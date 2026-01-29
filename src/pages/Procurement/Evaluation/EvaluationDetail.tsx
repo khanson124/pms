@@ -1037,35 +1037,36 @@ const EvaluationDetail = () => {
                                 View Request
                             </button>
                         )}
-                                    {/* Complete Evaluation Button - Shows when all sections are verified */}
-                                    {isProcurement && evaluation && evaluation.status === 'IN_PROGRESS' && (
-                                        (() => {
-                                            // Check if all sections are verified
-                                            const allSectionsVerified = ['A', 'B', 'C', 'D', 'E'].every((sec) => {
-                                                const statusKey = `section${sec}Status` as keyof typeof evaluation;
-                                                return evaluation[statusKey] === 'VERIFIED';
-                                            });
+                        {/* Complete Evaluation Button - Shows when all sections are verified */}
+                        {isProcurement &&
+                            evaluation &&
+                            evaluation.status === 'IN_PROGRESS' &&
+                            (() => {
+                                // Check if all sections are verified
+                                const allSectionsVerified = ['A', 'B', 'C', 'D', 'E'].every((sec) => {
+                                    const statusKey = `section${sec}Status` as keyof typeof evaluation;
+                                    return evaluation[statusKey] === 'VERIFIED';
+                                });
 
-                                            if (!allSectionsVerified) return null;
+                                if (!allSectionsVerified) return null;
 
-                                            return (
-                                                <div className="panel mb-4 bg-gradient-to-r from-success/10 to-primary/10 border-2 border-success no-print">
-                                                    <div className="flex items-center justify-between">
-                                                        <div>
-                                                            <h6 className="font-semibold text-success mb-1">All Sections Verified!</h6>
-                                                            <p className="text-sm text-white-dark">All sections have been verified. Mark this evaluation as completed to finalize it.</p>
-                                                        </div>
-                                                        <button type="button" className="btn btn-success gap-2" onClick={handleCompleteEvaluation}>
-                                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                            </svg>
-                                                            Mark as Complete
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })()
-                                    )}
+                                return (
+                                    <div className="panel mb-4 bg-gradient-to-r from-success/10 to-primary/10 border-2 border-success no-print">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <h6 className="font-semibold text-success mb-1">All Sections Verified!</h6>
+                                                <p className="text-sm text-white-dark">All sections have been verified. Mark this evaluation as completed to finalize it.</p>
+                                            </div>
+                                            <button type="button" className="btn btn-success gap-2" onClick={handleCompleteEvaluation}>
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                                Mark as Complete
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
 
                         <Link to="/procurement/evaluation" className="btn btn-outline-info gap-2">
                             <IconArrowLeft />

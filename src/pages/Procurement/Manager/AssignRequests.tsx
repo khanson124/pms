@@ -157,7 +157,7 @@ const AssignRequests = () => {
                     r.reference.toLowerCase().includes(search) ||
                     r.title.toLowerCase().includes(search) ||
                     r.requester.name.toLowerCase().includes(search) ||
-                    r.department.name.toLowerCase().includes(search)
+                    r.department.name.toLowerCase().includes(search),
             );
         }
         setFilteredRequests(filtered);
@@ -171,8 +171,8 @@ const AssignRequests = () => {
         viewingOfficerRequests !== null
             ? `Requests assigned to ${officers.find((o) => o.id === viewingOfficerRequests)?.name || 'Officer'}`
             : isProcurementManager
-            ? 'Manager Inbox'
-            : 'Unassigned Requests';
+              ? 'Manager Inbox'
+              : 'Unassigned Requests';
 
     const handleOfficerClick = (officerId: number) => {
         // If already viewing this officer, toggle off
@@ -291,7 +291,7 @@ const AssignRequests = () => {
                         if (o.id === assigneeId) return { ...o, assignedCount: o.assignedCount + 1 };
                         if (previousAssigneeId && o.id === previousAssigneeId && previousAssigneeId !== assigneeId) return { ...o, assignedCount: Math.max(0, o.assignedCount - 1) };
                         return o;
-                    })
+                    }),
                 );
 
                 toast(`Request assigned to ${officer.name}`, 'success');
@@ -339,7 +339,14 @@ const AssignRequests = () => {
                             <p className="text-sm text-white/90 mt-0.5">Intelligent workload distribution & real-time assignment management</p>
                         </div>
                     </div>
-                    <button onClick={() => { fetchData(); setViewingOfficerRequests(null); }} disabled={loading} className="btn bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30 gap-2 disabled:opacity-50">
+                    <button
+                        onClick={() => {
+                            fetchData();
+                            setViewingOfficerRequests(null);
+                        }}
+                        disabled={loading}
+                        className="btn bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30 gap-2 disabled:opacity-50"
+                    >
                         <IconRefresh className="h-4 w-4" />
                         Refresh Data
                     </button>
@@ -460,8 +467,8 @@ const AssignRequests = () => {
                                 {requestSearch
                                     ? 'Try adjusting your search criteria'
                                     : viewingOfficerRequests !== null
-                                    ? 'This officer has no assigned requests'
-                                    : 'All requests have been assigned to officers'}
+                                      ? 'This officer has no assigned requests'
+                                      : 'All requests have been assigned to officers'}
                             </p>
                             {requestSearch && (
                                 <button onClick={() => setRequestSearch('')} className="btn btn-primary btn-sm mt-3">
