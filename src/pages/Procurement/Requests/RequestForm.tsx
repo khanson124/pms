@@ -242,7 +242,7 @@ const RequestForm = () => {
     const canEditManagerFields = !!(isAssignee && requestMeta?.status === 'DEPARTMENT_REVIEW');
     const canEditHodFields = !!(isAssignee && requestMeta?.status === 'HOD_REVIEW');
     // Allow procurement section editing in PROCUREMENT_REVIEW, FINANCE_APPROVED, or SENT_TO_VENDOR (after evaluation)
-    const canEditProcurementSection = !!(isAssignee && (requestMeta?.status === 'PROCUREMENT_REVIEW' || requestMeta?.status === 'FINANCE_APPROVED' || requestMeta?.status === 'SENT_TO_VENDOR'));
+    const canEditProcurementSection = !!(isAssignee && isProcurementRole && requestMeta?.status && !['CANCELLED', 'REJECTED'].includes(requestMeta.status));
     // Budget section editing: assignee can edit at their stage
     const canEditBudgetSection = !!(isAssignee && (requestMeta?.status === 'FINANCE_REVIEW' || requestMeta?.status === 'BUDGET_MANAGER_REVIEW'));
 
@@ -303,7 +303,7 @@ const RequestForm = () => {
         };
 
         fetchFinanceOfficers();
-    }, [isEditMode, isBudgetManager, requestMeta?.status, requestMeta?.currentAssigneeId, currentUserId]);
+    }, [isEditMode, isBudgetManager, requestMeta?.status, requestMeta?.currentAssigneeId, currentUserId, isAssignee]);
 
     // Auto-fill manager/HOD/Budget names when they're the assignee and field is empty
     useEffect(() => {
@@ -901,7 +901,7 @@ const RequestForm = () => {
 
                 // Debug: log the full payload before sending
                 console.log('[RequestForm] Full updatePayload:', updatePayload);
-                console.log('[RequestForm] canEditProcurementSection:', canEditProcurementSection);
+                console.log('[RequestForm] canEditProcurementSection:', canEditProcurementSection, '| isAssignee:', isAssignee, '| status:', requestMeta?.status);
                 console.log('[RequestForm] Current request status:', requestMeta?.status);
                 console.log('[RequestForm] isAssignee:', isAssignee);
                 console.log('[RequestForm] isReturnedDraft:', isReturnedDraft);

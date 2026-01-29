@@ -989,6 +989,22 @@ const EvaluationDetail = () => {
         }
     };
 
+    const getSectionStatusLabel = (status?: string): { label: string; tone: 'success' | 'warning' | 'info' | 'danger' } => {
+        switch (status) {
+            case 'VERIFIED':
+                return { label: 'Verified', tone: 'success' };
+            case 'SUBMITTED':
+                return { label: 'Submitted', tone: 'info' };
+            case 'IN_PROGRESS':
+                return { label: 'In Progress', tone: 'warning' };
+            case 'RETURNED':
+                return { label: 'Returned', tone: 'danger' };
+            case 'NOT_STARTED':
+            default:
+                return { label: 'Not Started', tone: 'warning' };
+        }
+    };
+
     return (
         <div className="evaluation-print-root">
             {/* Page Header with Linked Request Info */}
@@ -1021,6 +1037,36 @@ const EvaluationDetail = () => {
                                 View Request
                             </button>
                         )}
+                                    {/* Complete Evaluation Button - Shows when all sections are verified */}
+                                    {isProcurement && evaluation && evaluation.status === 'IN_PROGRESS' && (
+                                        (() => {
+                                            // Check if all sections are verified
+                                            const allSectionsVerified = ['A', 'B', 'C', 'D', 'E'].every((sec) => {
+                                                const statusKey = `section${sec}Status` as keyof typeof evaluation;
+                                                return evaluation[statusKey] === 'VERIFIED';
+                                            });
+
+                                            if (!allSectionsVerified) return null;
+
+                                            return (
+                                                <div className="panel mb-4 bg-gradient-to-r from-success/10 to-primary/10 border-2 border-success no-print">
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <h6 className="font-semibold text-success mb-1">All Sections Verified!</h6>
+                                                            <p className="text-sm text-white-dark">All sections have been verified. Mark this evaluation as completed to finalize it.</p>
+                                                        </div>
+                                                        <button type="button" className="btn btn-success gap-2" onClick={handleCompleteEvaluation}>
+                                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                            </svg>
+                                                            Mark as Complete
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()
+                                    )}
+
                         <Link to="/procurement/evaluation" className="btn btn-outline-info gap-2">
                             <IconArrowLeft />
                             Back to List
@@ -1301,6 +1347,40 @@ const EvaluationDetail = () => {
                 </div>
             )}
 
+            {/* Section Status Summary for Procurement */}
+            {isProcurement && evaluation && (
+                <div className="panel mb-4 border border-gray-200 dark:border-gray-700 no-print">
+                    <div className="flex items-center justify-between mb-3">
+                        <div>
+                            <h6 className="font-semibold">Section Status Summary</h6>
+                            <p className="text-sm text-white-dark">All sections A–E must be Verified for completion.</p>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                        {(['A', 'B', 'C', 'D', 'E'] as const).map((sec) => {
+                            const statusKey = `section${sec}Status` as keyof typeof evaluation;
+                            const status = evaluation[statusKey] as string | undefined;
+                            const { label, tone } = getSectionStatusLabel(status);
+                            const toneClass =
+                                tone === 'success'
+                                    ? 'bg-success/10 text-success border-success/20'
+                                    : tone === 'danger'
+                                      ? 'bg-danger/10 text-danger border-danger/20'
+                                      : tone === 'info'
+                                        ? 'bg-info/10 text-info border-info/20'
+                                        : 'bg-warning/10 text-warning border-warning/20';
+
+                            return (
+                                <div key={sec} className={`border rounded p-3 ${toneClass}`}>
+                                    <div className="text-xs font-semibold uppercase">Section {sec}</div>
+                                    <div className="text-sm font-semibold mt-1">{label}</div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
             {/* Full Form UI with gated editability */}
             <EvaluationForm
                 mode="edit"
@@ -1347,27 +1427,6 @@ const EvaluationDetail = () => {
                 onSubmitSection={async (sec) => {
                     if (!evaluation) return;
 
-                    {
-                        /* Procurement Officer: Complete Evaluation */
-                    }
-                    {
-                        isProcurement && evaluation && canEditSections.includes('D') && canEditSections.includes('E') && evaluation.status !== 'COMPLETED' && (
-                            <div className="panel mb-4 bg-gradient-to-r from-success/10 to-primary/10 border-2 border-success no-print">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <h6 className="font-semibold text-success mb-1">Finalize Evaluation</h6>
-                                        <p className="text-sm text-white-dark">Mark this evaluation as completed after reviewing all sections and finalizing D & E.</p>
-                                    </div>
-                                    <button type="button" className="btn btn-success gap-2" onClick={handleCompleteEvaluation}>
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        </svg>
-                                        Complete Evaluation
-                                    </button>
-                                </div>
-                            </div>
-                        );
-                    }
                     const updated = await evaluationService.submitSection(evaluation.id, sec);
                     setEvaluation(updated);
                 }}

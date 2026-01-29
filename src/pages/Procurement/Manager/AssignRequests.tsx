@@ -339,7 +339,7 @@ const AssignRequests = () => {
                             <p className="text-sm text-white/90 mt-0.5">Intelligent workload distribution & real-time assignment management</p>
                         </div>
                     </div>
-                    <button onClick={fetchData} disabled={loading} className="btn bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30 gap-2 disabled:opacity-50">
+                    <button onClick={() => { fetchData(); setViewingOfficerRequests(null); }} disabled={loading} className="btn bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30 gap-2 disabled:opacity-50">
                         <IconRefresh className="h-4 w-4" />
                         Refresh Data
                     </button>

@@ -19,12 +19,12 @@ import { evaluationService, type Evaluation, type EvaluationStatus } from '../..
 import { getUser } from '../../../utils/auth';
 import { SkeletonLine, SkeletonStats, SkeletonTableRow } from '../../../components/SkeletonLoading';
 
-type DisplayStatus = 'Pending' | 'In Progress' | 'Committee Review' | 'Completed' | 'Validated' | 'Rejected';
+type DisplayStatus = 'Pending' | 'In Progress' | 'Awaiting Verification' | 'Completed' | 'Validated' | 'Rejected';
 
 const statusMap: Record<EvaluationStatus, DisplayStatus> = {
     PENDING: 'Pending',
     IN_PROGRESS: 'In Progress',
-    COMMITTEE_REVIEW: 'Committee Review',
+    COMMITTEE_REVIEW: 'Awaiting Verification',
     COMPLETED: 'Completed',
     VALIDATED: 'Validated',
     REJECTED: 'Rejected',
@@ -304,7 +304,7 @@ const EvaluationList = () => {
                             </div>
                             <div className="panel bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border-l-4 border-orange-500">
                                 <div className="flex items-center justify-between mb-3">
-                                    <div className="text-sm font-semibold text-orange-600 dark:text-orange-400 uppercase">Committee Review</div>
+                                    <div className="text-sm font-semibold text-orange-600 dark:text-orange-400 uppercase">Awaiting Verification</div>
                                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-500/20">
                                         <IconUsersGroup className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                                     </div>
@@ -371,7 +371,7 @@ const EvaluationList = () => {
                                     <option value="ALL">{t('evaluation.filters.all', 'All Statuses')}</option>
                                     <option value="Pending">{t('evaluation.status.pending', 'Pending')}</option>
                                     <option value="In Progress">{t('evaluation.status.inProgress', 'In Progress')}</option>
-                                    <option value="Committee Review">Committee Review</option>
+                                    <option value="Awaiting Verification">Awaiting Verification</option>
                                     <option value="Completed">{t('evaluation.status.completed', 'Completed')}</option>
                                     <option value="Validated">{t('evaluation.status.validated', 'Validated')}</option>
                                     <option value="Rejected">Rejected</option>
@@ -487,7 +487,7 @@ const EvaluationList = () => {
                                                     <div className="flex flex-wrap items-center gap-1">
                                                         <span className={`badge ${getStatusBadge(evaluation.status)} whitespace-nowrap`}>{statusMap[evaluation.status]}</span>
                                                         {isCommittee && hasNewSubmissions(evaluation) && (
-                                                            <span className="badge bg-info whitespace-nowrap" title="Submitted sections awaiting committee review">
+                                                            <span className="badge bg-info whitespace-nowrap" title="Submitted sections awaiting verification">
                                                                 New
                                                             </span>
                                                         )}

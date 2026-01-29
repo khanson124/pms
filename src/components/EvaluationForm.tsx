@@ -293,10 +293,15 @@ export const EvaluationForm: React.FC<Props> = ({
                     </div>
                 </div>
                 {canEdit('A') && (
-                    <div className="p-5 flex justify-end border-t">
+                    <div className="p-5 flex justify-end gap-3 border-t">
                         <button className="btn btn-primary" disabled={saving} onClick={() => saveSec('A')}>
                             {saving ? 'Saving…' : 'Save Section A'}
                         </button>
+                        {onSubmitSection && getSectionStatus('A') !== 'SUBMITTED' && getSectionStatus('A') !== 'VERIFIED' && (
+                            <button className="btn btn-success" disabled={saving} onClick={() => onSubmitSection('A')}>
+                                {saving ? 'Submitting…' : 'Submit Section A'}
+                            </button>
+                        )}
                     </div>
                 )}
                 {canVerifySection('A') && (
@@ -1257,10 +1262,28 @@ export const EvaluationForm: React.FC<Props> = ({
                         })()}
                 </div>
                 {canEdit('B') && (
-                    <div className="p-5 flex justify-end border-t">
+                    <div className="p-5 flex justify-end gap-3 border-t">
                         <button className="btn btn-primary" disabled={saving} onClick={() => saveSec('B')}>
                             {saving ? 'Saving…' : 'Save Section B'}
                         </button>
+                        {onSubmitSection && getSectionStatus('B') !== 'SUBMITTED' && getSectionStatus('B') !== 'VERIFIED' && (
+                            <button className="btn btn-success" disabled={saving} onClick={() => onSubmitSection('B')}>
+                                {saving ? 'Submitting…' : 'Submit Section B'}
+                            </button>
+                        )}
+                    </div>
+                )}
+                {onSubmitSection && ['IN_PROGRESS', 'RETURNED'].includes(getSectionStatus('B')) && (
+                    <div className="p-5 border-t bg-info/5">
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="flex-1">
+                                <h6 className="font-semibold text-info mb-2">Submit Section B</h6>
+                                <p className="text-sm text-white-dark">Submit this section for procurement verification.</p>
+                            </div>
+                            <button className="btn btn-info" disabled={saving} onClick={() => onSubmitSection('B')}>
+                                {saving ? 'Submitting…' : 'Submit Section B'}
+                            </button>
+                        </div>
                     </div>
                 )}
                 {canVerifySection('B') && (
@@ -1496,7 +1519,7 @@ export const EvaluationForm: React.FC<Props> = ({
                     </div>
                     {canEdit('C') && (
                         <div className="p-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between border-t">
-                            <div>
+                            <div className="flex gap-3">
                                 <button className="btn btn-primary" disabled={saving} onClick={() => saveSec('C')}>
                                     {saving ? 'Saving…' : 'Save Section C'}
                                 </button>
@@ -1504,41 +1527,55 @@ export const EvaluationForm: React.FC<Props> = ({
                             {sectionCActions && <div className="flex-shrink-0">{sectionCActions}</div>}
                         </div>
                     )}
-                    {canVerifySection('C') && (
-                        <div className="p-5 border-t bg-success/5">
-                            <div className="flex items-center justify-between gap-4">
-                                <div className="flex-1">
-                                    <h6 className="font-semibold text-success mb-2">Verify Section C</h6>
-                                    {verifyingSection === 'C' ? (
-                                        <div className="space-y-3">
-                                            <textarea
-                                                className="form-textarea w-full"
-                                                rows={2}
-                                                placeholder="Optional notes about this verification..."
-                                                value={verifyNotes['C'] || ''}
-                                                onChange={(e) => setVerifyNotes({ ...verifyNotes, C: e.target.value })}
-                                            />
-                                            <div className="flex gap-2">
-                                                <button className="btn btn-success btn-sm" disabled={saving} onClick={() => handleVerify('C')}>
-                                                    {saving ? 'Verifying...' : '✓ Confirm Verification'}
-                                                </button>
-                                                <button className="btn btn-outline-secondary btn-sm" onClick={() => setVerifyingSection(null)}>
-                                                    Cancel
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <button className="btn btn-success" onClick={() => setVerifyingSection('C')}>
-                                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            Verify Section C
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
+                </div>
+            )}
+
+            {onSubmitSection && getSectionStatus('C') !== 'VERIFIED' && (
+                <div className="panel mb-4 border border-info/30 bg-info/5">
+                    <div className="p-5 flex items-center justify-between gap-4">
+                        <div className="flex-1">
+                            <h6 className="font-semibold text-info mb-2">Submit Section C</h6>
+                            <p className="text-sm text-white-dark">Submit this section for procurement verification.</p>
                         </div>
-                    )}
+                        <button className="btn btn-info" disabled={saving} onClick={() => onSubmitSection('C')}>
+                            {saving ? 'Submitting…' : 'Submit Section C'}
+                        </button>
+                    </div>
+                </div>
+            )}
+            {canVerifySection('C') && (
+                <div className="panel mb-4 border border-success/30 bg-success/5">
+                    <div className="p-5 flex items-center justify-between gap-4">
+                        <div className="flex-1">
+                            <h6 className="font-semibold text-success mb-2">Verify Section C</h6>
+                            {verifyingSection === 'C' ? (
+                                <div className="space-y-3">
+                                    <textarea
+                                        className="form-textarea w-full"
+                                        rows={2}
+                                        placeholder="Optional notes about this verification..."
+                                        value={verifyNotes['C'] || ''}
+                                        onChange={(e) => setVerifyNotes({ ...verifyNotes, C: e.target.value })}
+                                    />
+                                    <div className="flex gap-2">
+                                        <button className="btn btn-success btn-sm" disabled={saving} onClick={() => handleVerify('C')}>
+                                            {saving ? 'Verifying...' : '✓ Confirm Verification'}
+                                        </button>
+                                        <button className="btn btn-outline-secondary btn-sm" onClick={() => setVerifyingSection(null)}>
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <button className="btn btn-success" onClick={() => setVerifyingSection('C')}>
+                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Verify Section C
+                                </button>
+                            )}
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -1559,10 +1596,15 @@ export const EvaluationForm: React.FC<Props> = ({
                     />
                 </div>
                 {canEdit('D') && (
-                    <div className="p-5 flex justify-end border-t">
+                    <div className="p-5 flex justify-end gap-3 border-t">
                         <button className="btn btn-primary" disabled={saving} onClick={() => saveSec('D')}>
                             {saving ? 'Saving…' : 'Save Section D'}
                         </button>
+                        {onSubmitSection && getSectionStatus('D') !== 'SUBMITTED' && getSectionStatus('D') !== 'VERIFIED' && (
+                            <button className="btn btn-success" disabled={saving} onClick={() => onSubmitSection('D')}>
+                                {saving ? 'Submitting…' : 'Submit Section D'}
+                            </button>
+                        )}
                     </div>
                 )}
                 {canVerifySection('D') && (
@@ -1653,10 +1695,15 @@ export const EvaluationForm: React.FC<Props> = ({
                     </div>
                 </div>
                 {canEdit('E') && (
-                    <div className="p-5 flex justify-end border-t">
+                    <div className="p-5 flex justify-end gap-3 border-t">
                         <button className="btn btn-primary" disabled={saving} onClick={() => saveSec('E')}>
                             {saving ? 'Saving…' : 'Save Section E'}
                         </button>
+                        {onSubmitSection && getSectionStatus('E') !== 'SUBMITTED' && getSectionStatus('E') !== 'VERIFIED' && (
+                            <button className="btn btn-success" disabled={saving} onClick={() => onSubmitSection('E')}>
+                                {saving ? 'Submitting…' : 'Submit Section E'}
+                            </button>
+                        )}
                     </div>
                 )}
                 {canVerifySection('E') && (

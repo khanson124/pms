@@ -33,7 +33,7 @@ import { createThresholdNotifications } from './services/notificationService.js'
 import { getLoadBalancingSettings, updateLoadBalancingSettings, autoAssignRequest, autoAssignFinanceOfficer, shouldAutoAssign } from './services/loadBalancingService.js';
 import { emailService } from './utils/emailService.js';
 import type { Prisma, User } from '@prisma/client';
-import { requireCommittee as requireCommitteeRole, requireEvaluationCommittee, requireAdmin, requireExecutive, requireRole } from './middleware/rbac.js';
+import { requireCommittee as requireCommitteeRole, requireEvaluationCommittee, requireAdmin, requireExecutive, requireRole, requireProcurement } from './middleware/rbac.js';
 import { validate, createIdeaSchema, voteSchema, approveRejectIdeaSchema, promoteIdeaSchema, sanitizeInput as sanitize } from './middleware/validation.js';
 import { errorHandler, notFoundHandler, asyncHandler, NotFoundError, BadRequestError } from './middleware/errorHandler.js';
 import { auditMiddleware, auditLogger } from './middleware/auditMiddleware.js';
@@ -6115,7 +6115,8 @@ app.get(
                     evaluations = evaluations.filter((e: any) => e.createdBy === userId || assignedIds.has(e.id));
                 }
 
-                return res.json({ success: true, data: evaluations });
+                const normalized = evaluations.map((e: any) => (e?.status === 'COMMITTEE_REVIEW' ? { ...e, status: 'IN_PROGRESS' } : e));
+                return res.json({ success: true, data: normalized });
             } catch (error: any) {
                 // If the table doesn't exist or query fails, return empty array
                 logger.warn('Evaluation table query failed, returning empty array:', error?.message);
@@ -6341,7 +6342,8 @@ app.get(
             if (!isCreator && !isProcurement && !isCommittee && !isAssigned) {
                 throw new Error('You do not have permission to view this evaluation');
             }
-            return res.json({ success: true, data: evaluation });
+            const normalized = evaluation?.status === 'COMMITTEE_REVIEW' ? { ...evaluation, status: 'IN_PROGRESS' } : evaluation;
+            return res.json({ success: true, data: normalized });
         }
         const rows = await prisma.$queryRawUnsafe<any>(
             `SELECT e.*, 
@@ -7503,7 +7505,7 @@ app.patch(
     }),
 );
 
-// POST /api/evaluations/:id/sections/:section/submit - Submit section for committee review
+// POST /api/evaluations/:id/sections/:section/submit - Submit section for procurement verification
 app.post(
     '/api/evaluations/:id/sections/:section/submit',
     authMiddleware,
@@ -7568,9 +7570,9 @@ app.post(
         const statusField = `section${sectionUpper}Status`;
         updateData[statusField] = 'SUBMITTED';
 
-        // Update evaluation status to COMMITTEE_REVIEW when any section is submitted
-        if (existing.status !== 'COMMITTEE_REVIEW' && existing.status !== 'COMPLETED') {
-            updateData.status = 'COMMITTEE_REVIEW';
+        // Ensure evaluation is in progress once any section is submitted
+        if (existing.status === 'PENDING') {
+            updateData.status = 'IN_PROGRESS';
         }
 
         if (hasEvaluationDelegate()) {
@@ -7582,7 +7584,7 @@ app.post(
                     [`section${sectionUpper}Verifier`]: { select: { id: true, name: true, email: true } },
                 },
             });
-            return res.json({ success: true, data: evaluation, message: `Section ${sectionUpper} submitted for review` });
+            return res.json({ success: true, data: evaluation, message: `Section ${sectionUpper} submitted for verification` });
         }
 
         const sets: string[] = [`${statusField}='SUBMITTED'`, 'updatedAt=NOW()'];
@@ -7595,10 +7597,11 @@ app.post(
 );
 
 // POST /api/evaluations/:id/sections/:section/verify - Committee verifies section (approve)
+// POST /api/evaluations/:id/sections/:section/verify - Procurement officer verifies section after evaluators submit
 app.post(
     '/api/evaluations/:id/sections/:section/verify',
     authMiddleware,
-    requireEvaluationCommittee,
+    requireProcurement,
     asyncHandler(async (req, res) => {
         const { id, section } = req.params;
         const { notes } = req.body;
@@ -7629,6 +7632,9 @@ app.post(
         updateData[`section${sectionUpper}VerifiedBy`] = userId;
         updateData[`section${sectionUpper}VerifiedAt`] = new Date();
         if (notes) updateData[`section${sectionUpper}Notes`] = notes;
+        if (existing.status === 'COMMITTEE_REVIEW') {
+            updateData.status = 'IN_PROGRESS';
+        }
 
         if (hasEvaluationDelegate()) {
             const evaluation = await (prisma as any).evaluation.update({
@@ -7640,18 +7646,16 @@ app.post(
                 },
             });
 
-            // Check if all sections are now verified
             const allSections = ['A', 'B', 'C', 'D', 'E'];
-            const allVerified = allSections.every((s) => {
-                const sectionStatus = evaluation[`section${s}Status`];
-                return sectionStatus === 'VERIFIED';
-            });
+            const allVerified = allSections.every((s) => evaluation[`section${s}Status`] === 'VERIFIED');
 
-            // If all sections verified, update evaluation status and notify creator
             if (allVerified && evaluation.status !== 'COMPLETED') {
                 const completedEvaluation = await (prisma as any).evaluation.update({
                     where: { id: parseInt(id) },
-                    data: { status: 'COMPLETED' },
+                    data: {
+                        status: 'COMPLETED',
+                        assignedProcurementOfficerId: evaluation.assignedProcurementOfficerId ?? userId,
+                    },
                     include: {
                         creator: { select: { id: true, name: true, email: true } },
                         sectionAVerifier: { select: { id: true, name: true, email: true } },
@@ -7662,33 +7666,28 @@ app.post(
                     },
                 });
 
-                // Send notification to creator
-                try {
-                    await prisma.notification.create({
-                        data: {
-                            userId: completedEvaluation.createdBy,
-                            type: 'EVALUATION_VERIFIED',
-                            message: `Evaluation ${completedEvaluation.evalNumber} has been fully verified by the committee and is now completed.`,
-                            data: {
-                                evaluationId: completedEvaluation.id,
-                                evalNumber: completedEvaluation.evalNumber,
-                                rfqTitle: completedEvaluation.rfqTitle,
-                            },
-                        },
-                    });
-                } catch (notifErr) {
-                    console.error('Failed to create notification:', notifErr);
-                }
-
-                return res.json({ success: true, data: completedEvaluation, message: `Section ${sectionUpper} verified. All sections complete!` });
+                return res.json({ success: true, data: completedEvaluation, message: `Section ${sectionUpper} verified. Evaluation completed.` });
             }
 
             return res.json({ success: true, data: evaluation, message: `Section ${sectionUpper} verified` });
         }
 
         const sets: string[] = [`${statusField}='VERIFIED'`, `section${sectionUpper}VerifiedBy=${userId}`, `section${sectionUpper}VerifiedAt=NOW()`, 'updatedAt=NOW()'];
+        if (existing?.status === 'COMMITTEE_REVIEW') {
+            sets.push("status='IN_PROGRESS'");
+        }
         if (notes) sets.push(`section${sectionUpper}Notes='${notes.replace(/'/g, "''")}'`);
         await prisma.$executeRawUnsafe(`UPDATE Evaluation SET ${sets.join(', ')} WHERE id=${parseInt(id)}`);
+
+        const allSections = ['A', 'B', 'C', 'D', 'E'];
+        const allVerified = allSections.every((s) => (s === sectionUpper ? 'VERIFIED' : existing?.[`section${s}Status`]) === 'VERIFIED');
+        if (allVerified && existing?.status !== 'COMPLETED') {
+            await prisma.$executeRawUnsafe(
+                `UPDATE Evaluation SET status='COMPLETED', assignedProcurementOfficerId=COALESCE(assignedProcurementOfficerId, ${userId}), updatedAt=NOW() WHERE id=${parseInt(id)}`,
+            );
+            return res.json({ success: true, message: `Section ${sectionUpper} verified. Evaluation completed.`, meta: { fallback: true } });
+        }
+
         res.json({ success: true, message: `Section ${sectionUpper} verified`, meta: { fallback: true } });
     }),
 );

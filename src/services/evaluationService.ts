@@ -258,15 +258,27 @@ class EvaluationService {
         }
 
         const attempt = async (extraHeaders?: Record<string, string>) => {
-            const response = await fetch(`${API_URL}${url}`, {
-                ...options,
-                headers: {
-                    ...baseHeaders,
-                    ...(options.headers || {}),
-                    ...(extraHeaders || {}),
-                },
-            });
-            return response;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
+            try {
+                const response = await fetch(`${API_URL}${url}`, {
+                    ...options,
+                    signal: controller.signal,
+                    headers: {
+                        ...baseHeaders,
+                        ...(options.headers || {}),
+                        ...(extraHeaders || {}),
+                    },
+                });
+                return response;
+            } catch (err: any) {
+                if (err?.name === 'AbortError') {
+                    throw new Error('Request timed out. Please try again.');
+                }
+                throw err;
+            } finally {
+                clearTimeout(timeoutId);
+            }
         };
 
         let response = await attempt();
