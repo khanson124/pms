@@ -156,7 +156,7 @@ export const adaptRequestsResponse = (input: unknown): Request[] => {
     const pickDepartment = (r: any): string => getName(r.department ?? r.dept ?? r.department_name ?? r.dept_name);
     const pickStatus = (r: any): string => normalizeStatus(toStr(r.status ?? r.state ?? r.stage ?? ''));
     const pickDate = (r: any): string => toStr(r.date ?? r.createdAt ?? r.created_at ?? r.submittedAt ?? r.submitted_at ?? '');
-    const pickItems = (r: any): RequestItem[] => (Array.isArray(r.items ?? r.lines) ? r.items ?? r.lines : []);
+    const pickItems = (r: any): RequestItem[] => (Array.isArray(r.items ?? r.lines) ? (r.items ?? r.lines) : []);
     const pickJustification = (r: any): string => toStr(r.justification ?? r.reason ?? r.purpose ?? '');
     const pickTotal = (r: any, items: RequestItem[]): number => {
         const t = r.totalEstimated ?? r.total_estimated ?? r.total ?? r.amount;
@@ -197,7 +197,7 @@ export const adaptRequestsResponse = (input: unknown): Request[] => {
             currentAssigneeName: pickAssigneeName(r),
             justification: pickJustification(r),
             comments: Array.isArray(r.comments) ? r.comments : [],
-            statusHistory: Array.isArray(r.statusHistory ?? r.status_history) ? r.statusHistory ?? r.status_history : [],
+            statusHistory: Array.isArray(r.statusHistory ?? r.status_history) ? (r.statusHistory ?? r.status_history) : [],
             statusComment: toStr(r.statusComment ?? r.status_comment ?? ''),
             rejectionNote: toStr(r.rejectionNote ?? r.rejection_note ?? ''),
         };

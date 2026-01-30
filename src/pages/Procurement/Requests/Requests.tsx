@@ -129,7 +129,7 @@ const Requests = () => {
                 setIsLoading(false);
             }
         },
-        [currentUserId, currentUserRoles]
+        [currentUserId, currentUserRoles],
     );
 
     // Fetch requests from API
@@ -472,8 +472,8 @@ const Requests = () => {
             <div class="field-row">
                 <div class="field"><div class="field-label">Currency</div><div class="field-value">${request.currency || 'JMD'}</div></div>
                 <div class="field"><div class="field-label">Total Amount</div><div class="field-value" style="font-weight: 600; color: #1e40af;">${request.currency || 'JMD'} $${formatCurrency(
-                request.totalEstimated
-            )}</div></div>
+                    request.totalEstimated,
+                )}</div></div>
             </div>
         </div>
 
@@ -506,7 +506,7 @@ const Requests = () => {
                         <td style="text-align: right;">$${formatCurrency(item.unitPrice)}</td>
                         <td>${item.partNumber || '—'}</td>
                         <td style="text-align: right;">$${formatCurrency((parseFloat(String(item.quantity || 0)) * parseFloat(String(item.unitPrice || 0))).toFixed(2))}</td>
-                    </tr>`
+                    </tr>`,
                         )
                         .join('')}
                 </tbody>
@@ -585,7 +585,7 @@ const Requests = () => {
                 ${approvals
                     .map(
                         (a: any) =>
-                            `<div class="approval-item"><div class="icon">✓</div><div class="content"><div class="role">${a.role}</div><div class="approver">${a.approver}</div></div><div class="date">${a.date}</div></div>`
+                            `<div class="approval-item"><div class="icon">✓</div><div class="content"><div class="role">${a.role}</div><div class="approver">${a.approver}</div></div><div class="date">${a.date}</div></div>`,
                     )
                     .join('')}
             </div>
@@ -647,7 +647,7 @@ const Requests = () => {
                     headers,
                     body: JSON.stringify({ reason: trimmedReason }),
                 });
-                const data: ApiResponse = await res.json().catch(() => ({} as ApiResponse));
+                const data: ApiResponse = await res.json().catch(() => ({}) as ApiResponse);
                 if (!res.ok) {
                     throw new Error(data?.message || data?.error || 'Failed to hide request');
                 }
@@ -660,14 +660,11 @@ const Requests = () => {
                 setHideActionId(null);
             }
         },
-        [currentUserId, fetchRequests]
+        [currentUserId, fetchRequests],
     );
 
     // Check if current user is procurement
-    const isProcurementRole = useMemo(
-        () => currentUserRoles.some((r) => r.toUpperCase().includes('PROCUREMENT')),
-        [currentUserRoles]
-    );
+    const isProcurementRole = useMemo(() => currentUserRoles.some((r) => r.toUpperCase().includes('PROCUREMENT')), [currentUserRoles]);
 
     // Open comment modal
     const openCommentModal = (req: Request) => {
@@ -722,7 +719,8 @@ const Requests = () => {
     };
 
     return (
-        <div className="p-6">{/* Comment Modal */}
+        <div className="p-6">
+            {/* Comment Modal */}
             {showCommentModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" onClick={() => !isSavingComment && setShowCommentModal(false)}>
                     <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl mx-4" onClick={(e) => e.stopPropagation()}>
@@ -867,7 +865,7 @@ const Requests = () => {
                                 requests
                                     .map((r) => r.status)
                                     .map((s) => s && s.trim())
-                                    .filter(Boolean)
+                                    .filter(Boolean),
                             ),
                         ]
                             .map((s) => ({ raw: s as string, norm: normalizeStatus(s as string) }))
@@ -1061,7 +1059,12 @@ const Requests = () => {
                                                         aria-label={`Update comment for request ${r.id}`}
                                                     >
                                                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+                                                            />
                                                         </svg>
                                                     </button>
                                                 )}

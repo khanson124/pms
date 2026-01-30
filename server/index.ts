@@ -3684,12 +3684,11 @@ app.delete('/api/evaluations/:id/attachments/:attachmentId', authMiddleware, asy
         const userId = parseInt(userObj?.sub || userObj?.id);
         if (!userId) return res.status(401).json({ message: 'User ID required' });
 
-        const att = await prisma.evaluationAttachment.findUnique({ 
-            where: { id: parseInt(attachmentId, 10) } 
+        const att = await prisma.evaluationAttachment.findUnique({
+            where: { id: parseInt(attachmentId, 10) },
         });
         if (!att) return res.status(404).json({ message: 'Attachment not found' });
-        if (att.evaluationId !== parseInt(id, 10)) 
-            return res.status(400).json({ message: 'Attachment does not belong to this evaluation' });
+        if (att.evaluationId !== parseInt(id, 10)) return res.status(400).json({ message: 'Attachment does not belong to this evaluation' });
 
         // Attempt to unlink file from disk (best-effort)
         try {
@@ -3707,7 +3706,6 @@ app.delete('/api/evaluations/:id/attachments/:attachmentId', authMiddleware, asy
         res.status(500).json({ message: e?.message || 'Failed to delete attachment' });
     }
 });
-
 
 // POST /requests/:id/action - approve/reject requests (manager, HOD, procurement, finance)
 app.post('/api/requests/:id/action', async (req, res) => {
@@ -6434,10 +6432,11 @@ app.get(
             // Construct full URLs for attachments
             const withUrls = {
                 ...evaluation,
-                attachments: evaluation?.attachments?.map((att: any) => ({
-                    ...att,
-                    filePath: `http://${PUBLIC_HOST}:${PORT}${att.filePath}`,
-                })) || [],
+                attachments:
+                    evaluation?.attachments?.map((att: any) => ({
+                        ...att,
+                        filePath: `http://${PUBLIC_HOST}:${PORT}${att.filePath}`,
+                    })) || [],
             };
 
             const normalized = withUrls?.status === 'COMMITTEE_REVIEW' ? { ...withUrls, status: 'IN_PROGRESS' } : withUrls;

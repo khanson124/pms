@@ -126,7 +126,7 @@ export const EvaluationForm: React.FC<Props> = ({
             // Get token from localStorage
             const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
             const headers: Record<string, string> = {};
-            
+
             if (token) {
                 headers['Authorization'] = `Bearer ${token}`;
             }
@@ -160,7 +160,7 @@ export const EvaluationForm: React.FC<Props> = ({
             const uploaded = await res.json();
             setExistingAttachments((prev) => [...(prev || []), ...uploaded]);
             setAttachments([]);
-            
+
             // Reset file input
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
@@ -182,7 +182,7 @@ export const EvaluationForm: React.FC<Props> = ({
             // Get token from localStorage
             const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
             const headers: Record<string, string> = {};
-            
+
             if (token) {
                 headers['Authorization'] = `Bearer ${token}`;
             }
@@ -1891,9 +1891,7 @@ export const EvaluationForm: React.FC<Props> = ({
                                     accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
                                     disabled={isUploadingAttachments}
                                 />
-                                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-                                    Supported: PDF, Word, Excel, Images - Max 10MB per file
-                                </p>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">Supported: PDF, Word, Excel, Images - Max 10MB per file</p>
                                 {attachments.length > 0 && (
                                     <>
                                         <div className="mb-3 space-y-2">
@@ -1905,12 +1903,7 @@ export const EvaluationForm: React.FC<Props> = ({
                                                 </div>
                                             ))}
                                         </div>
-                                        <button
-                                            type="button"
-                                            className="btn btn-primary w-full"
-                                            onClick={handleUploadAttachments}
-                                            disabled={isUploadingAttachments}
-                                        >
+                                        <button type="button" className="btn btn-primary w-full" onClick={handleUploadAttachments} disabled={isUploadingAttachments}>
                                             {isUploadingAttachments ? 'Uploading...' : `Upload ${attachments.length} File${attachments.length !== 1 ? 's' : ''}`}
                                         </button>
                                     </>
@@ -1925,24 +1918,12 @@ export const EvaluationForm: React.FC<Props> = ({
                             <h6 className="font-medium text-sm mb-2">Attached Documents ({existingAttachments.length})</h6>
                             <div className="space-y-2">
                                 {existingAttachments.map((att) => (
-                                    <div
-                                        key={att.id}
-                                        className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800"
-                                    >
-                                        <a
-                                            href={att.filePath}
-                                            download={att.originalName}
-                                            className="text-blue-600 dark:text-blue-400 hover:underline text-sm flex-1 truncate"
-                                        >
+                                    <div key={att.id} className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
+                                        <a href={att.filePath} download={att.originalName} className="text-blue-600 dark:text-blue-400 hover:underline text-sm flex-1 truncate">
                                             {att.originalName}
                                         </a>
                                         {canManageAttachments && (
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDeleteAttachment(att.id)}
-                                                className="text-red-600 hover:text-red-800 ml-2 text-sm"
-                                                title="Delete attachment"
-                                            >
+                                            <button type="button" onClick={() => handleDeleteAttachment(att.id)} className="text-red-600 hover:text-red-800 ml-2 text-sm" title="Delete attachment">
                                                 ✕
                                             </button>
                                         )}
