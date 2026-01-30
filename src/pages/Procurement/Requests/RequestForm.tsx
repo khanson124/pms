@@ -174,6 +174,7 @@ const RequestForm = () => {
     const [dateReceived, setDateReceived] = useState('');
     const [actionDate, setActionDate] = useState('');
     const [procurementComments, setProcurementComments] = useState('');
+    const [statusComment, setStatusComment] = useState('');
     const [attachments, setAttachments] = useState<File[]>([]);
     const [existingAttachments, setExistingAttachments] = useState<Array<{ id: number; filename: string; url: string }>>([]);
     const [financeOfficers, setFinanceOfficers] = useState<Array<{ id: number; name: string; email: string; assignedCount: number }>>([]);
@@ -450,6 +451,7 @@ const RequestForm = () => {
                 setDateReceived(request.dateReceived || '');
                 setActionDate(request.actionDate || '');
                 setProcurementComments(request.procurementComments || '');
+                setStatusComment(request.statusComment || '');
                 setProcurementApproved(!!request.procurementApproved);
 
                 // Load existing attachments (if any)
@@ -825,6 +827,7 @@ const RequestForm = () => {
                     dateReceived,
                     actionDate,
                     procurementComments,
+                    statusComment,
                     // Header code fields
                     headerDeptCode,
                     headerMonth,

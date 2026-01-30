@@ -39,6 +39,8 @@ export interface Request {
     justification: string;
     comments: CommentEntry[];
     statusHistory: StatusHistoryEntry[];
+    statusComment?: string;
+    rejectionNote?: string;
     // Combined request metadata (optional, used by list UI when present)
     isCombined?: boolean;
     lotNumber?: string | number;

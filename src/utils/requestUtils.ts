@@ -198,6 +198,8 @@ export const adaptRequestsResponse = (input: unknown): Request[] => {
             justification: pickJustification(r),
             comments: Array.isArray(r.comments) ? r.comments : [],
             statusHistory: Array.isArray(r.statusHistory ?? r.status_history) ? r.statusHistory ?? r.status_history : [],
+            statusComment: toStr(r.statusComment ?? r.status_comment ?? ''),
+            rejectionNote: toStr(r.rejectionNote ?? r.rejection_note ?? ''),
         };
     });
 };

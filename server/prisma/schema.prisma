@@ -206,6 +206,8 @@ model Request {
   procurementApproved   Boolean?               @default(false)
   actionDate            String?
   procurementComments   String?
+  statusComment         String?
+  rejectionNote         String?
   headerDeptCode        String?
   headerMonth           String?
   headerYear            Int?

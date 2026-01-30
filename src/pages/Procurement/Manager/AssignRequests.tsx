@@ -117,15 +117,17 @@ const AssignRequests = () => {
             });
             setIsProcurementManager(roles.includes('PROCUREMENT_MANAGER') || roles.includes('Procurement Manager') || roles.includes('PROCUREMENT'));
 
-            // Fetch requests at PROCUREMENT_REVIEW status
+            // Fetch ALL requests to show assigned ones even if status has changed
             const requestsRes = await fetch(getApiUrl('/api/requests'), {
                 headers: buildHeaders(),
             });
             if (!requestsRes.ok) throw new Error('Failed to fetch requests');
             const requestsData = await requestsRes.json();
-            const procurementRequests = Array.isArray(requestsData) ? requestsData.filter((r: any) => r && r.status === 'PROCUREMENT_REVIEW') : [];
-            // keep full list
-            setAllRequests(procurementRequests);
+            // Keep full list of ALL requests (including assigned ones) to show in officer view
+            const allReqs = Array.isArray(requestsData) ? requestsData : [];
+            setAllRequests(allReqs);
+            // For display in main inbox, only show PROCUREMENT_REVIEW status
+            const procurementRequests = allReqs.filter((r: any) => r && r.status === 'PROCUREMENT_REVIEW');
             // For procurement managers, show ALL procurement requests (they should see everything and delegate)
             if (userProfile && (roles.includes('PROCUREMENT_MANAGER') || roles.includes('Procurement Manager') || roles.includes('PROCUREMENT'))) {
                 setRequests(procurementRequests);

@@ -1387,6 +1387,7 @@ const EvaluationDetail = () => {
                 mode="edit"
                 evaluation={evaluation}
                 canEditSections={canEditSections as Array<'A' | 'B' | 'C' | 'D' | 'E'>}
+                canManageAttachments={isProcurement}
                 structureEditableSections={structureEditEnabled ? (['B'] as Array<'A' | 'B' | 'C' | 'D' | 'E'>) : ([] as Array<'A' | 'B' | 'C' | 'D' | 'E'>)}
                 prefilledCells={(myAssignment?.prefilledCells as Record<string, boolean>) || {}}
                 sectionCActions={

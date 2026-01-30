@@ -20,6 +20,7 @@ type Props = {
     mode: 'create' | 'edit';
     evaluation?: Evaluation | null;
     canEditSections?: Array<'A' | 'B' | 'C' | 'D' | 'E'>;
+    canManageAttachments?: boolean; // Only procurement can upload/delete
     onSaveSection?: (section: 'Background' | 'A' | 'B' | 'C' | 'D' | 'E', data: any) => Promise<void> | void;
     onSubmitSection?: (section: 'A' | 'B' | 'C' | 'D' | 'E') => Promise<void> | void;
     onVerifySection?: (section: 'A' | 'B' | 'C' | 'D' | 'E', notes?: string) => Promise<void> | void;
@@ -35,6 +36,7 @@ export const EvaluationForm: React.FC<Props> = ({
     mode,
     evaluation,
     canEditSections = [],
+    canManageAttachments = false,
     onSaveSection,
     onSubmitSection,
     onVerifySection,
@@ -61,8 +63,20 @@ export const EvaluationForm: React.FC<Props> = ({
     const [saving, setSaving] = useState(false);
     const [verifyingSection, setVerifyingSection] = useState<string | null>(null);
     const [verifyNotes, setVerifyNotes] = useState<Record<string, string>>({});
+    const [attachments, setAttachments] = useState<File[]>([]);
+    const [existingAttachments, setExistingAttachments] = useState<any[]>(evaluation?.attachments || []);
+    const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const canEdit = (sec: 'A' | 'B' | 'C' | 'D' | 'E') => canEditSections.includes(sec);
+
+    React.useEffect(() => {
+        if (evaluation?.attachments && Array.isArray(evaluation.attachments)) {
+            setExistingAttachments(evaluation.attachments);
+        } else {
+            setExistingAttachments([]);
+        }
+    }, [evaluation?.attachments]);
     const canEditStructure = (sec: 'A' | 'B' | 'C' | 'D' | 'E') => structureEditableSections.includes(sec);
     // Evaluators can only edit technical evaluation table, not eligibility or compliance
     const canEditTechnical = () => canEditSections.includes('B');
@@ -90,6 +104,118 @@ export const EvaluationForm: React.FC<Props> = ({
             setVerifyNotes({ ...verifyNotes, [sec]: '' });
         } finally {
             setSaving(false);
+        }
+    };
+
+    // Handle file selection for attachments
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            setAttachments(Array.from(e.target.files));
+        }
+    };
+
+    // Upload attachments
+    const handleUploadAttachments = async () => {
+        if (!attachments.length || !evaluation?.id) return;
+
+        setIsUploadingAttachments(true);
+        try {
+            const fd = new FormData();
+            attachments.forEach((f) => fd.append('attachments', f));
+
+            // Get token from localStorage
+            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+            const headers: Record<string, string> = {};
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            // Fallback: try to get user ID for X-User-Id header
+            try {
+                const rawUser = localStorage.getItem('auth_user') || sessionStorage.getItem('auth_user');
+                if (rawUser) {
+                    const parsed = JSON.parse(rawUser);
+                    const uid = parsed?.id ?? parsed?.userId;
+                    const numericId = typeof uid === 'number' ? uid : parseInt(String(uid), 10);
+                    if (Number.isFinite(numericId)) {
+                        headers['X-User-Id'] = String(numericId);
+                    }
+                }
+            } catch {
+                /* ignore parse errors */
+            }
+
+            const res = await fetch(`/api/evaluations/${evaluation.id}/attachments`, {
+                method: 'POST',
+                headers,
+                body: fd,
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.message || 'Failed to upload attachments');
+            }
+
+            const uploaded = await res.json();
+            setExistingAttachments((prev) => [...(prev || []), ...uploaded]);
+            setAttachments([]);
+            
+            // Reset file input
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        } catch (err) {
+            console.error('Upload failed:', err);
+            alert('Failed to upload attachments');
+        } finally {
+            setIsUploadingAttachments(false);
+        }
+    };
+
+    // Delete attachment
+    const handleDeleteAttachment = async (attachmentId: number) => {
+        if (!evaluation?.id) return;
+        if (!window.confirm('Delete this attachment?')) return;
+
+        try {
+            // Get token from localStorage
+            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+            const headers: Record<string, string> = {};
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            // Fallback: try to get user ID for X-User-Id header
+            try {
+                const rawUser = localStorage.getItem('auth_user') || sessionStorage.getItem('auth_user');
+                if (rawUser) {
+                    const parsed = JSON.parse(rawUser);
+                    const uid = parsed?.id ?? parsed?.userId;
+                    const numericId = typeof uid === 'number' ? uid : parseInt(String(uid), 10);
+                    if (Number.isFinite(numericId)) {
+                        headers['X-User-Id'] = String(numericId);
+                    }
+                }
+            } catch {
+                /* ignore parse errors */
+            }
+
+            const res = await fetch(`/api/evaluations/${evaluation.id}/attachments/${attachmentId}`, {
+                method: 'DELETE',
+                headers,
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.message || 'Failed to delete attachment');
+            }
+
+            setExistingAttachments((prev) => prev.filter((a) => a.id !== attachmentId));
+        } catch (err) {
+            console.error('Delete failed:', err);
+            alert('Failed to delete attachment');
         }
     };
 
@@ -1741,6 +1867,91 @@ export const EvaluationForm: React.FC<Props> = ({
                         </div>
                     </div>
                 )}
+
+                {/* Attachments Section */}
+                <div className="border-t pt-4 mt-6">
+                    <div className="mb-4">
+                        <h5 className="font-semibold text-lg mb-3">Supporting Documents</h5>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            {canManageAttachments
+                                ? 'Upload documents to support the evaluation (specifications, test reports, compliance documentation, etc.)'
+                                : 'Documents provided by the procurement team to support the evaluation'}
+                        </p>
+
+                        {/* Upload Form - Only for Procurement */}
+                        {canManageAttachments && (
+                            <div className="border rounded-lg p-4 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 mb-4">
+                                <label className="block text-sm font-medium mb-2">Select Files to Upload</label>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    multiple
+                                    onChange={handleFileChange}
+                                    className="form-input w-full mb-3"
+                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                                    disabled={isUploadingAttachments}
+                                />
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                                    Supported: PDF, Word, Excel, Images - Max 10MB per file
+                                </p>
+                                {attachments.length > 0 && (
+                                    <>
+                                        <div className="mb-3 space-y-2">
+                                            <p className="text-sm font-medium">Selected files ({attachments.length}):</p>
+                                            {attachments.map((file, idx) => (
+                                                <div key={idx} className="text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-800 p-2 rounded flex justify-between items-center">
+                                                    <span>{file.name}</span>
+                                                    <span className="text-gray-500">({(file.size / 1024).toFixed(2)} KB)</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className="btn btn-primary w-full"
+                                            onClick={handleUploadAttachments}
+                                            disabled={isUploadingAttachments}
+                                        >
+                                            {isUploadingAttachments ? 'Uploading...' : `Upload ${attachments.length} File${attachments.length !== 1 ? 's' : ''}`}
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Existing Attachments - Viewable by all */}
+                    {existingAttachments && existingAttachments.length > 0 && (
+                        <div className="mt-4">
+                            <h6 className="font-medium text-sm mb-2">Attached Documents ({existingAttachments.length})</h6>
+                            <div className="space-y-2">
+                                {existingAttachments.map((att) => (
+                                    <div
+                                        key={att.id}
+                                        className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800"
+                                    >
+                                        <a
+                                            href={att.filePath}
+                                            download={att.originalName}
+                                            className="text-blue-600 dark:text-blue-400 hover:underline text-sm flex-1 truncate"
+                                        >
+                                            {att.originalName}
+                                        </a>
+                                        {canManageAttachments && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDeleteAttachment(att.id)}
+                                                className="text-red-600 hover:text-red-800 ml-2 text-sm"
+                                                title="Delete attachment"
+                                            >
+                                                ✕
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

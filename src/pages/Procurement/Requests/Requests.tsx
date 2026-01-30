@@ -145,6 +145,12 @@ const Requests = () => {
     const [statusFilter, setStatusFilter] = useState<string>(() => initParams.get('status') || '');
     const [departmentFilter, setDepartmentFilter] = useState<string>(() => initParams.get('dept') || '');
 
+    // Comment modal state
+    const [showCommentModal, setShowCommentModal] = useState(false);
+    const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
+    const [commentText, setCommentText] = useState('');
+    const [isSavingComment, setIsSavingComment] = useState(false);
+
     const sorted = useMemo(() => sortRequestsByDateDesc(requests), [requests]);
     const searched = useMemo(() => searchRequests(sorted, query), [sorted, query]);
     const filteredByMeta = useMemo(() => filterRequests(searched, { status: statusFilter, department: departmentFilter }), [searched, statusFilter, departmentFilter]);
@@ -657,8 +663,124 @@ const Requests = () => {
         [currentUserId, fetchRequests]
     );
 
+    // Check if current user is procurement
+    const isProcurementRole = useMemo(
+        () => currentUserRoles.some((r) => r.toUpperCase().includes('PROCUREMENT')),
+        [currentUserRoles]
+    );
+
+    // Open comment modal
+    const openCommentModal = (req: Request) => {
+        setSelectedRequest(req);
+        setCommentText((req as any).statusComment || '');
+        setShowCommentModal(true);
+    };
+
+    // Save comment
+    const handleSaveComment = async () => {
+        if (!selectedRequest) return;
+
+        setIsSavingComment(true);
+        try {
+            const headers = getAuthHeadersSync();
+            headers['Content-Type'] = 'application/json';
+            if (!headers['x-user-id'] && currentUserId != null) headers['x-user-id'] = String(currentUserId);
+
+            const payload = { statusComment: commentText.trim() };
+            console.log('[Comment Modal] Saving comment for request:', selectedRequest.id, payload);
+
+            const res = await fetch(getApiUrl(`/api/requests/${selectedRequest.id}`), {
+                method: 'PUT',
+                headers,
+                body: JSON.stringify(payload),
+            });
+
+            console.log('[Comment Modal] Response status:', res.status);
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data?.message || 'Failed to save comment');
+            }
+
+            const updated = await res.json();
+            console.log('[Comment Modal] Updated request:', updated);
+
+            // Refresh requests list
+            await fetchRequests();
+
+            setShowCommentModal(false);
+            setSelectedRequest(null);
+            setCommentText('');
+
+            await MySwal.fire({ icon: 'success', title: 'Saved', text: 'Status comment updated successfully' });
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : 'Failed to save comment';
+            MySwal.fire({ icon: 'error', title: 'Error', text: message });
+        } finally {
+            setIsSavingComment(false);
+        }
+    };
+
     return (
-        <div className="p-6">
+        <div className="p-6">{/* Comment Modal */}
+            {showCommentModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" onClick={() => !isSavingComment && setShowCommentModal(false)}>
+                    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl mx-4" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-700">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Update Status Comment</h3>
+                            <button
+                                type="button"
+                                onClick={() => !isSavingComment && setShowCommentModal(false)}
+                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                disabled={isSavingComment}
+                            >
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div className="p-6">
+                            <div className="mb-4">
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                                    Request: <span className="font-semibold text-gray-900 dark:text-white">{selectedRequest?.title}</span>
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-500">ID: {selectedRequest?.id}</p>
+                            </div>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status Comment for Requester</label>
+                                <textarea
+                                    value={commentText}
+                                    onChange={(e) => setCommentText(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+                                    rows={5}
+                                    placeholder="Enter status update or reason for delay (visible to requester)..."
+                                    disabled={isSavingComment}
+                                />
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">💡 This comment will appear in the Comments column on the Requests list</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-end gap-3 p-4 border-t border-gray-200 dark:border-slate-700">
+                            <button
+                                type="button"
+                                onClick={() => setShowCommentModal(false)}
+                                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg"
+                                disabled={isSavingComment}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleSaveComment}
+                                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={isSavingComment}
+                            >
+                                {isSavingComment ? 'Saving...' : 'Save Comment'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h1 className="text-2xl font-semibold">Requests</h1>
@@ -808,16 +930,17 @@ const Requests = () => {
                                 <th className="px-4 py-3 text-left">Department</th>
                                 <th className="px-4 py-3 text-left">Assigned To</th>
                                 <th className="px-4 py-3 text-left">Status</th>
+                                <th className="px-4 py-3 text-left">Comments</th>
                                 <th className="px-4 py-3 text-left">Date</th>
                                 <th className="px-4 py-3 text-left">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="text-sm">
-                            <SkeletonTableRow columns={8} />
-                            <SkeletonTableRow columns={8} />
-                            <SkeletonTableRow columns={8} />
-                            <SkeletonTableRow columns={8} />
-                            <SkeletonTableRow columns={8} />
+                            <SkeletonTableRow columns={9} />
+                            <SkeletonTableRow columns={9} />
+                            <SkeletonTableRow columns={9} />
+                            <SkeletonTableRow columns={9} />
+                            <SkeletonTableRow columns={9} />
                         </tbody>
                     </table>
                 )}
@@ -833,6 +956,7 @@ const Requests = () => {
                                 <th className="px-4 py-3 text-left">Department</th>
                                 <th className="px-4 py-3 text-left">Assigned To</th>
                                 <th className="px-4 py-3 text-left">Status</th>
+                                <th className="px-4 py-3 text-left">Comments</th>
                                 <th className="px-4 py-3 text-left">Date</th>
                                 <th className="px-4 py-3 text-left">Actions</th>
                             </tr>
@@ -905,6 +1029,11 @@ const Requests = () => {
                                                 {badge.label}
                                             </span>
                                         </td>
+                                        <td className="px-4 py-3 max-w-xs">
+                                            <div className="truncate text-gray-600 dark:text-gray-400 text-xs" title={r.statusComment || r.rejectionNote || '—'}>
+                                                {r.statusComment || r.rejectionNote || '—'}
+                                            </div>
+                                        </td>
                                         <td className="px-4 py-3">{formatDate(r.date)}</td>
                                         <td className="px-4 py-3">
                                             <div className="flex items-center gap-2">
@@ -924,6 +1053,18 @@ const Requests = () => {
                                                 >
                                                     <IconPrinter className="w-5 h-5" />
                                                 </button>
+                                                {isProcurementRole && (
+                                                    <button
+                                                        className="p-1.5 rounded-md hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400 transition-colors"
+                                                        onClick={() => openCommentModal(r)}
+                                                        title="Update status comment"
+                                                        aria-label={`Update comment for request ${r.id}`}
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                                                        </svg>
+                                                    </button>
+                                                )}
                                                 {isAdmin && (
                                                     <button
                                                         className="p-1.5 rounded-md hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-700 dark:text-amber-300 disabled:opacity-60 transition-colors"

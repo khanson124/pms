@@ -2169,6 +2169,9 @@ app.get('/api/requests', async (req, res) => {
                 headerMonth: true,
                 headerYear: true,
                 headerSequence: true,
+                procurementComments: true,
+                statusComment: true,
+                rejectionNote: true,
             },
         });
         return res.json(requests);
@@ -2269,6 +2272,9 @@ app.get('/api/requests', async (req, res) => {
                             headerMonth: true,
                             headerYear: true,
                             headerSequence: true,
+                            procurementComments: true,
+                            statusComment: true,
+                            rejectionNote: true,
                         },
                     });
                     return res.json(requests);
@@ -3623,6 +3629,86 @@ app.delete('/api/requests/:id/attachments/:attachmentId', async (req, res) => {
     }
 });
 
+// POST /api/evaluations/:id/attachments - Upload attachments to an evaluation
+app.post('/api/evaluations/:id/attachments', authMiddleware, uploadAttachments.array('attachments'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userObj: any = (req as any).user;
+        const rawUserId = userObj?.sub || userObj?.id;
+        const userId = typeof rawUserId === 'number' ? rawUserId : parseInt(String(rawUserId), 10);
+
+        if (!userId || isNaN(userId)) {
+            console.error('Invalid userId from token:', userObj);
+            return res.status(401).json({ message: 'User ID required' });
+        }
+
+        const files = (req.files || []) as Express.Multer.File[];
+        if (!files.length) return res.status(400).json({ message: 'No files uploaded' });
+
+        // Verify evaluation exists
+        const evaluation = await prisma.evaluation.findUnique({
+            where: { id: parseInt(id, 10) },
+        });
+        if (!evaluation) return res.status(404).json({ message: 'Evaluation not found' });
+
+        const created: any[] = [];
+        for (const file of files) {
+            const filePath = `/uploads/${file.filename}`;
+            const att = await prisma.evaluationAttachment.create({
+                data: {
+                    evaluationId: parseInt(id, 10),
+                    fileName: file.filename,
+                    originalName: file.originalname,
+                    filePath,
+                    fileSize: file.size || 0,
+                    mimeType: file.mimetype || 'application/octet-stream',
+                    uploadedById: userId,
+                },
+            });
+            created.push(att);
+        }
+
+        console.log(`Created ${created.length} attachments for evaluation ${id}`);
+        res.status(201).json(created);
+    } catch (e: any) {
+        console.error('POST /evaluations/:id/attachments error:', e);
+        res.status(500).json({ message: e?.message || 'Failed to upload attachments' });
+    }
+});
+
+// DELETE /api/evaluations/:id/attachments/:attachmentId - Delete an evaluation attachment
+app.delete('/api/evaluations/:id/attachments/:attachmentId', authMiddleware, async (req, res) => {
+    try {
+        const { id, attachmentId } = req.params;
+        const userObj: any = (req as any).user;
+        const userId = parseInt(userObj?.sub || userObj?.id);
+        if (!userId) return res.status(401).json({ message: 'User ID required' });
+
+        const att = await prisma.evaluationAttachment.findUnique({ 
+            where: { id: parseInt(attachmentId, 10) } 
+        });
+        if (!att) return res.status(404).json({ message: 'Attachment not found' });
+        if (att.evaluationId !== parseInt(id, 10)) 
+            return res.status(400).json({ message: 'Attachment does not belong to this evaluation' });
+
+        // Attempt to unlink file from disk (best-effort)
+        try {
+            const filename = path.basename(att.url || '');
+            const filepath = path.resolve(process.cwd(), 'uploads', filename);
+            if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
+        } catch (fsErr) {
+            console.warn('Failed to remove attachment file from disk:', fsErr);
+        }
+
+        await prisma.evaluationAttachment.delete({ where: { id: parseInt(attachmentId, 10) } });
+        res.json({ success: true });
+    } catch (e: any) {
+        console.error('DELETE /evaluations/:id/attachments/:attachmentId error:', e);
+        res.status(500).json({ message: e?.message || 'Failed to delete attachment' });
+    }
+});
+
+
 // POST /requests/:id/action - approve/reject requests (manager, HOD, procurement, finance)
 app.post('/api/requests/:id/action', async (req, res) => {
     try {
@@ -4621,6 +4707,7 @@ app.post('/api/requests/:id/reject', async (req, res) => {
             data: {
                 status: 'DRAFT',
                 currentAssigneeId: request.requesterId,
+                rejectionNote: note.trim(),
                 statusHistory: {
                     create: {
                         status: 'DRAFT',
@@ -6321,6 +6408,7 @@ app.get(
                     sectionEVerifier: { select: { id: true, name: true, email: true } },
                     request: { select: { id: true, title: true, description: true, departmentId: true, department: { select: { name: true } } } },
                     combinedRequest: { select: { id: true, title: true, description: true } },
+                    attachments: true,
                 },
             });
             if (!evaluation) throw new NotFoundError('Evaluation not found');
@@ -6342,7 +6430,17 @@ app.get(
             if (!isCreator && !isProcurement && !isCommittee && !isAssigned) {
                 throw new Error('You do not have permission to view this evaluation');
             }
-            const normalized = evaluation?.status === 'COMMITTEE_REVIEW' ? { ...evaluation, status: 'IN_PROGRESS' } : evaluation;
+
+            // Construct full URLs for attachments
+            const withUrls = {
+                ...evaluation,
+                attachments: evaluation?.attachments?.map((att: any) => ({
+                    ...att,
+                    filePath: `http://${PUBLIC_HOST}:${PORT}${att.filePath}`,
+                })) || [],
+            };
+
+            const normalized = withUrls?.status === 'COMMITTEE_REVIEW' ? { ...withUrls, status: 'IN_PROGRESS' } : withUrls;
             return res.json({ success: true, data: normalized });
         }
         const rows = await prisma.$queryRawUnsafe<any>(
@@ -6370,6 +6468,16 @@ app.get(
         );
         const r = rows[0];
         if (!r) throw new NotFoundError('Evaluation not found');
+
+        // Fetch attachments separately and construct full URLs
+        const attachmentRecords = await prisma.evaluationAttachment.findMany({
+            where: { evaluationId: parseInt(id) },
+        });
+        const attachments = attachmentRecords.map((att) => ({
+            ...att,
+            filePath: `http://${PUBLIC_HOST}:${PORT}${att.filePath}`,
+        }));
+
         const mapped = {
             id: r.id,
             evalNumber: r.evalNumber,
@@ -6429,6 +6537,7 @@ app.get(
             request: r.requestId ? { id: r.requestId, title: r.requestTitle, description: r.requestDescription } : null,
             combinedRequestId: r.combinedRequestId ?? null,
             combinedRequest: r.combinedRequestId ? { id: r.combinedRequestId, title: r.combinedRequestTitle } : null,
+            attachments,
             _fallback: true,
         };
         res.json({ success: true, data: mapped, meta: { fallback: true } });
