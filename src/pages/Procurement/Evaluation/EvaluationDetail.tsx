@@ -341,9 +341,7 @@ const EvaluationDetail = () => {
         const direct = evaluation.cancelledByUser?.name || evaluation.cancelledByUser?.email;
         if (direct) return direct;
 
-        const match = availableUsers.find(
-            (u: { id?: number; name?: string | null; email?: string | null }) => Number(u?.id) === Number(evaluation.cancelledBy),
-        );
+        const match = availableUsers.find((u: { id?: number; name?: string | null; email?: string | null }) => Number(u?.id) === Number(evaluation.cancelledBy));
         return match?.name || match?.email || 'Unknown';
     };
 
@@ -1053,11 +1051,7 @@ const EvaluationDetail = () => {
                                     {evaluation.evalNumber} • {evaluation.rfqNumber} • {evaluation.rfqTitle}
                                 </p>
                             </div>
-                            {evaluation.cancelled && (
-                                <div className="badge bg-danger text-white">
-                                    CANCELLED
-                                </div>
-                            )}
+                            {evaluation.cancelled && <div className="badge bg-danger text-white">CANCELLED</div>}
                         </div>
                     </div>
                     <div className="flex gap-2">
@@ -1427,11 +1421,7 @@ const EvaluationDetail = () => {
                             <h6 className="font-semibold">Evaluation Actions</h6>
                             <p className="text-sm text-white-dark">Cancel this evaluation if you need to start a new one. The cancelled evaluation will remain visible for reference.</p>
                         </div>
-                        <button
-                            type="button"
-                            className="btn btn-danger gap-2"
-                            onClick={() => setShowCancelModal(true)}
-                        >
+                        <button type="button" className="btn btn-danger gap-2" onClick={() => setShowCancelModal(true)}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
@@ -1472,12 +1462,7 @@ const EvaluationDetail = () => {
                             >
                                 Keep Evaluation
                             </button>
-                            <button
-                                type="button"
-                                className="btn btn-danger gap-2"
-                                onClick={handleCancelEvaluation}
-                                disabled={isCancelling || !cancelReason.trim()}
-                            >
+                            <button type="button" className="btn btn-danger gap-2" onClick={handleCancelEvaluation} disabled={isCancelling || !cancelReason.trim()}>
                                 {isCancelling && <span className="spinner-border animate-spin w-4 h-4 border-2"></span>}
                                 {isCancelling ? 'Cancelling...' : 'Confirm Cancel'}
                             </button>

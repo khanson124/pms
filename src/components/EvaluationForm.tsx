@@ -91,11 +91,11 @@ export const EvaluationForm: React.FC<Props> = ({
                     const currentSectionE = sectionE || {};
                     // Only set if not already populated
                     if (!currentSectionE.preparedBy) {
-                        setSectionE({ 
-                            ...currentSectionE, 
+                        setSectionE({
+                            ...currentSectionE,
                             preparedBy: user.name,
                             finalRecommendation: currentSectionE.finalRecommendation || '',
-                            approved: currentSectionE.approved || false
+                            approved: currentSectionE.approved || false,
                         } as SectionE);
                     }
                 }

@@ -7794,18 +7794,14 @@ app.post(
                         // Parse procurement type from JSON
                         if (request.procurementType) {
                             try {
-                                procurementTypes = Array.isArray(request.procurementType) 
-                                    ? request.procurementType 
-                                    : JSON.parse(String(request.procurementType));
+                                procurementTypes = Array.isArray(request.procurementType) ? request.procurementType : JSON.parse(String(request.procurementType));
                             } catch {
                                 procurementTypes = [];
                             }
                         }
 
                         // Check thresholds: 3 million for GOODS, 5 million for WORKS
-                        const shouldCreateEDForm =
-                            (procurementTypes.includes('GOODS') && totalAmount >= 3000000) ||
-                            (procurementTypes.includes('WORKS') && totalAmount >= 5000000);
+                        const shouldCreateEDForm = (procurementTypes.includes('GOODS') && totalAmount >= 3000000) || (procurementTypes.includes('WORKS') && totalAmount >= 5000000);
 
                         if (shouldCreateEDForm) {
                             // Check if ED Approval Form already exists for this evaluation
@@ -7815,9 +7811,7 @@ app.post(
 
                             if (!existingForm) {
                                 // Determine which type triggers the form
-                                const triggeringType = procurementTypes.includes('GOODS') && totalAmount >= 3000000 
-                                    ? 'GOODS' 
-                                    : 'WORKS';
+                                const triggeringType = procurementTypes.includes('GOODS') && totalAmount >= 3000000 ? 'GOODS' : 'WORKS';
 
                                 // Extract data from evaluation sections
                                 let justification = completedEvaluation.description || '';
@@ -7827,9 +7821,7 @@ app.post(
                                 // Try to extract justification from Section E (final recommendation)
                                 if (completedEvaluation.sectionE) {
                                     try {
-                                        const sectionE = typeof completedEvaluation.sectionE === 'string' 
-                                            ? JSON.parse(completedEvaluation.sectionE) 
-                                            : completedEvaluation.sectionE;
+                                        const sectionE = typeof completedEvaluation.sectionE === 'string' ? JSON.parse(completedEvaluation.sectionE) : completedEvaluation.sectionE;
                                         if (sectionE.finalRecommendation) {
                                             justification = sectionE.finalRecommendation;
                                         }
@@ -7841,9 +7833,7 @@ app.post(
                                 // Try to extract risk assessment from Section D (summary)
                                 if (completedEvaluation.sectionD) {
                                     try {
-                                        const sectionD = typeof completedEvaluation.sectionD === 'string' 
-                                            ? JSON.parse(completedEvaluation.sectionD) 
-                                            : completedEvaluation.sectionD;
+                                        const sectionD = typeof completedEvaluation.sectionD === 'string' ? JSON.parse(completedEvaluation.sectionD) : completedEvaluation.sectionD;
                                         if (sectionD.summary) {
                                             riskAssessment = sectionD.summary;
                                         }
