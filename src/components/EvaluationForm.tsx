@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import type { Evaluation, SectionA, SectionB, SectionC, SectionD, SectionE } from '../services/evaluationService';
+import { getUser } from '../utils/auth';
 
 // Utility functions for currency formatting
 const formatNumberWithCommas = (num: number | string): string => {
@@ -21,6 +22,7 @@ type Props = {
     evaluation?: Evaluation | null;
     canEditSections?: Array<'A' | 'B' | 'C' | 'D' | 'E'>;
     canManageAttachments?: boolean; // Only procurement can upload/delete
+    isProcurement?: boolean; // Whether user is in procurement department
     onSaveSection?: (section: 'Background' | 'A' | 'B' | 'C' | 'D' | 'E', data: any) => Promise<void> | void;
     onSubmitSection?: (section: 'A' | 'B' | 'C' | 'D' | 'E') => Promise<void> | void;
     onVerifySection?: (section: 'A' | 'B' | 'C' | 'D' | 'E', notes?: string) => Promise<void> | void;
@@ -37,6 +39,7 @@ export const EvaluationForm: React.FC<Props> = ({
     evaluation,
     canEditSections = [],
     canManageAttachments = false,
+    isProcurement = false,
     onSaveSection,
     onSubmitSection,
     onVerifySection,
@@ -77,6 +80,30 @@ export const EvaluationForm: React.FC<Props> = ({
             setExistingAttachments([]);
         }
     }, [evaluation?.attachments]);
+
+    // Auto-populate "Prepared By" field in Section E with current user's name
+    React.useEffect(() => {
+        if (canEdit('E')) {
+            try {
+                const user = getUser();
+                if (user?.name) {
+                    // Initialize sectionE if it doesn't exist
+                    const currentSectionE = sectionE || {};
+                    // Only set if not already populated
+                    if (!currentSectionE.preparedBy) {
+                        setSectionE({ 
+                            ...currentSectionE, 
+                            preparedBy: user.name,
+                            finalRecommendation: currentSectionE.finalRecommendation || '',
+                            approved: currentSectionE.approved || false
+                        } as SectionE);
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to auto-populate prepared by:', err);
+            }
+        }
+    }, [evaluation?.id, canEdit('E')]);
     const canEditStructure = (sec: 'A' | 'B' | 'C' | 'D' | 'E') => structureEditableSections.includes(sec);
     // Evaluators can only edit technical evaluation table, not eligibility or compliance
     const canEditTechnical = () => canEditSections.includes('B');
@@ -91,7 +118,7 @@ export const EvaluationForm: React.FC<Props> = ({
     const canVerifySection = (sec: 'A' | 'B' | 'C' | 'D' | 'E'): boolean => {
         if (!onVerifySection) return false;
         const status = getSectionStatus(sec);
-        return status === 'SUBMITTED';
+        return status === 'SUBMITTED' || status === 'RETURNED';
     };
 
     // Handle verify section
@@ -423,14 +450,14 @@ export const EvaluationForm: React.FC<Props> = ({
                         <button className="btn btn-primary" disabled={saving} onClick={() => saveSec('A')}>
                             {saving ? 'Saving…' : 'Save Section A'}
                         </button>
-                        {onSubmitSection && getSectionStatus('A') !== 'SUBMITTED' && getSectionStatus('A') !== 'VERIFIED' && (
+                        {isProcurement && onSubmitSection && getSectionStatus('A') !== 'SUBMITTED' && getSectionStatus('A') !== 'VERIFIED' && (
                             <button className="btn btn-success" disabled={saving} onClick={() => onSubmitSection('A')}>
                                 {saving ? 'Submitting…' : 'Submit Section A'}
                             </button>
                         )}
                     </div>
                 )}
-                {canVerifySection('A') && (
+                {isProcurement && canVerifySection('A') && (
                     <div className="p-5 border-t bg-success/5">
                         <div className="flex items-center justify-between gap-4">
                             <div className="flex-1">
@@ -1392,14 +1419,14 @@ export const EvaluationForm: React.FC<Props> = ({
                         <button className="btn btn-primary" disabled={saving} onClick={() => saveSec('B')}>
                             {saving ? 'Saving…' : 'Save Section B'}
                         </button>
-                        {onSubmitSection && getSectionStatus('B') !== 'SUBMITTED' && getSectionStatus('B') !== 'VERIFIED' && (
+                        {isProcurement && onSubmitSection && getSectionStatus('B') !== 'SUBMITTED' && getSectionStatus('B') !== 'VERIFIED' && (
                             <button className="btn btn-success" disabled={saving} onClick={() => onSubmitSection('B')}>
                                 {saving ? 'Submitting…' : 'Submit Section B'}
                             </button>
                         )}
                     </div>
                 )}
-                {onSubmitSection && ['IN_PROGRESS', 'RETURNED'].includes(getSectionStatus('B')) && (
+                {canEdit('B') && onSubmitSection && ['IN_PROGRESS', 'RETURNED'].includes(getSectionStatus('B')) && (
                     <div className="p-5 border-t bg-info/5">
                         <div className="flex items-center justify-between gap-4">
                             <div className="flex-1">
@@ -1412,7 +1439,7 @@ export const EvaluationForm: React.FC<Props> = ({
                         </div>
                     </div>
                 )}
-                {canVerifySection('B') && (
+                {isProcurement && canVerifySection('B') && (
                     <div className="p-5 border-t bg-success/5">
                         <div className="flex items-center justify-between gap-4">
                             <div className="flex-1">
@@ -1656,7 +1683,7 @@ export const EvaluationForm: React.FC<Props> = ({
                 </div>
             )}
 
-            {onSubmitSection && getSectionStatus('C') !== 'VERIFIED' && (
+            {canEdit('C') && onSubmitSection && getSectionStatus('C') !== 'VERIFIED' && (
                 <div className="panel mb-4 border border-info/30 bg-info/5">
                     <div className="p-5 flex items-center justify-between gap-4">
                         <div className="flex-1">
@@ -1669,7 +1696,7 @@ export const EvaluationForm: React.FC<Props> = ({
                     </div>
                 </div>
             )}
-            {canVerifySection('C') && (
+            {isProcurement && canVerifySection('C') && (
                 <div className="panel mb-4 border border-success/30 bg-success/5">
                     <div className="p-5 flex items-center justify-between gap-4">
                         <div className="flex-1">
@@ -1726,14 +1753,14 @@ export const EvaluationForm: React.FC<Props> = ({
                         <button className="btn btn-primary" disabled={saving} onClick={() => saveSec('D')}>
                             {saving ? 'Saving…' : 'Save Section D'}
                         </button>
-                        {onSubmitSection && getSectionStatus('D') !== 'SUBMITTED' && getSectionStatus('D') !== 'VERIFIED' && (
+                        {isProcurement && onSubmitSection && getSectionStatus('D') !== 'SUBMITTED' && getSectionStatus('D') !== 'VERIFIED' && (
                             <button className="btn btn-success" disabled={saving} onClick={() => onSubmitSection('D')}>
                                 {saving ? 'Submitting…' : 'Submit Section D'}
                             </button>
                         )}
                     </div>
                 )}
-                {canVerifySection('D') && (
+                {isProcurement && canVerifySection('D') && (
                     <div className="p-5 border-t bg-success/5">
                         <div className="flex items-center justify-between gap-4">
                             <div className="flex-1">
@@ -1825,14 +1852,14 @@ export const EvaluationForm: React.FC<Props> = ({
                         <button className="btn btn-primary" disabled={saving} onClick={() => saveSec('E')}>
                             {saving ? 'Saving…' : 'Save Section E'}
                         </button>
-                        {onSubmitSection && getSectionStatus('E') !== 'SUBMITTED' && getSectionStatus('E') !== 'VERIFIED' && (
+                        {isProcurement && onSubmitSection && getSectionStatus('E') !== 'SUBMITTED' && getSectionStatus('E') !== 'VERIFIED' && (
                             <button className="btn btn-success" disabled={saving} onClick={() => onSubmitSection('E')}>
                                 {saving ? 'Submitting…' : 'Submit Section E'}
                             </button>
                         )}
                     </div>
                 )}
-                {canVerifySection('E') && (
+                {isProcurement && canVerifySection('E') && (
                     <div className="p-5 border-t bg-success/5">
                         <div className="flex items-center justify-between gap-4">
                             <div className="flex-1">

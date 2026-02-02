@@ -121,6 +121,11 @@ export interface Evaluation {
     dateSubmissionConsidered?: string;
     reportCompletionDate?: string;
     status: EvaluationStatus;
+    cancelled?: boolean;
+    cancelledAt?: string | null;
+    cancelledBy?: number | null;
+    cancelledByUser?: { id: number; name: string | null; email: string } | null;
+    cancelReason?: string | null;
     combinedRequestId?: number;
     requestId?: number;
     request?: {
@@ -425,6 +430,14 @@ class EvaluationService {
         const result = await this.fetchWithAuth(`/api/evaluations/${evaluationId}/assignments/return`, {
             method: 'POST',
             body: JSON.stringify(payload),
+        });
+        return result.data;
+    }
+
+    async cancelEvaluation(evaluationId: number, cancelReason?: string) {
+        const result = await this.fetchWithAuth(`/api/evaluations/${evaluationId}/cancel`, {
+            method: 'POST',
+            body: JSON.stringify({ cancelReason: cancelReason || '' }),
         });
         return result.data;
     }

@@ -56,6 +56,9 @@ const EvaluationDetail = () => {
     const [availableUsers, setAvailableUsers] = useState<any[]>([]);
     const [userSearchTerm, setUserSearchTerm] = useState<string>('');
     const [showUserDropdown, setShowUserDropdown] = useState<boolean>(false);
+    const [showCancelModal, setShowCancelModal] = useState<boolean>(false);
+    const [cancelReason, setCancelReason] = useState<string>('');
+    const [isCancelling, setIsCancelling] = useState<boolean>(false);
 
     const toast = (title: string, icon: 'success' | 'error' | 'info' | 'warning' = 'info') =>
         Swal.fire({
@@ -333,6 +336,17 @@ const EvaluationDetail = () => {
         }
     };
 
+    const getCancelledByDisplay = () => {
+        if (!evaluation) return 'Unknown';
+        const direct = evaluation.cancelledByUser?.name || evaluation.cancelledByUser?.email;
+        if (direct) return direct;
+
+        const match = availableUsers.find(
+            (u: { id?: number; name?: string | null; email?: string | null }) => Number(u?.id) === Number(evaluation.cancelledBy),
+        );
+        return match?.name || match?.email || 'Unknown';
+    };
+
     const handleCompleteAssignment = async () => {
         if (!evaluation || !myAssignment) return;
 
@@ -361,6 +375,27 @@ const EvaluationDetail = () => {
             toast(err.message || 'Failed to complete assignment', 'error');
         } finally {
             setCompletingAssignment(false);
+        }
+    };
+
+    const handleCancelEvaluation = async () => {
+        if (!evaluation || !cancelReason.trim()) {
+            toast('Please provide a cancellation reason', 'warning');
+            return;
+        }
+
+        setIsCancelling(true);
+        try {
+            await evaluationService.cancelEvaluation(evaluation.id, cancelReason);
+            toast('Evaluation cancelled successfully', 'success');
+            setShowCancelModal(false);
+            setCancelReason('');
+            // Reload evaluation to show cancelled status
+            await loadEvaluation();
+        } catch (err: any) {
+            toast(err.message || 'Failed to cancel evaluation', 'error');
+        } finally {
+            setIsCancelling(false);
         }
     };
 
@@ -1011,10 +1046,19 @@ const EvaluationDetail = () => {
             {evaluation && (
                 <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
                     <div className="flex-1">
-                        <h2 className="text-2xl font-bold">Evaluation Details</h2>
-                        <p className="text-white-dark">
-                            {evaluation.evalNumber} • {evaluation.rfqNumber} • {evaluation.rfqTitle}
-                        </p>
+                        <div className="flex items-center gap-3">
+                            <div>
+                                <h2 className="text-2xl font-bold">Evaluation Details</h2>
+                                <p className="text-white-dark">
+                                    {evaluation.evalNumber} • {evaluation.rfqNumber} • {evaluation.rfqTitle}
+                                </p>
+                            </div>
+                            {evaluation.cancelled && (
+                                <div className="badge bg-danger text-white">
+                                    CANCELLED
+                                </div>
+                            )}
+                        </div>
                     </div>
                     <div className="flex gap-2">
                         {(evaluation.requestId || evaluation.combinedRequestId) && (
@@ -1072,6 +1116,33 @@ const EvaluationDetail = () => {
                             <IconArrowLeft />
                             Back to List
                         </Link>
+                    </div>
+                </div>
+            )}
+
+            {/* Cancellation Details Panel */}
+            {evaluation && evaluation.cancelled && (
+                <div className="panel mb-4 bg-danger/10 border-2 border-danger no-print">
+                    <div className="flex items-start gap-3">
+                        <div className="flex-1">
+                            <h6 className="font-semibold text-danger mb-2">Evaluation Cancelled</h6>
+                            <div className="space-y-1 text-sm">
+                                <p className="text-white-dark">
+                                    <strong>Cancelled By:</strong> {getCancelledByDisplay()}
+                                </p>
+                                {evaluation.cancelledAt && (
+                                    <p className="text-white-dark">
+                                        <strong>Cancelled On:</strong> {new Date(evaluation.cancelledAt).toLocaleString()}
+                                    </p>
+                                )}
+                                {evaluation.cancelReason && (
+                                    <div className="mt-2">
+                                        <strong className="text-white-dark">Reason:</strong>
+                                        <p className="text-white-dark whitespace-pre-wrap mt-1">{evaluation.cancelReason}</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
@@ -1348,6 +1419,73 @@ const EvaluationDetail = () => {
                 </div>
             )}
 
+            {/* Cancel Evaluation Button - Procurement Only */}
+            {isProcurement && evaluation && !evaluation.cancelled && (
+                <div className="panel mb-4 border border-gray-200 dark:border-gray-700 no-print">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h6 className="font-semibold">Evaluation Actions</h6>
+                            <p className="text-sm text-white-dark">Cancel this evaluation if you need to start a new one. The cancelled evaluation will remain visible for reference.</p>
+                        </div>
+                        <button
+                            type="button"
+                            className="btn btn-danger gap-2"
+                            onClick={() => setShowCancelModal(true)}
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            Cancel Evaluation
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Cancel Evaluation Modal */}
+            {showCancelModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 no-print">
+                    <div className="bg-white dark:bg-dark p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+                        <h3 className="text-xl font-semibold mb-4">Cancel Evaluation</h3>
+                        <p className="text-gray-600 dark:text-gray-400 mb-4">
+                            Are you sure you want to cancel this evaluation? It will remain visible for reference and can be linked to a new evaluation.
+                        </p>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium mb-2">Reason for Cancellation (Required)</label>
+                            <textarea
+                                className="form-textarea w-full"
+                                rows={4}
+                                placeholder="Enter reason for cancellation..."
+                                value={cancelReason}
+                                onChange={(e) => setCancelReason(e.target.value)}
+                                disabled={isCancelling}
+                            />
+                        </div>
+                        <div className="flex gap-2 justify-end">
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                onClick={() => {
+                                    setShowCancelModal(false);
+                                    setCancelReason('');
+                                }}
+                                disabled={isCancelling}
+                            >
+                                Keep Evaluation
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-danger gap-2"
+                                onClick={handleCancelEvaluation}
+                                disabled={isCancelling || !cancelReason.trim()}
+                            >
+                                {isCancelling && <span className="spinner-border animate-spin w-4 h-4 border-2"></span>}
+                                {isCancelling ? 'Cancelling...' : 'Confirm Cancel'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Section Status Summary for Procurement */}
             {isProcurement && evaluation && (
                 <div className="panel mb-4 border border-gray-200 dark:border-gray-700 no-print">
@@ -1388,6 +1526,7 @@ const EvaluationDetail = () => {
                 evaluation={evaluation}
                 canEditSections={canEditSections as Array<'A' | 'B' | 'C' | 'D' | 'E'>}
                 canManageAttachments={isProcurement}
+                isProcurement={isProcurement}
                 structureEditableSections={structureEditEnabled ? (['B'] as Array<'A' | 'B' | 'C' | 'D' | 'E'>) : ([] as Array<'A' | 'B' | 'C' | 'D' | 'E'>)}
                 prefilledCells={(myAssignment?.prefilledCells as Record<string, boolean>) || {}}
                 sectionCActions={

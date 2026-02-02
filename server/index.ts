@@ -2669,6 +2669,7 @@ app.get('/api/requests/:id', async (req, res) => {
 app.patch('/api/requests/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        const userId = req.headers['x-user-id'] ? parseInt(String(req.headers['x-user-id']), 10) : null;
         const updates = req.body || {};
 
         // Keep all fields including budget approval fields
@@ -6404,6 +6405,7 @@ app.get(
                     sectionCVerifier: { select: { id: true, name: true, email: true } },
                     sectionDVerifier: { select: { id: true, name: true, email: true } },
                     sectionEVerifier: { select: { id: true, name: true, email: true } },
+                    cancelledByUser: { select: { id: true, name: true, email: true } },
                     request: { select: { id: true, title: true, description: true, departmentId: true, department: { select: { name: true } } } },
                     combinedRequest: { select: { id: true, title: true, description: true } },
                     attachments: true,
@@ -6451,6 +6453,7 @@ app.get(
              uc_v.id AS sectionCVerifierId, uc_v.name AS sectionCVerifierName, uc_v.email AS sectionCVerifierEmail,
              ud.id AS sectionDVerifierId, ud.name AS sectionDVerifierName, ud.email AS sectionDVerifierEmail,
              ue.id AS sectionEVerifierId, ue.name AS sectionEVerifierName, ue.email AS sectionEVerifierEmail,
+             ucancelled.id AS cancelledById, ucancelled.name AS cancelledByName, ucancelled.email AS cancelledByEmail,
              req.id AS requestId, req.title AS requestTitle, req.description AS requestDescription,
              cr.id AS combinedRequestId, cr.title AS combinedRequestTitle
              FROM Evaluation e 
@@ -6461,6 +6464,7 @@ app.get(
              LEFT JOIN User uc_v ON e.sectionCVerifiedBy = uc_v.id
              LEFT JOIN User ud ON e.sectionDVerifiedBy = ud.id
              LEFT JOIN User ue ON e.sectionEVerifiedBy = ue.id
+             LEFT JOIN User ucancelled ON e.cancelledBy = ucancelled.id
              LEFT JOIN Request req ON e.requestId = req.id
              LEFT JOIN CombinedRequest cr ON e.combinedRequestId = cr.id
              WHERE e.id = ${parseInt(id)} LIMIT 1`,
@@ -6536,6 +6540,11 @@ app.get(
             request: r.requestId ? { id: r.requestId, title: r.requestTitle, description: r.requestDescription } : null,
             combinedRequestId: r.combinedRequestId ?? null,
             combinedRequest: r.combinedRequestId ? { id: r.combinedRequestId, title: r.combinedRequestTitle } : null,
+            cancelled: r.cancelled ?? false,
+            cancelledAt: r.cancelledAt ?? null,
+            cancelledBy: r.cancelledBy ?? null,
+            cancelledByUser: r.cancelledById ? { id: r.cancelledById, name: r.cancelledByName, email: r.cancelledByEmail } : null,
+            cancelReason: r.cancelReason ?? null,
             attachments,
             _fallback: true,
         };
@@ -6654,15 +6663,15 @@ app.post(
                         // persist the originating request id when provided
                         requestId: requestToLink ?? null,
                         sectionA: sectionA || null,
-                        sectionAStatus: sectionA && submitToCommittee ? 'SUBMITTED' : 'NOT_STARTED',
+                        sectionAStatus: sectionA ? (submitToCommittee ? 'SUBMITTED' : 'IN_PROGRESS') : 'NOT_STARTED',
                         sectionB: sectionB || null,
-                        sectionBStatus: sectionB && submitToCommittee ? 'SUBMITTED' : 'NOT_STARTED',
+                        sectionBStatus: sectionB ? (submitToCommittee ? 'SUBMITTED' : 'IN_PROGRESS') : 'NOT_STARTED',
                         sectionC: sectionC || null,
-                        sectionCStatus: sectionC && submitToCommittee ? 'SUBMITTED' : 'NOT_STARTED',
+                        sectionCStatus: sectionC ? (submitToCommittee ? 'SUBMITTED' : 'IN_PROGRESS') : 'NOT_STARTED',
                         sectionD: sectionD || null,
-                        sectionDStatus: sectionD && submitToCommittee ? 'SUBMITTED' : 'NOT_STARTED',
+                        sectionDStatus: sectionD ? (submitToCommittee ? 'SUBMITTED' : 'IN_PROGRESS') : 'NOT_STARTED',
                         sectionE: sectionE || null,
-                        sectionEStatus: sectionE && submitToCommittee ? 'SUBMITTED' : 'NOT_STARTED',
+                        sectionEStatus: sectionE ? (submitToCommittee ? 'SUBMITTED' : 'IN_PROGRESS') : 'NOT_STARTED',
                         evaluator: evaluator || null,
                         dueDate: formattedDueDate ? new Date(formattedDueDate) : null,
                         dateSubmissionConsidered: formattedDateSubmission ? new Date(formattedDateSubmission) : null,
@@ -7731,8 +7740,8 @@ app.post(
         if (!existing) throw new NotFoundError('Evaluation not found');
 
         const statusField = `section${sectionUpper}Status`;
-        if (existing[statusField] !== 'SUBMITTED') {
-            throw new BadRequestError(`Section ${sectionUpper} must be submitted before verification`);
+        if (existing[statusField] !== 'SUBMITTED' && existing[statusField] !== 'RETURNED') {
+            throw new BadRequestError(`Section ${sectionUpper} must be submitted or returned before verification`);
         }
 
         const updateData: any = {};
@@ -7771,8 +7780,154 @@ app.post(
                         sectionCVerifier: { select: { id: true, name: true, email: true } },
                         sectionDVerifier: { select: { id: true, name: true, email: true } },
                         sectionEVerifier: { select: { id: true, name: true, email: true } },
+                        request: { select: { id: true, reference: true, totalEstimated: true, procurementType: true } },
                     },
                 });
+
+                // Check if ED Approval Form should be created based on procurement type and value thresholds
+                try {
+                    const request = completedEvaluation.request;
+                    if (request) {
+                        const totalAmount = request.totalEstimated ? parseFloat(String(request.totalEstimated)) : 0;
+                        let procurementTypes: string[] = [];
+
+                        // Parse procurement type from JSON
+                        if (request.procurementType) {
+                            try {
+                                procurementTypes = Array.isArray(request.procurementType) 
+                                    ? request.procurementType 
+                                    : JSON.parse(String(request.procurementType));
+                            } catch {
+                                procurementTypes = [];
+                            }
+                        }
+
+                        // Check thresholds: 3 million for GOODS, 5 million for WORKS
+                        const shouldCreateEDForm =
+                            (procurementTypes.includes('GOODS') && totalAmount >= 3000000) ||
+                            (procurementTypes.includes('WORKS') && totalAmount >= 5000000);
+
+                        if (shouldCreateEDForm) {
+                            // Check if ED Approval Form already exists for this evaluation
+                            const existingForm = await (prisma as any).edApprovalForm.findFirst({
+                                where: { evaluationId: completedEvaluation.id },
+                            });
+
+                            if (!existingForm) {
+                                // Determine which type triggers the form
+                                const triggeringType = procurementTypes.includes('GOODS') && totalAmount >= 3000000 
+                                    ? 'GOODS' 
+                                    : 'WORKS';
+
+                                // Extract data from evaluation sections
+                                let justification = completedEvaluation.description || '';
+                                let riskAssessment = '';
+                                let alternatives = '';
+
+                                // Try to extract justification from Section E (final recommendation)
+                                if (completedEvaluation.sectionE) {
+                                    try {
+                                        const sectionE = typeof completedEvaluation.sectionE === 'string' 
+                                            ? JSON.parse(completedEvaluation.sectionE) 
+                                            : completedEvaluation.sectionE;
+                                        if (sectionE.finalRecommendation) {
+                                            justification = sectionE.finalRecommendation;
+                                        }
+                                    } catch (e) {
+                                        console.warn('Failed to parse sectionE:', e);
+                                    }
+                                }
+
+                                // Try to extract risk assessment from Section D (summary)
+                                if (completedEvaluation.sectionD) {
+                                    try {
+                                        const sectionD = typeof completedEvaluation.sectionD === 'string' 
+                                            ? JSON.parse(completedEvaluation.sectionD) 
+                                            : completedEvaluation.sectionD;
+                                        if (sectionD.summary) {
+                                            riskAssessment = sectionD.summary;
+                                        }
+                                    } catch (e) {
+                                        console.warn('Failed to parse sectionD:', e);
+                                    }
+                                }
+
+                                // Generate form number
+                                const formCount = await (prisma as any).edApprovalForm.count({});
+                                const formNumber = `ED-${new Date().getFullYear()}-${String(formCount + 1).padStart(5, '0')}`;
+
+                                // Create ED Approval Form with evaluation data
+                                const edForm = await (prisma as any).edApprovalForm.create({
+                                    data: {
+                                        formNumber,
+                                        requestId: request.id,
+                                        evaluationId: completedEvaluation.id,
+                                        procurementType: triggeringType,
+                                        totalAmount: totalAmount,
+                                        justification: justification,
+                                        riskAssessment: riskAssessment || null,
+                                        alternatives: alternatives || null,
+                                        status: 'PENDING',
+                                        submittedById: userId,
+                                    },
+                                });
+
+                                // Find procurement managers to notify
+                                let procurementManagers: any[] = [];
+                                try {
+                                    procurementManagers = await (prisma as any).user.findMany({
+                                        where: {
+                                            userRoles: {
+                                                some: {
+                                                    role: {
+                                                        name: {
+                                                            in: ['PROCUREMENT_MANAGER', 'PROCUREMENT_OFFICER'],
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                        select: { id: true, name: true, email: true },
+                                    });
+                                } catch {
+                                    // Fallback to raw SQL
+                                    procurementManagers = await prisma.$queryRawUnsafe<any>(`
+                                        SELECT DISTINCT u.id, u.name, u.email 
+                                        FROM User u
+                                        INNER JOIN UserRole ur ON u.id = ur.userId
+                                        INNER JOIN Role r ON ur.roleId = r.id
+                                        WHERE r.name IN ('PROCUREMENT_MANAGER', 'PROCUREMENT_OFFICER')
+                                        LIMIT 5
+                                    `);
+                                }
+
+                                // Send notifications to procurement managers
+                                for (const manager of procurementManagers) {
+                                    await (prisma as any).notification.create({
+                                        data: {
+                                            userId: manager.id,
+                                            type: 'ED_APPROVAL_REQUIRED',
+                                            message: `ED Approval Form required for completed evaluation ${completedEvaluation.evalNumber} (${triggeringType}, ${totalAmount.toLocaleString()}). Form: ${formNumber}`,
+                                            data: {
+                                                requestId: request.id,
+                                                evaluationId: completedEvaluation.id,
+                                                edFormId: edForm.id,
+                                                formNumber: formNumber,
+                                                procurementType: triggeringType,
+                                                totalAmount: totalAmount,
+                                            },
+                                        },
+                                    });
+                                }
+
+                                console.log(`[ED Approval] Created form ${formNumber} for completed evaluation ${completedEvaluation.id}, notified ${procurementManagers.length} managers`);
+                            }
+                        }
+                    }
+                } catch (edErr) {
+                    console.warn('Failed to create ED Approval Form after evaluation completion:', edErr);
+                    // Don't fail evaluation completion if ED form creation fails
+                }
 
                 return res.json({ success: true, data: completedEvaluation, message: `Section ${sectionUpper} verified. Evaluation completed.` });
             }
@@ -7980,6 +8135,47 @@ app.delete(
         if (!checkRow[0]) throw new NotFoundError('Evaluation not found');
         await prisma.$executeRawUnsafe(`DELETE FROM Evaluation WHERE id = ${parseInt(id)}`);
         res.json({ success: true, message: 'Evaluation deleted successfully', meta: { fallback: true } });
+    }),
+);
+
+// POST /api/evaluations/:id/cancel - Cancel an evaluation (mark as cancelled, keep for reference)
+app.post(
+    '/api/evaluations/:id/cancel',
+    authMiddleware,
+    asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        const { cancelReason } = req.body;
+        const userObj: any = (req as any).user;
+        const userId = parseInt(userObj?.sub || userObj?.id);
+
+        if (hasEvaluationDelegate()) {
+            const existing = await (prisma as any).evaluation.findUnique({ where: { id: parseInt(id) } });
+            if (!existing) throw new NotFoundError('Evaluation not found');
+
+            const updated = await (prisma as any).evaluation.update({
+                where: { id: parseInt(id) },
+                data: {
+                    cancelled: true,
+                    cancelledAt: new Date(),
+                    cancelledBy: userId,
+                    cancelReason: cancelReason || null,
+                },
+            });
+
+            return res.json({ success: true, message: 'Evaluation cancelled successfully', data: updated });
+        }
+
+        // Fallback to raw SQL
+        const checkRow = await prisma.$queryRawUnsafe<any>(`SELECT id FROM Evaluation WHERE id = ${parseInt(id)} LIMIT 1`);
+        if (!checkRow[0]) throw new NotFoundError('Evaluation not found');
+
+        await prisma.$executeRawUnsafe(
+            `UPDATE Evaluation SET cancelled=1, cancelledAt=NOW(), cancelledBy=${userId}, cancelReason=${
+                cancelReason ? `'${cancelReason.replace(/'/g, "''")}'` : 'NULL'
+            }, updatedAt=NOW() WHERE id = ${parseInt(id)}`,
+        );
+
+        res.json({ success: true, message: 'Evaluation cancelled successfully', meta: { fallback: true } });
     }),
 );
 
