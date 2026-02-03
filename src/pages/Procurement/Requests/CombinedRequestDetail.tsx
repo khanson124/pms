@@ -317,23 +317,11 @@ const CombinedRequestDetail = () => {
                     {renameSuccess && <div className="alert alert-success">{renameSuccess}</div>}
                     <div>
                         <label className="form-label">Title</label>
-                        <input
-                            type="text"
-                            className="form-input"
-                            value={renameTitle}
-                            onChange={(e) => setRenameTitle(e.target.value)}
-                            placeholder="Enter a new title"
-                        />
+                        <input type="text" className="form-input" value={renameTitle} onChange={(e) => setRenameTitle(e.target.value)} placeholder="Enter a new title" />
                     </div>
                     <div>
                         <label className="form-label">Description</label>
-                        <textarea
-                            className="form-textarea"
-                            rows={3}
-                            value={renameDescription}
-                            onChange={(e) => setRenameDescription(e.target.value)}
-                            placeholder="Enter a new description"
-                        />
+                        <textarea className="form-textarea" rows={3} value={renameDescription} onChange={(e) => setRenameDescription(e.target.value)} placeholder="Enter a new description" />
                     </div>
                     <div className="flex justify-end">
                         <button type="button" className="btn btn-primary" onClick={submitRename} disabled={renameLoading}>
@@ -377,7 +365,12 @@ const CombinedRequestDetail = () => {
                                 <div className="flex-1">
                                     <h6 className="text-lg font-bold text-primary">LOT-{lot.lotNumber}</h6>
                                     <div className="text-md font-semibold mt-1">{lot.title}</div>
-                                    <div className="text-sm text-white-dark mt-1">Original Reference: <Link to={`/apps/requests/edit/${lot.id}`} className="text-primary hover:underline">{lot.reference}</Link></div>
+                                    <div className="text-sm text-white-dark mt-1">
+                                        Original Reference:{' '}
+                                        <Link to={`/apps/requests/edit/${lot.id}`} className="text-primary hover:underline">
+                                            {lot.reference}
+                                        </Link>
+                                    </div>
                                     {lot.description && <p className="text-sm text-white-dark mt-2">{lot.description}</p>}
                                 </div>
                                 <div className="text-right ml-4">

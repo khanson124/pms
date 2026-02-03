@@ -80,7 +80,7 @@ router.get('/', async (req, res) => {
                               }
                             : null,
                     };
-                })
+                }),
             );
 
             return res.json(transformedCombined);

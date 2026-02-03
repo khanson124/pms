@@ -4518,39 +4518,44 @@ app.get('/api/users/procurement-officers', async (req, res) => {
 app.get('/api/users/by-role/:roleId', async (req, res) => {
     try {
         const { roleId } = req.params;
-        
+
         if (!roleId) {
             return res.status(400).json({ message: 'Role ID is required' });
         }
 
-        const users = await prisma.user.findMany({
-            where: {
-                roles: {
-                    some: {
-                        role: {
-                            name: {
-                                in: [roleId],
+        const users = await prisma.user
+            .findMany({
+                where: {
+                    roles: {
+                        some: {
+                            role: {
+                                name: {
+                                    in: [roleId],
+                                },
                             },
                         },
                     },
                 },
-            },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-            },
-        }).catch(async () => {
-            // Fallback: try with raw SQL if Prisma fails
-            return prisma.$queryRawUnsafe<any>(`
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                },
+            })
+            .catch(async () => {
+                // Fallback: try with raw SQL if Prisma fails
+                return prisma.$queryRawUnsafe<any>(
+                    `
                 SELECT DISTINCT u.id, u.name, u.email 
                 FROM User u
                 INNER JOIN UserRole ur ON u.id = ur.userId
                 INNER JOIN Role r ON ur.roleId = r.id
                 WHERE r.name = ?
                 LIMIT 100
-            `, roleId);
-        });
+            `,
+                    roleId,
+                );
+            });
 
         res.json({ success: true, data: users });
     } catch (e: any) {
@@ -8232,9 +8237,7 @@ app.get(
         }
 
         // Procurement sees all forms; Executive sees only assigned to them
-        const whereClause = isProcurement 
-            ? {} 
-            : { approvedById: userId };
+        const whereClause = isProcurement ? {} : { approvedById: userId };
 
         const forms = await (prisma as any).eDApprovalForm.findMany({
             where: whereClause,
@@ -8271,19 +8274,19 @@ app.get(
             where: { id: parseInt(id) },
             include: {
                 request: { select: { id: true, reference: true, totalEstimated: true, procurementType: true, description: true } },
-                evaluation: { 
-                    select: { 
-                        id: true, 
-                        evalNumber: true, 
-                        rfqNumber: true, 
+                evaluation: {
+                    select: {
+                        id: true,
+                        evalNumber: true,
+                        rfqNumber: true,
                         rfqTitle: true,
                         description: true,
                         sectionA: true,
                         sectionB: true,
                         sectionC: true,
                         sectionD: true,
-                        sectionE: true
-                    } 
+                        sectionE: true,
+                    },
                 },
                 submittedBy: { select: { id: true, name: true, email: true } },
                 approvedBy: { select: { id: true, name: true, email: true } },
@@ -8459,7 +8462,7 @@ app.post(
 
         // Create notification for procurement
         try {
-            const procurementMessage = approved 
+            const procurementMessage = approved
                 ? `ED Approval Form ${updated.formNumber} has been APPROVED by the Executive Director.`
                 : `ED Approval Form ${updated.formNumber} has been REJECTED. Please review comments.`;
 

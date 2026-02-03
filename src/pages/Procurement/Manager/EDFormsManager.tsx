@@ -171,11 +171,7 @@ const EDFormsManager = () => {
         };
 
         const style = statusStyles[status] || statusStyles.PENDING;
-        return (
-            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${style.bg} ${style.text}`}>
-                {style.label}
-            </span>
-        );
+        return <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${style.bg} ${style.text}`}>{style.label}</span>;
     };
 
     const filteredForms = forms.filter((form) => {
@@ -295,10 +291,7 @@ const EDFormsManager = () => {
                 ) : error ? (
                     <div className="p-6 text-center">
                         <p className="text-red-500">{error}</p>
-                        <button
-                            onClick={loadForms}
-                            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                        >
+                        <button onClick={loadForms} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                             Retry
                         </button>
                     </div>
@@ -331,28 +324,18 @@ const EDFormsManager = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className="inline-block px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium">
-                                                {form.procurementType}
-                                            </span>
+                                            <span className="inline-block px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium">{form.procurementType}</span>
                                         </td>
-                                        <td className="px-6 py-4 text-right font-medium">
-                                            {formatCurrency(form.totalAmount)}
-                                        </td>
+                                        <td className="px-6 py-4 text-right font-medium">{formatCurrency(form.totalAmount)}</td>
                                         <td className="px-6 py-4">{getStatusBadge(form.status)}</td>
                                         <td className="px-6 py-4 text-gray-500">{formatDate(form.createdAt)}</td>
                                         <td className="px-6 py-4">
                                             <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => handleViewDetails(form)}
-                                                    className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs font-medium"
-                                                >
+                                                <button onClick={() => handleViewDetails(form)} className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs font-medium">
                                                     View
                                                 </button>
                                                 {form.status === 'PENDING' && (
-                                                    <button
-                                                        onClick={() => handleAssignClick(form)}
-                                                        className="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 text-xs font-medium"
-                                                    >
+                                                    <button onClick={() => handleAssignClick(form)} className="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 text-xs font-medium">
                                                         Assign
                                                     </button>
                                                 )}
@@ -520,9 +503,7 @@ const EDFormsManager = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Select Executive Director
-                                </label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Select Executive Director</label>
                                 <select
                                     value={selectedED || ''}
                                     onChange={(e) => setSelectedED(parseInt(e.target.value))}
@@ -535,9 +516,7 @@ const EDFormsManager = () => {
                                         </option>
                                     ))}
                                 </select>
-                                {executives.length === 0 && (
-                                    <p className="text-red-500 text-sm mt-2">No Executive Directors found in the system</p>
-                                )}
+                                {executives.length === 0 && <p className="text-red-500 text-sm mt-2">No Executive Directors found in the system</p>}
                             </div>
                         </div>
 
