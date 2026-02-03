@@ -441,6 +441,42 @@ class EvaluationService {
         });
         return result.data;
     }
+
+    // ED Approval Form Methods
+
+    async getEdForms() {
+        const result = await this.fetchWithAuth('/api/ed-forms');
+        return result.data;
+    }
+
+    async getEdFormById(formId: number) {
+        const result = await this.fetchWithAuth(`/api/ed-forms/${formId}`);
+        return result.data;
+    }
+
+    async assignEdForm(formId: number, executiveDirectorId: number) {
+        const result = await this.fetchWithAuth(`/api/ed-forms/${formId}/assign`, {
+            method: 'POST',
+            body: JSON.stringify({ executiveDirectorId }),
+        });
+        return result.data;
+    }
+
+    async updateEdForm(formId: number, updates: { justification?: string; riskAssessment?: string; alternatives?: string; comments?: string }) {
+        const result = await this.fetchWithAuth(`/api/ed-forms/${formId}`, {
+            method: 'PATCH',
+            body: JSON.stringify(updates),
+        });
+        return result.data;
+    }
+
+    async submitEdForm(formId: number, approved: boolean, comments?: string) {
+        const result = await this.fetchWithAuth(`/api/ed-forms/${formId}/submit`, {
+            method: 'POST',
+            body: JSON.stringify({ approved, comments: comments || null }),
+        });
+        return result.data;
+    }
 }
 
 export const evaluationService = new EvaluationService();

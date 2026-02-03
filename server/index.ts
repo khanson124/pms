@@ -4514,6 +4514,51 @@ app.get('/api/users/procurement-officers', async (req, res) => {
     }
 });
 
+// GET /api/users/by-role/:roleId - Get users by role name
+app.get('/api/users/by-role/:roleId', async (req, res) => {
+    try {
+        const { roleId } = req.params;
+        
+        if (!roleId) {
+            return res.status(400).json({ message: 'Role ID is required' });
+        }
+
+        const users = await prisma.user.findMany({
+            where: {
+                roles: {
+                    some: {
+                        role: {
+                            name: {
+                                in: [roleId],
+                            },
+                        },
+                    },
+                },
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+            },
+        }).catch(async () => {
+            // Fallback: try with raw SQL if Prisma fails
+            return prisma.$queryRawUnsafe<any>(`
+                SELECT DISTINCT u.id, u.name, u.email 
+                FROM User u
+                INNER JOIN UserRole ur ON u.id = ur.userId
+                INNER JOIN Role r ON ur.roleId = r.id
+                WHERE r.name = ?
+                LIMIT 100
+            `, roleId);
+        });
+
+        res.json({ success: true, data: users });
+    } catch (e: any) {
+        console.error('GET /api/users/by-role error:', e);
+        return res.status(500).json({ message: e?.message || 'Failed to fetch users by role' });
+    }
+});
+
 // Admin override endpoint: explicitly approve a splintering-blocked submission
 app.post('/api/admin/requests/:id/override-splinter', requireAdmin, async (req, res) => {
     try {
@@ -7805,7 +7850,7 @@ app.post(
 
                         if (shouldCreateEDForm) {
                             // Check if ED Approval Form already exists for this evaluation
-                            const existingForm = await (prisma as any).edApprovalForm.findFirst({
+                            const existingForm = await (prisma as any).eDApprovalForm.findFirst({
                                 where: { evaluationId: completedEvaluation.id },
                             });
 
@@ -7843,11 +7888,11 @@ app.post(
                                 }
 
                                 // Generate form number
-                                const formCount = await (prisma as any).edApprovalForm.count({});
+                                const formCount = await (prisma as any).eDApprovalForm.count({});
                                 const formNumber = `ED-${new Date().getFullYear()}-${String(formCount + 1).padStart(5, '0')}`;
 
                                 // Create ED Approval Form with evaluation data
-                                const edForm = await (prisma as any).edApprovalForm.create({
+                                const edForm = await (prisma as any).eDApprovalForm.create({
                                     data: {
                                         formNumber,
                                         requestId: request.id,
@@ -8166,6 +8211,306 @@ app.post(
         );
 
         res.json({ success: true, message: 'Evaluation cancelled successfully', meta: { fallback: true } });
+    }),
+);
+
+// ED Approval Form API Routes
+
+// GET /api/ed-forms - List all ED approval forms (procurement/ED access)
+app.get(
+    '/api/ed-forms',
+    authMiddleware,
+    asyncHandler(async (req, res) => {
+        const userObj: any = (req as any).user;
+        const userId = parseInt(userObj?.sub || userObj?.id);
+        const roles: string[] = userObj?.roles || [];
+        const isProcurement = roles.some((r: string) => r.toUpperCase().includes('PROCUREMENT'));
+        const isExecutive = roles.some((r: string) => r.toUpperCase().includes('EXECUTIVE'));
+
+        if (!isProcurement && !isExecutive) {
+            return res.status(403).json({ message: 'Only procurement and executive users can access ED forms' });
+        }
+
+        // Procurement sees all forms; Executive sees only assigned to them
+        const whereClause = isProcurement 
+            ? {} 
+            : { approvedById: userId };
+
+        const forms = await (prisma as any).eDApprovalForm.findMany({
+            where: whereClause,
+            include: {
+                request: { select: { id: true, reference: true, totalEstimated: true, procurementType: true } },
+                evaluation: { select: { id: true, evalNumber: true } },
+                submittedBy: { select: { id: true, name: true, email: true } },
+                approvedBy: { select: { id: true, name: true, email: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+
+        res.json({ success: true, data: forms });
+    }),
+);
+
+// GET /api/ed-forms/:id - Get specific ED approval form
+app.get(
+    '/api/ed-forms/:id',
+    authMiddleware,
+    asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        const userObj: any = (req as any).user;
+        const userId = parseInt(userObj?.sub || userObj?.id);
+        const roles: string[] = userObj?.roles || [];
+        const isProcurement = roles.some((r: string) => r.toUpperCase().includes('PROCUREMENT'));
+        const isExecutive = roles.some((r: string) => r.toUpperCase().includes('EXECUTIVE'));
+
+        if (!isProcurement && !isExecutive) {
+            return res.status(403).json({ message: 'Only procurement and executive users can access ED forms' });
+        }
+
+        const form = await (prisma as any).eDApprovalForm.findUnique({
+            where: { id: parseInt(id) },
+            include: {
+                request: { select: { id: true, reference: true, totalEstimated: true, procurementType: true, description: true } },
+                evaluation: { 
+                    select: { 
+                        id: true, 
+                        evalNumber: true, 
+                        rfqNumber: true, 
+                        rfqTitle: true,
+                        description: true,
+                        sectionA: true,
+                        sectionB: true,
+                        sectionC: true,
+                        sectionD: true,
+                        sectionE: true
+                    } 
+                },
+                submittedBy: { select: { id: true, name: true, email: true } },
+                approvedBy: { select: { id: true, name: true, email: true } },
+                hodForm: { select: { id: true, formNumber: true, status: true } },
+            },
+        });
+
+        if (!form) {
+            return res.status(404).json({ message: 'ED Approval Form not found' });
+        }
+
+        // Check access: Procurement can access any form; Executive can only access if assigned
+        if (!isProcurement && form.approvedById && form.approvedById !== userId) {
+            return res.status(403).json({ message: 'You do not have permission to access this ED form' });
+        }
+
+        res.json({ success: true, data: form });
+    }),
+);
+
+// POST /api/ed-forms/:id/assign - Assign ED form to Executive Director
+app.post(
+    '/api/ed-forms/:id/assign',
+    authMiddleware,
+    requireProcurement,
+    asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        const { executiveDirectorId } = req.body;
+
+        if (!executiveDirectorId) {
+            throw new BadRequestError('Executive Director ID is required');
+        }
+
+        const form = await (prisma as any).eDApprovalForm.findUnique({
+            where: { id: parseInt(id) },
+        });
+
+        if (!form) {
+            throw new NotFoundError('ED Approval Form not found');
+        }
+
+        if (form.status !== 'PENDING') {
+            throw new BadRequestError('Can only assign forms with PENDING status');
+        }
+
+        // Update form to assign to ED
+        const updated = await (prisma as any).eDApprovalForm.update({
+            where: { id: parseInt(id) },
+            data: {
+                approvedById: parseInt(String(executiveDirectorId)),
+                status: 'ASSIGNED_TO_ED',
+            },
+            include: {
+                request: true,
+                evaluation: true,
+                submittedBy: { select: { id: true, name: true, email: true } },
+                approvedBy: { select: { id: true, name: true, email: true } },
+            },
+        });
+
+        // Create notification for assigned ED
+        try {
+            await (prisma as any).notification.create({
+                data: {
+                    userId: parseInt(String(executiveDirectorId)),
+                    type: 'ED_APPROVAL_REQUIRED',
+                    message: `ED Approval Form ${updated.formNumber} has been assigned to you for review and approval.`,
+                    data: {
+                        edFormId: updated.id,
+                        formNumber: updated.formNumber,
+                        evaluationId: updated.evaluationId,
+                    },
+                },
+            });
+        } catch (notifErr) {
+            console.warn('Failed to create assignment notification:', notifErr);
+        }
+
+        res.json({ success: true, data: updated, message: 'ED Approval Form assigned successfully' });
+    }),
+);
+
+// PATCH /api/ed-forms/:id - Update ED approval form (by ED)
+app.patch(
+    '/api/ed-forms/:id',
+    authMiddleware,
+    asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        const userObj: any = (req as any).user;
+        const userId = parseInt(userObj?.sub || userObj?.id);
+        const updates = req.body || {};
+
+        const form = await (prisma as any).eDApprovalForm.findUnique({
+            where: { id: parseInt(id) },
+        });
+
+        if (!form) {
+            throw new NotFoundError('ED Approval Form not found');
+        }
+
+        // Check access: Only the assigned ED can update
+        if (form.approvedById && form.approvedById !== userId) {
+            throw new BadRequestError('You do not have permission to update this form');
+        }
+
+        // Allow only specific fields to be updated
+        const allowedFields = ['justification', 'riskAssessment', 'alternatives', 'comments'];
+        const cleanUpdates: any = {};
+        for (const key of allowedFields) {
+            if (key in updates) {
+                cleanUpdates[key] = updates[key];
+            }
+        }
+
+        const updated = await (prisma as any).eDApprovalForm.update({
+            where: { id: parseInt(id) },
+            data: cleanUpdates,
+            include: {
+                request: true,
+                evaluation: true,
+                submittedBy: { select: { id: true, name: true, email: true } },
+                approvedBy: { select: { id: true, name: true, email: true } },
+            },
+        });
+
+        res.json({ success: true, data: updated, message: 'ED Approval Form updated successfully' });
+    }),
+);
+
+// POST /api/ed-forms/:id/submit - Submit ED form back to procurement (approve/complete)
+app.post(
+    '/api/ed-forms/:id/submit',
+    authMiddleware,
+    asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        const userObj: any = (req as any).user;
+        const userId = parseInt(userObj?.sub || userObj?.id);
+        const { approved, comments } = req.body;
+
+        const form = await (prisma as any).eDApprovalForm.findUnique({
+            where: { id: parseInt(id) },
+            include: {
+                evaluation: true,
+            },
+        });
+
+        if (!form) {
+            throw new NotFoundError('ED Approval Form not found');
+        }
+
+        // Check access: Only the assigned ED can submit
+        if (form.approvedById && form.approvedById !== userId) {
+            throw new BadRequestError('You do not have permission to submit this form');
+        }
+
+        // Update form status based on approval
+        const newStatus = approved === true ? 'APPROVED' : 'REJECTED';
+
+        const updated = await (prisma as any).eDApprovalForm.update({
+            where: { id: parseInt(id) },
+            data: {
+                status: newStatus,
+                approvedAt: new Date(),
+                comments: comments || null,
+            },
+            include: {
+                request: true,
+                evaluation: true,
+                submittedBy: { select: { id: true, name: true, email: true } },
+                approvedBy: { select: { id: true, name: true, email: true } },
+            },
+        });
+
+        // Create notification for procurement
+        try {
+            const procurementMessage = approved 
+                ? `ED Approval Form ${updated.formNumber} has been APPROVED by the Executive Director.`
+                : `ED Approval Form ${updated.formNumber} has been REJECTED. Please review comments.`;
+
+            // Find procurement managers to notify
+            let procurementManagers: any[] = [];
+            try {
+                procurementManagers = await (prisma as any).user.findMany({
+                    where: {
+                        userRoles: {
+                            some: {
+                                role: {
+                                    name: {
+                                        in: ['PROCUREMENT_MANAGER', 'PROCUREMENT_OFFICER'],
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    select: { id: true, name: true, email: true },
+                });
+            } catch {
+                procurementManagers = await prisma.$queryRawUnsafe<any>(`
+                    SELECT DISTINCT u.id, u.name, u.email 
+                    FROM User u
+                    INNER JOIN UserRole ur ON u.id = ur.userId
+                    INNER JOIN Role r ON ur.roleId = r.id
+                    WHERE r.name IN ('PROCUREMENT_MANAGER', 'PROCUREMENT_OFFICER')
+                    LIMIT 5
+                `);
+            }
+
+            for (const manager of procurementManagers) {
+                await (prisma as any).notification.create({
+                    data: {
+                        userId: manager.id,
+                        type: 'ED_APPROVAL_REQUIRED',
+                        message: procurementMessage,
+                        data: {
+                            edFormId: updated.id,
+                            formNumber: updated.formNumber,
+                            evaluationId: updated.evaluationId,
+                            status: newStatus,
+                        },
+                    },
+                });
+            }
+        } catch (notifErr) {
+            console.warn('Failed to create submission notification:', notifErr);
+        }
+
+        res.json({ success: true, data: updated, message: `ED Approval Form ${newStatus.toLowerCase()}` });
     }),
 );
 

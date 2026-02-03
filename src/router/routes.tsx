@@ -44,6 +44,7 @@ const HODPendingApprovals = lazy(() => import('../pages/Procurement/HeadOfDivisi
 const ProcurementManagerRequests = lazy(() => import('../pages/Procurement/Manager/Requests'));
 const ProcurementManagerAssignRequests = lazy(() => import('../pages/Procurement/Manager/AssignRequests'));
 const ProcurementManagerLoadBalancingSettings = lazy(() => import('../pages/Procurement/Manager/LoadBalancingSettings'));
+const EDFormsManager = lazy(() => import('../pages/Procurement/Manager/EDFormsManager'));
 const RFQsAwaitingApproval = lazy(() => import('../pages/Procurement/Manager/RFQsAwaitingApproval'));
 const EvaluationsToValidate = lazy(() => import('../pages/Procurement/Manager/EvaluationsToValidate'));
 const RFQList = lazy(() => import('../pages/Procurement/RFQ/RFQList'));
@@ -470,6 +471,14 @@ const routes = [
         element: (
             <RoleDashboardGuard allowedRoles={['PROCUREMENT_MANAGER']} fallbackPath="/procurement/manager">
                 <EvaluationsToValidate />
+            </RoleDashboardGuard>
+        ),
+    },
+    {
+        path: '/procurement/manager/ed-forms',
+        element: (
+            <RoleDashboardGuard allowedRoles={['PROCUREMENT_MANAGER']} fallbackPath="/procurement/manager">
+                <EDFormsManager />
             </RoleDashboardGuard>
         ),
     },

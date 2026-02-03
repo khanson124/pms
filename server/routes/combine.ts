@@ -447,4 +447,120 @@ router.get('/:id', authMiddleware, async (req, res) => {
     }
 });
 
+// PATCH /api/requests/combinable/:id - Rename combined request (title/description)
+router.patch('/:id', authMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { title, description } = req.body as { title?: string; description?: string };
+
+        if (!title && !description) {
+            return res.status(400).json({ success: false, error: 'Provide title or description to update' });
+        }
+
+        const authReq = req as AuthenticatedRequest;
+        const userRoles = authReq.user.roles || [];
+        const userPermissions = authReq.user.permissions || ({} as any);
+
+        const userRoleInfo = checkUserRoles(userRoles);
+        const canCombine = Boolean((userPermissions as any)['request:combine']) || userRoleInfo.canCombineRequests;
+
+        if (!canCombine) {
+            return res.status(403).json({ success: false, error: 'Access denied. Insufficient permissions to rename combined request.' });
+        }
+
+        const combinedId = parseInt(id);
+        const updated = await (prisma as any).combinedRequest.update({
+            where: { id: combinedId },
+            data: {
+                ...(title ? { title } : {}),
+                ...(description ? { description } : {}),
+            },
+        });
+
+        res.json({ success: true, combinedRequest: { id: updated.id, title: updated.title, description: updated.description } });
+    } catch (error) {
+        console.error('[COMBINE] Error renaming combined request:', error);
+        return res.status(500).json({ success: false, error: 'Failed to rename combined request', details: error instanceof Error ? error.message : undefined });
+    }
+});
+
+// POST /api/requests/combine/:id/add - Add additional original requests to an existing combined request
+router.post('/:id/add', authMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { originalRequestIds } = req.body;
+
+        if (!originalRequestIds || !Array.isArray(originalRequestIds) || originalRequestIds.length === 0) {
+            return res.status(400).json({ success: false, error: 'Missing or invalid originalRequestIds' });
+        }
+
+        const authReq = req as AuthenticatedRequest;
+        const userId = authReq.user.sub;
+        const userRoles = authReq.user.roles || [];
+        const userPermissions = authReq.user.permissions || ({} as any);
+
+        const userRoleInfo = checkUserRoles(userRoles);
+        const canCombine = Boolean((userPermissions as any)['request:combine']) || userRoleInfo.canCombineRequests;
+        if (!canCombine) {
+            return res.status(403).json({ success: false, error: 'Access denied. Insufficient permissions to add requests to combined request.' });
+        }
+
+        // Ensure combined request exists
+        const combinedParent = await prisma.combinedRequest.findUnique({ where: { id: parseInt(id) } });
+        if (!combinedParent) {
+            return res.status(404).json({ success: false, error: 'Combined request not found' });
+        }
+
+        // Fetch original requests and validate they are eligible (not already combined)
+        const originalRequests = await prisma.request.findMany({
+            where: { id: { in: originalRequestIds }, combinedRequestId: null },
+            include: { department: true, requester: true },
+        });
+
+        if (!originalRequests.length) {
+            return res.status(400).json({ success: false, error: 'No eligible requests found to add' });
+        }
+
+        const result = await prisma.$transaction(async (tx) => {
+            // Determine current max lotNumber for this combined parent
+            const existingLots = await (tx as any).request.findMany({ where: { combinedRequestId: combinedParent.id }, select: { lotNumber: true } });
+            let lotNumber = existingLots.length ? Math.max(...existingLots.map((l: any) => l.lotNumber || 0)) + 1 : 1;
+
+            const addedLots: any[] = [];
+
+            for (const orig of originalRequests) {
+                const updated = await tx.request.update({
+                    where: { id: orig.id },
+                    data: {
+                        isCombined: true,
+                        combinedRequestId: combinedParent.id,
+                        lotNumber,
+                        status: 'PROCUREMENT_REVIEW',
+                        title: `LOT-${lotNumber}: ${orig.title}`,
+                    } as any,
+                });
+
+                await tx.requestAction.create({
+                    data: {
+                        requestId: updated.id,
+                        performedById: userId,
+                        action: 'COMMENT',
+                        comment: `Added to combined request ${combinedParent.reference} as LOT-${lotNumber}`,
+                    },
+                });
+
+                addedLots.push(updated);
+                lotNumber++;
+            }
+
+            return { addedLots };
+        });
+
+        res.json({ success: true, message: 'Requests added to combined request', added: result.addedLots.map((l: any) => ({ id: l.id, reference: l.reference, lotNumber: l.lotNumber })) });
+    } catch (error) {
+        console.error('[COMBINE] Error adding requests to combined request:', error);
+        return res.status(500).json({ success: false, error: 'Failed to add requests to combined request', details: error instanceof Error ? error.message : undefined });
+    }
+});
+
 export default router;
