@@ -148,11 +148,7 @@ const EDApprovalForm = () => {
                 </Link>
             </div>
 
-            {isFinal && (
-                <div className={`alert ${form.status === 'APPROVED' ? 'alert-success' : 'alert-danger'}`}>
-                    This form has been {form.status.toLowerCase()} and can no longer be edited.
-                </div>
-            )}
+            {isFinal && <div className={`alert ${form.status === 'APPROVED' ? 'alert-success' : 'alert-danger'}`}>This form has been {form.status.toLowerCase()} and can no longer be edited.</div>}
 
             <div className="panel">
                 <h5 className="font-semibold text-lg mb-4">Request & Evaluation</h5>
