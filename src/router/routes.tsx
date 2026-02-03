@@ -99,6 +99,7 @@ const HiddenRequests = lazy(() => import('../pages/Procurement/Admin/HiddenReque
 // Forms Pages
 const FormSelection = lazy(() => import('../pages/Procurement/Forms/FormSelection'));
 const FormDetail = lazy(() => import('../pages/Procurement/Forms/FormDetail'));
+const EDApprovalForm = lazy(() => import('../pages/Procurement/Forms/EDApprovalForm'));
 
 // Request Pages
 const Requests = lazy(() => import('../pages/Procurement/Requests/Requests'));
@@ -760,6 +761,14 @@ const routes = [
         element: (
             <ProcurementRoute>
                 <FormDetail />
+            </ProcurementRoute>
+        ),
+    },
+    {
+        path: '/procurement/forms/ed-approval/:id',
+        element: (
+            <ProcurementRoute>
+                <EDApprovalForm />
             </ProcurementRoute>
         ),
     },

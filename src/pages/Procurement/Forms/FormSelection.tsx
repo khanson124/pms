@@ -4,7 +4,11 @@ import { Link } from 'react-router-dom';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import IconFile from '../../../components/Icon/IconFile';
 import IconDownload from '../../../components/Icon/IconDownload';
+import IconEye from '../../../components/Icon/IconEye';
 import { SkeletonCard } from '../../../components/SkeletonLoading';
+import { evaluationService } from '../../../services/evaluationService';
+import { getUser } from '../../../utils/auth';
+import { detectUserRoles } from '../../../utils/roleDetection';
 
 interface ProcurementForm {
     id: string;
@@ -16,6 +20,22 @@ interface ProcurementForm {
     maxValue?: string;
     createdDate: string;
     fileUrl?: string;
+}
+
+interface EDFormListItem {
+    id: number;
+    formNumber: string;
+    status: 'PENDING' | 'ASSIGNED_TO_ED' | 'APPROVED' | 'REJECTED';
+    totalAmount: number;
+    procurementType: string;
+    createdAt: string;
+    request?: {
+        reference: string;
+    };
+    evaluation?: {
+        evalNumber: string;
+        rfqTitle?: string | null;
+    };
 }
 
 const FORMS: ProcurementForm[] = [
@@ -36,13 +56,37 @@ export default function FormSelection() {
     const [forms, setForms] = useState<ProcurementForm[]>(FORMS);
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
     const [isLoading, setIsLoading] = useState(true);
+    const [edForms, setEdForms] = useState<EDFormListItem[]>([]);
+    const [edLoading, setEdLoading] = useState(false);
+    const [edError, setEdError] = useState<string | null>(null);
+
+    const currentUser = getUser();
+    const userRoles = currentUser?.roles || (currentUser?.role ? [currentUser.role] : []);
+    const { isExecutiveDirector } = detectUserRoles(userRoles);
 
     useEffect(() => {
         dispatch(setPageTitle('Procurement Forms'));
-        // Simulate loading time
         const timer = setTimeout(() => setIsLoading(false), 500);
         return () => clearTimeout(timer);
     }, [dispatch]);
+
+    useEffect(() => {
+        const loadEdForms = async () => {
+            if (!isExecutiveDirector) return;
+            try {
+                setEdLoading(true);
+                setEdError(null);
+                const data = (await evaluationService.getEdForms()) as EDFormListItem[];
+                setEdForms(data);
+            } catch (err) {
+                setEdError(err instanceof Error ? err.message : 'Failed to load ED approval forms');
+            } finally {
+                setEdLoading(false);
+            }
+        };
+
+        loadEdForms();
+    }, [isExecutiveDirector]);
 
     const categories = ['All', ...new Set(forms.map((f) => f.category))];
     const filteredForms = selectedCategory === 'All' ? forms : forms.filter((f) => f.category === selectedCategory);
@@ -54,6 +98,55 @@ export default function FormSelection() {
                 <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Procurement Forms</h1>
                 <p className="text-gray-600 dark:text-gray-400">Select and download the required procurement forms for your transactions</p>
             </div>
+
+            {isExecutiveDirector && (
+                <div className="panel mb-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-semibold">My ED Approval Forms</h2>
+                        <span className="text-xs text-gray-500">Assigned forms ready for completion</span>
+                    </div>
+
+                    {edLoading ? (
+                        <div className="text-sm text-gray-500">Loading ED approval forms...</div>
+                    ) : edError ? (
+                        <div className="alert alert-danger">{edError}</div>
+                    ) : edForms.length === 0 ? (
+                        <div className="text-sm text-gray-500">No assigned ED approval forms.</div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="table-hover text-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Form #</th>
+                                        <th>Request</th>
+                                        <th>Evaluation</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {edForms.map((form) => (
+                                        <tr key={form.id}>
+                                            <td className="font-semibold text-primary">{form.formNumber}</td>
+                                            <td>{form.request?.reference || '-'}</td>
+                                            <td>{form.evaluation?.evalNumber || '-'}</td>
+                                            <td>{form.totalAmount.toLocaleString()}</td>
+                                            <td>{form.status}</td>
+                                            <td>
+                                                <Link to={`/procurement/forms/ed-approval/${form.id}`} className="btn btn-sm btn-outline-primary gap-1">
+                                                    <IconEye className="w-4 h-4" />
+                                                    Open
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Category Filter */}
             <div className="flex flex-wrap gap-2 mb-6">
