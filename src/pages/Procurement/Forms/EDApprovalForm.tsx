@@ -7,6 +7,16 @@ import IconCircleCheck from '../../../components/Icon/IconCircleCheck';
 import IconX from '../../../components/Icon/IconX';
 import { evaluationService } from '../../../services/evaluationService';
 
+interface FormField {
+    id: string;
+    label: string;
+    type: 'text' | 'textarea' | 'select' | 'checkbox' | 'number';
+    placeholder?: string;
+    options?: string[];
+    required?: boolean;
+    value?: string;
+}
+
 interface EDApprovalFormData {
     id: number;
     formNumber: string;
@@ -14,6 +24,13 @@ interface EDApprovalFormData {
     evaluationId: number;
     procurementType: string;
     totalAmount: number;
+    formData?: {
+        templateId: string;
+        templateName: string;
+        sections?: Record<string, Record<string, any>>;
+        evaluationReference?: string;
+        requestReference?: string;
+    };
     justification?: string | null;
     riskAssessment?: string | null;
     alternatives?: string | null;
@@ -135,6 +152,134 @@ const EDApprovalForm = () => {
 
     const isFinal = form.status === 'APPROVED' || form.status === 'REJECTED';
 
+    // If formData exists, render the actual template
+    if (form.formData) {
+        const sectionA = form.formData.sections?.sectionA || {};
+        const sectionB = form.formData.sections?.sectionB || {};
+        const sectionC = form.formData.sections?.sectionC || {};
+
+        return (
+            <div className="space-y-6">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <h2 className="text-2xl font-bold">{form.formData.templateName}</h2>
+                        <p className="text-white-dark">Form #{form.formNumber}</p>
+                    </div>
+                    <Link to="/procurement/forms" className="btn btn-outline-secondary gap-2">
+                        <IconArrowLeft />
+                        Back to Forms
+                    </Link>
+                </div>
+
+                {isFinal && <div className={`alert ${form.status === 'APPROVED' ? 'alert-success' : 'alert-danger'}`}>This form has been {form.status.toLowerCase()} and can no longer be edited.</div>}
+
+                {/* Section A: Procurement & Tendering Data */}
+                <div className="panel">
+                    <h3 className="text-xl font-semibold mb-4">Section A: Procurement & Tendering Data</h3>
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="form-label">1. Name of Procurement Activity & Ref. Code</label>
+                                <input type="text" className="form-input" value={sectionA.procurement_activity_name || ''} disabled />
+                            </div>
+                            <div>
+                                <label className="form-label">2. Unit</label>
+                                <input type="text" className="form-input" value={sectionA.unit || ''} disabled />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="form-label">3. Description of Goods/Services/Works</label>
+                            <textarea className="form-textarea" rows={3} value={sectionA.description_goods || ''} disabled></textarea>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="form-label">4. Contract Type</label>
+                                <input type="text" className="form-input" value={sectionA.contract_type || ''} disabled />
+                            </div>
+                            <div>
+                                <label className="form-label">5. Comparable Estimate</label>
+                                <input type="text" className="form-input" value={sectionA.comparable_estimate || ''} disabled />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Section B: Procurement Method & Evaluation */}
+                <div className="panel">
+                    <h3 className="text-xl font-semibold mb-4">Section B: Procurement Method & Evaluation</h3>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="form-label">Procurement Method</label>
+                            <input type="text" className="form-input" value={sectionB.procurement_method || ''} disabled />
+                        </div>
+                        <div>
+                            <label className="form-label">Justification for Method</label>
+                            <textarea className="form-textarea" rows={3} value={sectionB.justification_method || ''} disabled></textarea>
+                        </div>
+                        <div>
+                            <label className="form-label">Evaluation Summary</label>
+                            <textarea className="form-textarea" rows={3} value={sectionB.evaluation_summary || ''} disabled></textarea>
+                        </div>
+                        <div>
+                            <label className="form-label">Number of Bids Received</label>
+                            <input type="number" className="form-input" value={sectionB.number_bidders || ''} disabled />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Section C: Head of Entity Decision */}
+                <div className="panel">
+                    <h3 className="text-xl font-semibold mb-4">Section C: Head of Entity Decision</h3>
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="form-label">Recommended Bidder</label>
+                                <input type="text" className="form-input" value={sectionC.recommended_bidder || ''} disabled />
+                            </div>
+                            <div>
+                                <label className="form-label">Contract Value</label>
+                                <input type="text" className="form-input" value={sectionC.contract_value || ''} disabled />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="form-label">Approval Recommendation</label>
+                            <textarea className="form-textarea" rows={3} value={sectionC.approval_recommendation || ''} onChange={(e) => setJustification(e.target.value)} disabled={isFinal} />
+                        </div>
+                        <div>
+                            <label className="form-label">Risk Assessment</label>
+                            <textarea className="form-textarea" rows={3} value={sectionC.risk_assessment || ''} onChange={(e) => setRiskAssessment(e.target.value)} disabled={isFinal} />
+                        </div>
+                        <div>
+                            <label className="form-label">Alternatives Considered</label>
+                            <textarea className="form-textarea" rows={3} value={sectionC.alternatives_considered || ''} onChange={(e) => setAlternatives(e.target.value)} disabled={isFinal} />
+                        </div>
+                        <div>
+                            <label className="form-label">Executive Director Comments</label>
+                            <textarea className="form-textarea" rows={3} value={comments} onChange={(e) => setComments(e.target.value)} disabled={isFinal} />
+                        </div>
+                    </div>
+                </div>
+
+                {!isFinal && (
+                    <div className="flex flex-wrap gap-2 justify-end">
+                        <button type="button" className="btn btn-outline-primary" onClick={handleSave} disabled={saving || submitting}>
+                            {saving ? 'Saving...' : 'Save Draft'}
+                        </button>
+                        <button type="button" className="btn btn-danger gap-2" onClick={() => handleSubmit(false)} disabled={saving || submitting}>
+                            <IconX className="w-4 h-4" />
+                            Reject
+                        </button>
+                        <button type="button" className="btn btn-success gap-2" onClick={() => handleSubmit(true)} disabled={saving || submitting}>
+                            <IconCircleCheck className="w-4 h-4" />
+                            Approve
+                        </button>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    // Fallback to simple form if no formData
     return (
         <div className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-4">

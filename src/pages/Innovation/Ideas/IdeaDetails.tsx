@@ -233,10 +233,17 @@ export default function IdeaDetails() {
                 <div className="flex items-start justify-between gap-4">
                     <div>
                         <h1 className="text-2xl font-black text-gray-900 dark:text-white">{idea.title}</h1>
-                        <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                            <span>{t('innovation.view.submittedBy', { name: idea.submittedBy })}</span>
-                            <span className="mx-2">•</span>
-                            <span>{new Date(idea.submittedAt).toLocaleDateString()}</span>
+                        <div className="mt-1 flex items-center gap-2 flex-wrap">
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                                <span>{t('innovation.view.submittedBy', { name: idea.submittedBy })}</span>
+                                <span className="mx-2">•</span>
+                                <span>{new Date(idea.submittedAt).toLocaleDateString()}</span>
+                            </div>
+                            {(idea as any).isAnonymousSubmission && (
+                                <span className="px-2 py-0.5 text-xs font-semibold bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 rounded-full">
+                                    Anonymous Submission
+                                </span>
+                            )}
                         </div>
                     </div>
                     <Link to="/innovation/ideas/browse" className="btn btn-outline-primary">

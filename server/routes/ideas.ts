@@ -130,10 +130,11 @@ router.get(
 
         const user = (req as any).user as { roles?: string[]; sub?: number };
         const isCommittee = user.roles && user.roles.includes('INNOVATION_COMMITTEE');
+        const isAdmin = user.roles && (user.roles.includes('ADMIN') || user.roles.includes('SUPER_ADMIN'));
         const userId = user.sub;
 
         // Build cache key
-        const cacheKey = `ideas:${userId}:${status || 'all'}:${sort || 'recent'}:${include || 'none'}:${mine || 'false'}:${cursor || 'start'}:${limit}`;
+        const cacheKey = `ideas:${userId}:${status || 'all'}:${sort || 'recent'}:${include || 'none'}:${mine || 'false'}:${cursor || 'start'}:${limit}:${isAdmin ? 'admin' : 'user'}`;
 
         // For mine=true requests, always clear cache to ensure fresh data
         if (mine === 'true') {
@@ -246,7 +247,8 @@ router.get(
             ...idea,
             commentCount: idea._count?.comments || 0,
             hasVoted: voteMap.has(idea.id) ? (voteMap.get(idea.id) === 'UPVOTE' ? 'up' : 'down') : null,
-            submittedBy: idea.isAnonymous ? 'Anonymous' : idea.submitter?.name || idea.submitter?.email || 'Unknown',
+            submittedBy: idea.isAnonymous && !isAdmin ? 'Anonymous' : idea.submitter?.name || idea.submitter?.email || 'Unknown',
+            isAnonymousSubmission: idea.isAnonymous && isAdmin ? true : undefined,
             tags: Array.isArray(idea.tags) ? idea.tags.map((it: any) => it.tag?.name).filter(Boolean) : [],
             tagObjects: Array.isArray(idea.tags) ? idea.tags.map((it: any) => ({ id: it.tagId, name: it.tag?.name })).filter((t: any) => t.name) : [],
         }));
@@ -319,7 +321,8 @@ router.get(
         }
 
         // Check user's vote if authenticated
-        const user = (req as any).user as { sub?: number };
+        const user = (req as any).user as { sub?: number; roles?: string[] };
+        const isAdmin = user.roles && (user.roles.includes('ADMIN') || user.roles.includes('SUPER_ADMIN'));
         let hasVoted: 'up' | 'down' | null = null;
 
         if (user?.sub) {
@@ -338,7 +341,8 @@ router.get(
             ...idea,
             commentCount: idea._count?.comments || 0,
             hasVoted,
-            submittedBy: idea.isAnonymous ? 'Anonymous' : idea.submitter?.name || idea.submitter?.email || 'Unknown',
+            submittedBy: idea.isAnonymous && !isAdmin ? 'Anonymous' : idea.submitter?.name || idea.submitter?.email || 'Unknown',
+            isAnonymousSubmission: idea.isAnonymous && isAdmin ? true : undefined,
             tags: Array.isArray(idea.tags) ? idea.tags.map((it: any) => it.tag?.name).filter(Boolean) : [],
         });
     })

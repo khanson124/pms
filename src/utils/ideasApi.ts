@@ -43,6 +43,7 @@ export type Idea = {
     firstAttachmentUrl?: string | null;
     stage?: string;
     isAnonymous?: boolean;
+    isAnonymousSubmission?: boolean;
     challenge?: { id: number; title: string } | null;
     tags?: Array<{ id: number; name: string }>;
 };

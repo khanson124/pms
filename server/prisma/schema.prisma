@@ -688,6 +688,7 @@ model EDApprovalForm {
   justification   String       @db.Text
   riskAssessment  String?      @db.Text
   alternatives    String?      @db.Text
+  formData        Json?        // Stores populated form template data
   status          EDFormStatus @default(PENDING)
   submittedById   Int
   approvedById    Int?
@@ -707,7 +708,6 @@ model EDApprovalForm {
   @@index([submittedById])
   @@index([approvedById])
 }
-
 model StatusComment {
   id            Int      @id @default(autoincrement())
   entityType    String // 'REQUEST', 'EVALUATION', 'HOD_FORM', 'ED_FORM'

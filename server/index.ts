@@ -7841,17 +7841,33 @@ app.post(
                         const totalAmount = request.totalEstimated ? parseFloat(String(request.totalEstimated)) : 0;
                         let procurementTypes: string[] = [];
 
-                        // Parse procurement type from JSON
+                        // Parse procurement type from JSON or string
                         if (request.procurementType) {
                             try {
-                                procurementTypes = Array.isArray(request.procurementType) ? request.procurementType : JSON.parse(String(request.procurementType));
-                            } catch {
+                                if (Array.isArray(request.procurementType)) {
+                                    procurementTypes = request.procurementType.map((t: string) => t.toUpperCase());
+                                } else if (typeof request.procurementType === 'string') {
+                                    // Try parsing as JSON first
+                                    try {
+                                        const parsed = JSON.parse(request.procurementType);
+                                        procurementTypes = Array.isArray(parsed) ? parsed.map((t: string) => t.toUpperCase()) : [String(parsed).toUpperCase()];
+                                    } catch {
+                                        // If not JSON, treat as single value
+                                        procurementTypes = [request.procurementType.toUpperCase()];
+                                    }
+                                }
+                            } catch (parseErr) {
+                                console.warn('[ED Form] Failed to parse procurement type:', parseErr);
                                 procurementTypes = [];
                             }
                         }
 
+                        console.log(`[ED Form Check] Evaluation ${completedEvaluation.id} - Amount: ${totalAmount}, Types: ${JSON.stringify(procurementTypes)}`);
+
                         // Check thresholds: 3 million for GOODS, 5 million for WORKS
                         const shouldCreateEDForm = (procurementTypes.includes('GOODS') && totalAmount >= 3000000) || (procurementTypes.includes('WORKS') && totalAmount >= 5000000);
+                        
+                        console.log(`[ED Form Check] Should create: ${shouldCreateEDForm}`);
 
                         if (shouldCreateEDForm) {
                             // Check if ED Approval Form already exists for this evaluation
@@ -7893,8 +7909,62 @@ app.post(
                                 }
 
                                 // Generate form number
-                                const formCount = await (prisma as any).eDApprovalForm.count({});
-                                const formNumber = `ED-${new Date().getFullYear()}-${String(formCount + 1).padStart(5, '0')}`;
+                                const now = new Date();
+                                const year = now.getFullYear();
+                                const month = String(now.getMonth() + 1).padStart(2, '0');
+                                const randomSuffix = Math.floor(Math.random() * 90000) + 10000;
+                                const formNumber = `PRO_70_F_12/00-${year}${month}-${randomSuffix}`;
+
+                                // Build complete form template instance with evaluation data
+                                const formData = {
+                                    templateId: 'hoe-approval-form',
+                                    templateName: "Head of Entity's Approval Form",
+                                    templateCode: 'PRO_70_F_12/00',
+                                    
+                                    // Section A: Procurement & Tendering Data
+                                    sectionA: {
+                                        procurement_activity_name: `${request.reference || ''} - ${completedEvaluation.rfqTitle || ''}`,
+                                        unit: '',
+                                        description_goods: completedEvaluation.description || '',
+                                        contract_type: triggeringType,
+                                        comparable_estimate: `JMD $${totalAmount.toLocaleString()}`,
+                                        approved_supplier: '',
+                                        ppc_registration_category: '',
+                                        procurement_case_number: request.procurementCaseNumber || '',
+                                        date_case_received: request.dateReceived || '',
+                                        procurement_method: '',
+                                        justification_procurement_method: '',
+                                    },
+                                    
+                                    // Section B: Procurement Method & Evaluation
+                                    sectionB: {
+                                        shortlist_criteria: '',
+                                        number_bidders: 0,
+                                        evaluation_criteria: '',
+                                        evaluation_method: '',
+                                        preferred_bidder: '',
+                                        contract_value: `JMD $${totalAmount.toLocaleString()}`,
+                                        evaluation_summary: riskAssessment,
+                                    },
+                                    
+                                    // Section C: Head of Entity Decision
+                                    sectionC: {
+                                        head_entity_review: '',
+                                        risk_assessment: riskAssessment,
+                                        alternatives_considered: alternatives || '',
+                                        recommendation: justification,
+                                        approval_decision: '',
+                                        head_entity_signature: '',
+                                        head_entity_name: '',
+                                        date_approved: new Date().toISOString().split('T')[0],
+                                    },
+                                    
+                                    // Reference data
+                                    evaluationReference: completedEvaluation.evalNumber || '',
+                                    requestReference: request.reference || '',
+                                    rfqNumber: completedEvaluation.rfqNumber || '',
+                                };
+
 
                                 // Create ED Approval Form with evaluation data
                                 const edForm = await (prisma as any).eDApprovalForm.create({
@@ -7907,6 +7977,7 @@ app.post(
                                         justification: justification,
                                         riskAssessment: riskAssessment || null,
                                         alternatives: alternatives || null,
+                                        formData: formData,
                                         status: 'PENDING',
                                         submittedById: userId,
                                     },
@@ -8236,8 +8307,13 @@ app.get(
             return res.status(403).json({ message: 'Only procurement and executive users can access ED forms' });
         }
 
-        // Procurement sees all forms; Executive sees only assigned to them
-        const whereClause = isProcurement ? {} : { approvedById: userId };
+        // Procurement sees all forms; Executive sees pending forms or forms they approved
+        const whereClause = isProcurement ? {} : {
+            OR: [
+                { status: 'PENDING' },
+                { approvedById: userId },
+            ],
+        };
 
         const forms = await (prisma as any).eDApprovalForm.findMany({
             where: whereClause,

@@ -656,13 +656,13 @@ const SubmitIdea = () => {
                         )}
                     </div>
 
-                    {/* Anonymous toggle */}
-                    <div className="flex items-center gap-3">
+                    {/* Anonymous toggle - Temporarily hidden */}
+                    {/* <div className="flex items-center gap-3">
                         <label className="inline-flex items-center gap-2 text-sm">
                             <input type="checkbox" checked={formData.isAnonymous} onChange={(e) => setFormData((prev) => ({ ...prev, isAnonymous: e.target.checked }))} className="form-checkbox" />
                             <span>Submit anonymously (your name hidden publicly)</span>
                         </label>
-                    </div>
+                    </div> */}
 
                     {/* Buttons */}
                     <div className="flex items-center justify-between gap-4 pt-6 border-t-2 border-gray-200 dark:border-gray-700">

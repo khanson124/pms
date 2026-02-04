@@ -272,9 +272,14 @@ const BrowseIdeas = () => {
                                             <Link to={`/innovation/ideas/${idea.id}`} className="text-xl font-bold text-gray-900 dark:text-white hover:text-primary transition-colors">
                                                 {idea.title}
                                             </Link>
-                                            <div className="flex items-center gap-3 mt-2">
+                                            <div className="flex items-center gap-3 mt-2 flex-wrap">
                                                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getCategoryColor(idea.category)}`}>{getCategoryLabel(idea.category)}</span>
                                                 <span className="text-sm text-gray-500 dark:text-gray-400">{t('innovation.browse.submittedBy', { name: idea.submittedBy })}</span>
+                                                {(idea as any).isAnonymousSubmission && (
+                                                    <span className="px-2 py-0.5 text-xs font-semibold bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 rounded-full">
+                                                        Anonymous
+                                                    </span>
+                                                )}
                                                 <span className="text-sm text-gray-500 dark:text-gray-400">• {new Date(idea.submittedAt).toLocaleDateString()}</span>
                                             </div>
                                         </div>
