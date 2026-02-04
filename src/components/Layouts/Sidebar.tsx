@@ -178,9 +178,7 @@ const Sidebar = () => {
                 <IconCaretDown className={`w-4 h-4 transition-transform ${isSectionOpen(id) ? 'rotate-180' : ''}`} />
             </button>
             <AnimateHeight height={isSectionOpen(id) ? 'auto' : 0} duration={200}>
-                <ul className="mt-1 space-y-0.5">
-                    {children}
-                </ul>
+                <ul className="mt-1 space-y-0.5">{children}</ul>
             </AnimateHeight>
         </li>
     );
@@ -479,7 +477,7 @@ const Sidebar = () => {
                                                     </div>
                                                 </NavLink>
                                             </li>
-                                        </>
+                                        </>,
                                     )}
 
                                     {!isAdmin && procurementLocked ? (
@@ -516,7 +514,7 @@ const Sidebar = () => {
                                                             </div>
                                                         </NavLink>
                                                     </li>
-                                                </>
+                                                </>,
                                             )}
 
                                             {renderSection(
@@ -576,7 +574,7 @@ const Sidebar = () => {
                                                             </div>
                                                         </NavLink>
                                                     </li>
-                                                </>
+                                                </>,
                                             )}
                                         </>
                                     ) : null}
@@ -630,7 +628,7 @@ const Sidebar = () => {
                                                             </li>
                                                         </>
                                                     )}
-                                                </>
+                                                </>,
                                             )}
                                         </>
                                     ) : null}
@@ -661,7 +659,7 @@ const Sidebar = () => {
                                                     </div>
                                                 </NavLink>
                                             </li>
-                                        </>
+                                        </>,
                                     )}
 
                                     {renderSection(
@@ -694,7 +692,7 @@ const Sidebar = () => {
                                                     </div>
                                                 </NavLink>
                                             </li>
-                                        </>
+                                        </>,
                                     )}
                                 </>
                             )}
@@ -751,7 +749,7 @@ const Sidebar = () => {
                                                     </div>
                                                 </NavLink>
                                             </li>
-                                        </>
+                                        </>,
                                     )}
                                 </>
                             )}
@@ -772,7 +770,7 @@ const Sidebar = () => {
                                                     </div>
                                                 </NavLink>
                                             </li>
-                                        </>
+                                        </>,
                                     )}
                                 </>
                             )}
@@ -829,7 +827,7 @@ const Sidebar = () => {
                                                     </div>
                                                 </NavLink>
                                             </li>
-                                        </>
+                                        </>,
                                     )}
                                 </>
                             )}
@@ -895,7 +893,7 @@ const Sidebar = () => {
                                                     </div>
                                                 </NavLink>
                                             </li>
-                                        </>
+                                        </>,
                                     )}
                                 </>
                             )}
@@ -916,7 +914,7 @@ const Sidebar = () => {
                                                     </div>
                                                 </NavLink>
                                             </li>
-                                        </>
+                                        </>,
                                     )}
                                 </>
                             )}
@@ -945,7 +943,7 @@ const Sidebar = () => {
                                                     </div>
                                                 </NavLink>
                                             </li>
-                                        </>
+                                        </>,
                                     )}
                                 </>
                             )}
@@ -975,7 +973,7 @@ const Sidebar = () => {
                                                     </div>
                                                 </NavLink>
                                             </li>
-                                        </>
+                                        </>,
                                     )}
                                 </>
                             )}
@@ -1041,7 +1039,7 @@ const Sidebar = () => {
                                                     </div>
                                                 </NavLink>
                                             </li>
-                                        </>
+                                        </>,
                                     )}
                                 </>
                             )}
@@ -1071,7 +1069,7 @@ const Sidebar = () => {
                                                     </div>
                                                 </NavLink>
                                             </li>
-                                        </>
+                                        </>,
                                     )}
 
                                     {renderSection(
@@ -1140,7 +1138,7 @@ const Sidebar = () => {
                                                     </div>
                                                 </NavLink>
                                             </li>
-                                        </>
+                                        </>,
                                     )}
 
                                     {/* <li className="nav-item">
@@ -1171,7 +1169,7 @@ const Sidebar = () => {
                                                     </div>
                                                 </NavLink>
                                             </li>
-                                        </>
+                                        </>,
                                     )}
 
                                     {renderSection(
@@ -1197,7 +1195,7 @@ const Sidebar = () => {
                                                     </NavLink>
                                                 </li>
                                             )}
-                                        </>
+                                        </>,
                                     )}
                                 </>
                             )}
