@@ -100,7 +100,7 @@ router.get(
         });
 
         res.json(counts);
-    })
+    }),
 );
 
 // List ideas with filtering and pagination
@@ -162,7 +162,7 @@ router.get(
                       String(t)
                           .split(',')
                           .map((s) => s.trim())
-                          .filter(Boolean)
+                          .filter(Boolean),
                   )
                 : String(tag)
                       .split(',')
@@ -278,7 +278,7 @@ router.get(
         res.setHeader('ETag', etag);
         res.setHeader('Cache-Control', 'private, max-age=30');
         res.json(result);
-    })
+    }),
 );
 
 // Get single idea by ID
@@ -345,7 +345,7 @@ router.get(
             isAnonymousSubmission: idea.isAnonymous && isAdmin ? true : undefined,
             tags: Array.isArray(idea.tags) ? idea.tags.map((it: any) => it.tag?.name).filter(Boolean) : [],
         });
-    })
+    }),
 );
 
 // Create new idea
@@ -413,7 +413,7 @@ router.post(
         logger.info('New idea created', { ideaId: idea.id, userId: user.sub });
 
         res.status(201).json(created);
-    })
+    }),
 );
 
 // Vote on idea
@@ -505,7 +505,7 @@ router.post(
         logger.info('Vote recorded', { ideaId, userId, voteType: type });
 
         res.json({ ...result.idea, hasVoted: result.hasVoted });
-    })
+    }),
 );
 
 // Remove vote from idea
@@ -576,7 +576,7 @@ router.delete(
         logger.info('Vote removed', { ideaId, userId });
 
         res.json({ ...result.idea, hasVoted: result.hasVoted });
-    })
+    }),
 );
 
 // Committee: Approve idea
@@ -606,7 +606,7 @@ router.post(
         logger.info('Idea approved', { ideaId: updated.id, reviewerId: user.sub });
 
         res.json(updated);
-    })
+    }),
 );
 
 // Committee: Reject idea
@@ -636,7 +636,7 @@ router.post(
         logger.info('Idea rejected', { ideaId: updated.id, reviewerId: user.sub });
 
         res.json(updated);
-    })
+    }),
 );
 
 // Committee: Promote idea to project
@@ -665,7 +665,7 @@ router.post(
         logger.info('Idea promoted to project', { ideaId: updated.id, projectCode, promotedBy: user.sub });
 
         res.json(updated);
-    })
+    }),
 );
 
 // Get related ideas (same category or tags)
@@ -721,7 +721,7 @@ router.get(
         }));
 
         res.json({ related: formatted });
-    })
+    }),
 );
 
 // Search ideas
@@ -776,7 +776,7 @@ router.get(
         });
 
         res.json(results);
-    })
+    }),
 );
 
 // Analytics endpoint
@@ -831,7 +831,7 @@ router.get(
                     ideas: c._count.id,
                     votes: c._sum.voteCount || 0,
                 };
-            })
+            }),
         );
 
         const analytics = {
@@ -860,7 +860,7 @@ router.get(
 
         await cacheSet(cacheKey, analytics, 300); // 5 minute cache
         res.json(analytics);
-    })
+    }),
 );
 
 export { router as ideasRoutes };

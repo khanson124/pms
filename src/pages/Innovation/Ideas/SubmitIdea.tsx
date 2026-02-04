@@ -215,7 +215,7 @@ const SubmitIdea = () => {
                     challengeId: formData.challengeId ? Number(formData.challengeId) : undefined,
                     tagIds: formData.tagIds,
                 },
-                files.length ? { images: files } : undefined
+                files.length ? { images: files } : undefined,
             );
 
             // Optimistic event so MyIdeas can reflect immediately
@@ -247,10 +247,10 @@ const SubmitIdea = () => {
                 text: isNetworkError
                     ? 'Unable to submit your idea due to a connection problem. Please check your internet and try again.'
                     : isValidationError
-                    ? errorMessage
-                    : error instanceof Error
-                    ? error.message
-                    : t('innovation.submit.error.message'),
+                      ? errorMessage
+                      : error instanceof Error
+                        ? error.message
+                        : t('innovation.submit.error.message'),
                 confirmButtonText: 'OK',
             });
         } finally {

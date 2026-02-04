@@ -12,17 +12,12 @@ export const HOE_APPROVAL_FORM_TEMPLATE = {
 };
 
 // Function to create a complete form instance with evaluation data
-export function createEDFormInstance(
-    evaluationData: any,
-    requestData: any,
-    totalAmount: number,
-    procurementType: string
-) {
+export function createEDFormInstance(evaluationData: any, requestData: any, totalAmount: number, procurementType: string) {
     return {
         templateId: 'hoe-approval-form',
         templateName: "Head of Entity's Approval Form",
         templateCode: 'PRO_70_F_12/00',
-        
+
         // Section A: Procurement & Tendering Data
         sectionA: {
             procurement_activity_name: `${requestData?.reference || ''} - ${evaluationData?.rfqTitle || ''}`,
@@ -37,7 +32,7 @@ export function createEDFormInstance(
             procurement_method: evaluationData?.sectionA?.procurementMethod || '',
             justification_procurement_method: evaluationData?.sectionA?.justification || '',
         },
-        
+
         // Section B: Procurement Method & Evaluation
         sectionB: {
             shortlist_criteria: evaluationData?.sectionB?.criteria || '',
@@ -48,7 +43,7 @@ export function createEDFormInstance(
             contract_value: `JMD $${(totalAmount || 0).toLocaleString()}`,
             evaluation_summary: evaluationData?.sectionD?.summary || '',
         },
-        
+
         // Section C: Head of Entity Decision
         sectionC: {
             head_entity_review: '',
@@ -60,12 +55,12 @@ export function createEDFormInstance(
             head_entity_name: '',
             date_approved: new Date().toISOString().split('T')[0],
         },
-        
+
         // Reference data
         evaluationReference: evaluationData?.evalNumber || '',
         requestReference: requestData?.reference || '',
         rfqNumber: evaluationData?.rfqNumber || '',
-        
+
         // Metadata
         createdAt: new Date().toISOString(),
         formNumber: generateFormNumber(),

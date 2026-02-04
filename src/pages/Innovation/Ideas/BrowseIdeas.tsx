@@ -56,7 +56,7 @@ const BrowseIdeas = () => {
                     voteCount: idea.voteCount,
                     hasVoted: idea.hasVoted || false,
                     viewCount: idea.viewCount,
-                }))
+                })),
             );
         } catch (error: any) {
             console.error('[BrowseIdeas] Error loading ideas:', error);

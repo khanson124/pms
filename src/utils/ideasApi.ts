@@ -176,10 +176,10 @@ export async function fetchIdeaById(id: string | number, opts?: { includeAttachm
                     res.status === 404
                         ? 'Idea not found'
                         : res.status === 403
-                        ? 'Access denied'
-                        : res.status === 401
-                        ? 'Please log in to continue'
-                        : 'Unable to load idea details. Please try again later.';
+                          ? 'Access denied'
+                          : res.status === 401
+                            ? 'Please log in to continue'
+                            : 'Unable to load idea details. Please try again later.';
             }
             throw new Error(errorMessage);
         }
@@ -311,10 +311,10 @@ export async function fetchAnalytics(): Promise<AnalyticsData> {
                     res.status === 404
                         ? 'Analytics not available'
                         : res.status === 403
-                        ? 'Access denied'
-                        : res.status === 401
-                        ? 'Please log in to continue'
-                        : 'Unable to load analytics data. Please try again later.';
+                          ? 'Access denied'
+                          : res.status === 401
+                            ? 'Please log in to continue'
+                            : 'Unable to load analytics data. Please try again later.';
             }
             throw new Error(errorMessage);
         }
@@ -340,7 +340,7 @@ export async function submitIdea(
         challengeId?: number;
         tagIds?: number[];
     },
-    opts?: { image?: File; images?: File[] }
+    opts?: { image?: File; images?: File[] },
 ) {
     const token = getToken();
     const user = getUser();

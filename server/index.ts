@@ -7866,7 +7866,7 @@ app.post(
 
                         // Check thresholds: 3 million for GOODS, 5 million for WORKS
                         const shouldCreateEDForm = (procurementTypes.includes('GOODS') && totalAmount >= 3000000) || (procurementTypes.includes('WORKS') && totalAmount >= 5000000);
-                        
+
                         console.log(`[ED Form Check] Should create: ${shouldCreateEDForm}`);
 
                         if (shouldCreateEDForm) {
@@ -7920,7 +7920,7 @@ app.post(
                                     templateId: 'hoe-approval-form',
                                     templateName: "Head of Entity's Approval Form",
                                     templateCode: 'PRO_70_F_12/00',
-                                    
+
                                     // Section A: Procurement & Tendering Data
                                     sectionA: {
                                         procurement_activity_name: `${request.reference || ''} - ${completedEvaluation.rfqTitle || ''}`,
@@ -7935,7 +7935,7 @@ app.post(
                                         procurement_method: '',
                                         justification_procurement_method: '',
                                     },
-                                    
+
                                     // Section B: Procurement Method & Evaluation
                                     sectionB: {
                                         shortlist_criteria: '',
@@ -7946,7 +7946,7 @@ app.post(
                                         contract_value: `JMD $${totalAmount.toLocaleString()}`,
                                         evaluation_summary: riskAssessment,
                                     },
-                                    
+
                                     // Section C: Head of Entity Decision
                                     sectionC: {
                                         head_entity_review: '',
@@ -7958,13 +7958,12 @@ app.post(
                                         head_entity_name: '',
                                         date_approved: new Date().toISOString().split('T')[0],
                                     },
-                                    
+
                                     // Reference data
                                     evaluationReference: completedEvaluation.evalNumber || '',
                                     requestReference: request.reference || '',
                                     rfqNumber: completedEvaluation.rfqNumber || '',
                                 };
-
 
                                 // Create ED Approval Form with evaluation data
                                 const edForm = await (prisma as any).eDApprovalForm.create({
@@ -8308,12 +8307,11 @@ app.get(
         }
 
         // Procurement sees all forms; Executive sees pending forms or forms they approved
-        const whereClause = isProcurement ? {} : {
-            OR: [
-                { status: 'PENDING' },
-                { approvedById: userId },
-            ],
-        };
+        const whereClause = isProcurement
+            ? {}
+            : {
+                  OR: [{ status: 'PENDING' }, { approvedById: userId }],
+              };
 
         const forms = await (prisma as any).eDApprovalForm.findMany({
             where: whereClause,

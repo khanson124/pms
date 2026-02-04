@@ -181,8 +181,8 @@ export default function IdeaDetails() {
                     {is404
                         ? "This idea doesn't exist or may have been removed. It might have been deleted or you may not have permission to view it."
                         : error
-                        ? 'We encountered a problem loading this idea. Please check your connection and try again.'
-                        : t('innovation.view.empty.message')}
+                          ? 'We encountered a problem loading this idea. Please check your connection and try again.'
+                          : t('innovation.view.empty.message')}
                 </p>
                 <div className="flex items-center justify-center gap-3">
                     {error && !is404 && (
@@ -240,9 +240,7 @@ export default function IdeaDetails() {
                                 <span>{new Date(idea.submittedAt).toLocaleDateString()}</span>
                             </div>
                             {(idea as any).isAnonymousSubmission && (
-                                <span className="px-2 py-0.5 text-xs font-semibold bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 rounded-full">
-                                    Anonymous Submission
-                                </span>
+                                <span className="px-2 py-0.5 text-xs font-semibold bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 rounded-full">Anonymous Submission</span>
                             )}
                         </div>
                     </div>
@@ -503,7 +501,7 @@ export default function IdeaDetails() {
                             </div>
                         </div>
                     </div>,
-                    document.getElementById('modal-portal') as HTMLElement
+                    document.getElementById('modal-portal') as HTMLElement,
                 )}
         </div>
     );
