@@ -355,6 +355,7 @@ export async function submitIdea(
         form.append('category', data.category);
         if (data.expectedBenefits) form.append('expectedBenefits', data.expectedBenefits);
         if (data.implementationNotes) form.append('implementationNotes', data.implementationNotes);
+        form.append('isAnonymous', data.isAnonymous ? 'true' : 'false');
 
         // Send single image only - backend uses upload.single('image')
         if (opts?.image) {
@@ -363,7 +364,6 @@ export async function submitIdea(
             form.append('image', opts.images[0]); // Use first image only
         }
 
-        if (data.isAnonymous) form.append('isAnonymous', String(data.isAnonymous));
         if (data.challengeId) form.append('challengeId', String(data.challengeId));
         if (data.tagIds && data.tagIds.length) form.append('tagIds', data.tagIds.join(','));
 

@@ -58,11 +58,12 @@ const Sidebar = () => {
     // Initialize pinnedModule based on module lock status
     const [pinnedModule, setPinnedModule] = useState<string | null>(() => {
         const locks = getModuleLocks();
-        // Default to innovation if procurement is locked, otherwise procurement
+        // Only set to innovation if procurement is locked AND innovation is not locked
         if (locks.procurement.locked && !locks.innovation.locked) {
             return 'innovation';
         }
-        return 'procurement';
+        // Otherwise don't pin anything - let role-based routing take over
+        return null;
     });
     const themeConfig = useSelector((state: IRootState) => state.themeConfig);
     const semidark = useSelector((state: IRootState) => state.themeConfig.semidark);
@@ -636,7 +637,7 @@ const Sidebar = () => {
                             )}
 
                             {/* Show HEAD_OF_DIVISION section for HOD users */}
-                            {isHeadOfDivision && !isAdmin && !procurementLocked && (
+                            {isHeadOfDivision && !procurementLocked && (
                                 <>
                                     {renderSection(
                                         'division-dashboard',
@@ -662,6 +663,7 @@ const Sidebar = () => {
                                         </>,
                                     )}
 
+                                    {/* Hidden: Division Management section
                                     {renderSection(
                                         'division-management',
                                         'Management',
@@ -694,11 +696,12 @@ const Sidebar = () => {
                                             </li>
                                         </>,
                                     )}
+                                    */}
                                 </>
                             )}
 
                             {/* Show EXECUTIVE_DIRECTOR section - only when procurement module is active and unlocked */}
-                            {isExecutiveDirector && !isAdmin && showProcurementMenus && (
+                            {isExecutiveDirector && showProcurementMenus && (
                                 // Executive Director Menu
                                 <>
                                     {renderSection(
@@ -919,8 +922,8 @@ const Sidebar = () => {
                                 </>
                             )}
 
-                            {/* Show REQUESTER section - hide for admins; only when procurement is active and unlocked */}
-                            {isRequester && !isAdmin && showProcurementMenus && (
+                            {/* Show REQUESTER section - only when procurement is active and unlocked */}
+                            {isRequester && showProcurementMenus && (
                                 // Requester Only Menu
                                 <>
                                     {renderSection(
@@ -949,7 +952,7 @@ const Sidebar = () => {
                             )}
 
                             {/* Show DEPARTMENT_MANAGER section - only when procurement module is active and unlocked */}
-                            {(isDepartmentManager || isDeptManagerHere) && !isAdmin && showProcurementMenus && (
+                            {(isDepartmentManager || isDeptManagerHere) && showProcurementMenus && (
                                 // Department Manager Menu
                                 <>
                                     {renderSection(
@@ -979,7 +982,7 @@ const Sidebar = () => {
                             )}
 
                             {/* Show PROCUREMENT_OFFICER section - only when procurement module is active and unlocked */}
-                            {isProcurementOfficer && !isAdmin && showProcurementMenus && (
+                            {isProcurementOfficer && showProcurementMenus && (
                                 // Procurement Officer Only Menu
                                 <>
                                     {renderSection(
@@ -1044,8 +1047,8 @@ const Sidebar = () => {
                                 </>
                             )}
 
-                            {/* Show PROCUREMENT_MANAGER section - hide for admins and when in Innovation Hub */}
-                            {isProcurementManager && !isAdmin && !isInnovationHub && !procurementLocked && (
+                            {/* Show PROCUREMENT_MANAGER section - hide when in Innovation Hub */}
+                            {isProcurementManager && !isInnovationHub && !procurementLocked && (
                                 // Procurement Manager Only Menu
                                 <>
                                     {renderSection(
@@ -1154,7 +1157,7 @@ const Sidebar = () => {
 
                             {/* Show FINANCE_MANAGER or BUDGET_MANAGER section - limited access to USER and FINANCE only */}
                             {/* Show FINANCE_OFFICER section - limited access to USER and FINANCE only */}
-                            {can('VIEW_FINANCE') && !isAdmin && !isProcurementManager && !isInnovationHub && !procurementLocked && (
+                            {can('VIEW_FINANCE') && !isProcurementManager && !isInnovationHub && !procurementLocked && (
                                 // Finance Menu (permission-based)
                                 <>
                                     {renderSection(
@@ -1201,7 +1204,7 @@ const Sidebar = () => {
                             )}
 
                             {/* Show Budget Manager section - same menu as Finance Manager */}
-                            {isBudgetManager && !isAdmin && !isInnovationHub && !procurementLocked && (
+                            {isBudgetManager && !isInnovationHub && !procurementLocked && (
                                 <>
                                     <h2 className="py-3 px-7 flex items-center uppercase font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1">
                                         <IconMinus className="w-4 h-5 flex-none hidden" />

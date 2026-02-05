@@ -357,8 +357,11 @@ router.post(
     validate(createIdeaSchema),
     asyncHandler(async (req, res) => {
         const user = (req as any).user as { sub: number };
-        const { title, description, category, isAnonymous = false } = req.body;
+        const { title, description, category, isAnonymous } = req.body;
         const tagIdsRaw = req.body?.tagIds || '';
+
+        // Parse isAnonymous - handle both boolean and string values
+        const isAnonymousFlag = isAnonymous === true || isAnonymous === 'true' ? true : false;
 
         const idea = await prisma.idea.create({
             data: {
@@ -367,7 +370,7 @@ router.post(
                 category,
                 status: 'PENDING_REVIEW',
                 submittedBy: user.sub,
-                isAnonymous: Boolean(isAnonymous),
+                isAnonymous: isAnonymousFlag,
             },
         });
 

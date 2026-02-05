@@ -75,7 +75,7 @@ export const createRequestSchema = z.object({
                     stockLevel: z.string().optional(),
                     unitOfMeasure: z.string().optional(),
                     partNumber: z.string().optional(),
-                })
+                }),
             )
             .optional(),
         totalEstimated: z.number().nonnegative().optional(),

@@ -191,14 +191,69 @@ export function detectUserRoles(userRoles: Array<string | { name: string } | nul
  */
 export function getDashboardPath(roles: DetectedRoles, currentPathname: string = ''): string {
     const isInnovationHub = currentPathname.startsWith('/innovation');
+    const isProcurementHub = currentPathname.startsWith('/procurement') || currentPathname.startsWith('/apps');
 
     // Priority order for dashboard routing
+    // IMPORTANT: Check context (current page) FIRST for multi-role users
+    // If user is on procurement page AND has procurement role, stay in procurement
+    // If user is on innovation page AND has innovation role, stay in innovation
+
     if (roles.isAdmin) {
         return '/procurement/admin';
     }
     if (roles.isHeadOfDivision) {
         return '/procurement/hod';
     }
+
+    // If currently on innovation hub AND has innovation role, stay there
+    if (isInnovationHub && roles.isInnovationCommittee) {
+        return '/innovation/committee/dashboard';
+    }
+
+    // If currently on procurement hub AND has procurement role, go to appropriate procurement dashboard
+    if (
+        isProcurementHub &&
+        (roles.isDepartmentManager ||
+            roles.isProcurementManager ||
+            roles.isProcurementOfficer ||
+            roles.isDepartmentHead ||
+            roles.isFinanceManager ||
+            roles.isFinanceOfficer ||
+            roles.isFinancePaymentStage ||
+            roles.isBudgetManager ||
+            roles.isAuditor)
+    ) {
+        // Route to appropriate procurement-related dashboard
+        if (roles.isDepartmentHead) {
+            return '/procurement/dashboard/department-head';
+        }
+        if (roles.isAuditor) {
+            return '/procurement/dashboard/auditor';
+        }
+        if (roles.isFinancePaymentStage) {
+            return '/procurement/dashboard/payment-stage';
+        }
+        if (roles.isBudgetManager) {
+            return '/finance/manager';
+        }
+        if (roles.isFinanceManager) {
+            return '/finance/manager';
+        }
+        if (roles.isFinanceOfficer) {
+            return '/procurement/dashboard/finance-officer';
+        }
+        if (roles.isProcurementManager) {
+            return '/procurement/manager';
+        }
+        if (roles.isProcurementOfficer) {
+            return '/procurement/dashboard';
+        }
+        if (roles.isDepartmentManager) {
+            return '/procurement/dashboard/department-manager';
+        }
+    }
+
+    // Otherwise, use primary role-based routing
     if (roles.isInnovationCommittee) {
         return '/innovation/committee/dashboard';
     }
