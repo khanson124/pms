@@ -3185,7 +3185,7 @@ app.get('/api/requests/:id/pdf', async (req, res) => {
             .replace('{{currency}}', request.currency || 'JMD')
             .replace(/{{totalEstimated}}/g, formatCurrency(request.totalEstimated))
             .replace('{{description}}', request.description || '—')
-            .replace('{{justification}}', request.justification || request.description || '—')
+            .replace('{{justification}}', (request as any).justification || request.description || '—')
             .replace('{{itemsRows}}', itemsRows)
             .replace('{{managerName}}', request.managerName || '—')
             .replace('{{managerApprovalDate}}', formatDate(request.managerApprovedAt))
@@ -3615,7 +3615,7 @@ app.delete('/api/requests/:id/attachments/:attachmentId', async (req, res) => {
 
         // Attempt to unlink file from disk (best-effort)
         try {
-            const filename = path.basename(att.url || '');
+            const filename = path.basename(att.url || att.filename || '');
             const filepath = path.resolve(process.cwd(), 'uploads', filename);
             if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
         } catch (fsErr) {
@@ -3693,7 +3693,7 @@ app.delete('/api/evaluations/:id/attachments/:attachmentId', authMiddleware, asy
 
         // Attempt to unlink file from disk (best-effort)
         try {
-            const filename = path.basename(att.url || '');
+            const filename = path.basename(att.filePath || att.originalName || '');
             const filepath = path.resolve(process.cwd(), 'uploads', filename);
             if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
         } catch (fsErr) {

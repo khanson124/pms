@@ -710,7 +710,7 @@ router.get('/finance-manager', async (req: Request, res: Response) => {
         let spent = 0;
 
         for (const req of approvedRequests) {
-            const total = req.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+            const total = req.items.reduce((sum, item) => sum + item.quantity * Number(item.unitPrice), 0);
             totalBudget += total;
             // For now, assume all approved requests are spent
             spent += total;
