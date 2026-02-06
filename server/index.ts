@@ -8483,13 +8483,23 @@ app.get(
 app.post(
     '/api/ed-forms/:id/assign',
     authMiddleware,
-    requireProcurement,
     asyncHandler(async (req, res) => {
         const { id } = req.params;
         const { executiveDirectorId } = req.body;
+        const userObj: any = (req as any).user;
+        const roles: string[] = userObj?.roles || [];
+        const isProcurement = roles.some((r: string) => String(r).toUpperCase().includes('PROCUREMENT') || String(r).toUpperCase().includes('ADMIN'));
 
-        if (!executiveDirectorId) {
-            throw new BadRequestError('Executive Director ID is required');
+        if (!isProcurement) {
+            return res.status(403).json({
+                message: 'Only procurement users can assign ED forms',
+                roles,
+            });
+        }
+
+        const edId = Number(executiveDirectorId);
+        if (!Number.isFinite(edId) || edId <= 0) {
+            throw new BadRequestError('Executive Director ID must be a valid number');
         }
 
         const form = await (prisma as any).eDApprovalForm.findUnique({
@@ -8504,11 +8514,23 @@ app.post(
             throw new BadRequestError('Can only assign forms with PENDING status');
         }
 
+        const edUser = await (prisma as any).user.findUnique({
+            where: { id: edId },
+            include: { roles: { include: { role: true } } },
+        });
+        if (!edUser) {
+            throw new BadRequestError('Executive Director not found');
+        }
+        const edRoles = (edUser.roles || []).map((r: any) => String(r.role?.name || '').toUpperCase());
+        if (!edRoles.some((r: string) => r.includes('EXECUTIVE'))) {
+            throw new BadRequestError('Selected user is not an Executive Director');
+        }
+
         // Update form to assign to ED
         const updated = await (prisma as any).eDApprovalForm.update({
             where: { id: parseInt(id) },
             data: {
-                approvedById: parseInt(String(executiveDirectorId)),
+                approvedById: edId,
                 status: 'ASSIGNED_TO_ED',
             },
             include: {
@@ -8603,6 +8625,8 @@ app.post(
         const { id } = req.params;
         const userObj: any = (req as any).user;
         const userId = parseInt(userObj?.sub || userObj?.id);
+        const roles: string[] = userObj?.roles || [];
+        const isExecutive = roles.some((r: string) => String(r).toUpperCase().includes('EXECUTIVE'));
         const { approved, comments } = req.body;
 
         const form = await (prisma as any).eDApprovalForm.findUnique({
@@ -8617,7 +8641,10 @@ app.post(
         }
 
         // Check access: Only the assigned ED can submit
-        if (form.approvedById && form.approvedById !== userId) {
+        if (!form.approvedById) {
+            throw new BadRequestError('ED Approval Form must be assigned before it can be submitted');
+        }
+        if (form.approvedById !== userId || !isExecutive) {
             throw new BadRequestError('You do not have permission to submit this form');
         }
 

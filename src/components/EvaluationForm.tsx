@@ -23,6 +23,7 @@ type Props = {
     canEditSections?: Array<'A' | 'B' | 'C' | 'D' | 'E'>;
     canManageAttachments?: boolean; // Only procurement can upload/delete
     isProcurement?: boolean; // Whether user is in procurement department
+    availableUsers?: Array<{ id?: number; name?: string | null; email?: string | null }>;
     onSaveSection?: (section: 'Background' | 'A' | 'B' | 'C' | 'D' | 'E', data: any) => Promise<void> | void;
     onSubmitSection?: (section: 'A' | 'B' | 'C' | 'D' | 'E') => Promise<void> | void;
     onVerifySection?: (section: 'A' | 'B' | 'C' | 'D' | 'E', notes?: string) => Promise<void> | void;
@@ -65,6 +66,7 @@ export const EvaluationForm: React.FC<Props> = ({
     canEditSections = [],
     canManageAttachments = false,
     isProcurement = false,
+    availableUsers = [],
     onSaveSection,
     onSubmitSection,
     onVerifySection,
@@ -74,6 +76,36 @@ export const EvaluationForm: React.FC<Props> = ({
     sectionCActions,
     prefilledCells = {},
 }) => {
+    const currentUserName = useMemo(() => {
+        try {
+            const user = getUser();
+            return String(user?.name || '').trim();
+        } catch {
+            return '';
+        }
+    }, []);
+
+    const canEditAssignedColumn = (column: { name?: string; assigneeName?: string } | null): boolean => {
+        if (!currentUserName || !column) return false;
+        const explicit = String(column.assigneeName || '').trim();
+        const parsed = (() => {
+            const name = column.name || '';
+            const match = name.match(/\(([^)]+)\)\s*$/);
+            return match ? match[1]?.trim() || '' : '';
+        })();
+        const assignee = explicit || parsed;
+        if (!assignee) return false;
+        const assigneeLower = assignee.toLowerCase();
+        const userLower = currentUserName.toLowerCase();
+        return assigneeLower === userLower || userLower.includes(assigneeLower) || assigneeLower.includes(userLower);
+    };
+
+    const getColumnDisplayName = (column: { name?: string; assigneeName?: string }) => {
+        const base = String(column.name || '').trim();
+        const assigned = String(column.assigneeName || '').trim();
+        if (!assigned || base.includes('(')) return base || '—';
+        return `${base} (${assigned})`;
+    };
     // Keep sectionC as array if multiple evaluators, or as single object if one evaluator
     const normalizedSectionC = useMemo(() => {
         if (Array.isArray(evaluation?.sectionC)) {
@@ -1057,8 +1089,9 @@ export const EvaluationForm: React.FC<Props> = ({
                                                                             </label>
                                                                         </div>
                                                                     ) : (
-                                                                        <input
-                                                                            className="form-input w-full"
+                                                                        <textarea
+                                                                            className="form-textarea w-full resize-y"
+                                                                            rows={1}
                                                                             value={row.data[col.id] || ''}
                                                                             onChange={(e) => {
                                                                                 const copy = { ...(sectionB as any) };
@@ -1070,7 +1103,7 @@ export const EvaluationForm: React.FC<Props> = ({
                                                                             }}
                                                                         />
                                                                     )
-                                                                ) : canEditTechnical() && !prefilledCells[`B-${row.id}-${col.id}`] ? (
+                                                                ) : canEditTechnical() && canEditAssignedColumn(col.name) && !prefilledCells[`B-${row.id}-${col.id}`] ? (
                                                                     // Evaluator mode - only edit if cell was NOT pre-filled by officer
                                                                     col.cellType === 'radio' ? (
                                                                         <div className="flex items-center gap-4 justify-center">
@@ -1108,8 +1141,9 @@ export const EvaluationForm: React.FC<Props> = ({
                                                                             </label>
                                                                         </div>
                                                                     ) : (
-                                                                        <input
-                                                                            className="form-input w-full"
+                                                                        <textarea
+                                                                            className="form-textarea w-full resize-y"
+                                                                            rows={1}
                                                                             value={row.data[col.id] || ''}
                                                                             onChange={(e) => {
                                                                                 const copy = { ...(sectionB as any) };
@@ -1340,8 +1374,9 @@ export const EvaluationForm: React.FC<Props> = ({
                                                                             </label>
                                                                         </div>
                                                                     ) : (
-                                                                        <input
-                                                                            className="form-input w-full"
+                                                                        <textarea
+                                                                            className="form-textarea w-full resize-y"
+                                                                            rows={1}
                                                                             value={row.data[col.id] || ''}
                                                                             onChange={(e) => {
                                                                                 const copy = { ...(sectionB as any) };
@@ -1352,7 +1387,7 @@ export const EvaluationForm: React.FC<Props> = ({
                                                                             }}
                                                                         />
                                                                     )
-                                                                ) : canEditTechnical() && !prefilledCells[`B-${row.id}-${col.id}`] ? (
+                                                                ) : canEditTechnical() && canEditAssignedColumn(col.name) && !prefilledCells[`B-${row.id}-${col.id}`] ? (
                                                                     // Evaluator mode - only edit if cell was NOT pre-filled by officer
                                                                     col.cellType === 'radio' ? (
                                                                         <div className="flex items-center gap-4 justify-center">
@@ -1390,8 +1425,9 @@ export const EvaluationForm: React.FC<Props> = ({
                                                                             </label>
                                                                         </div>
                                                                     ) : (
-                                                                        <input
-                                                                            className="form-input w-full"
+                                                                        <textarea
+                                                                            className="form-textarea w-full resize-y"
+                                                                            rows={1}
                                                                             value={row.data[col.id] || ''}
                                                                             onChange={(e) => {
                                                                                 const copy = { ...(sectionB as any) };
@@ -1583,9 +1619,35 @@ export const EvaluationForm: React.FC<Props> = ({
                                                                         <option value="text">Text</option>
                                                                         <option value="radio">Yes/No</option>
                                                                     </select>
+                                                                    <select
+                                                                        className="form-select text-xs py-1 px-2"
+                                                                        value={col.assigneeId ?? ''}
+                                                                        onChange={(e) => {
+                                                                            const nextId = e.target.value ? Number(e.target.value) : null;
+                                                                            const selectedUser = availableUsers.find((u) => Number(u.id) === Number(nextId));
+                                                                            const copy = { ...(sectionB as any) };
+                                                                            copy.bidders[0].technicalEvaluation.columns = copy.bidders[0].technicalEvaluation.columns.map((c: any) =>
+                                                                                c.id === col.id
+                                                                                    ? {
+                                                                                          ...c,
+                                                                                          assigneeId: nextId,
+                                                                                          assigneeName: selectedUser?.name || selectedUser?.email || '',
+                                                                                      }
+                                                                                    : c,
+                                                                            );
+                                                                            setSectionB(copy);
+                                                                        }}
+                                                                    >
+                                                                        <option value="">Assign evaluator…</option>
+                                                                        {availableUsers.map((u) => (
+                                                                            <option key={String(u.id)} value={String(u.id)}>
+                                                                                {u.name || u.email || `User ${u.id}`}
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
                                                                 </div>
                                                             ) : (
-                                                                col.name
+                                                                getColumnDisplayName(col)
                                                             )}
                                                         </th>
                                                     ))}
@@ -1632,8 +1694,9 @@ export const EvaluationForm: React.FC<Props> = ({
                                                                             </label>
                                                                         </div>
                                                                     ) : (
-                                                                        <input
-                                                                            className="form-input w-full"
+                                                                        <textarea
+                                                                            className="form-textarea w-full resize-y"
+                                                                            rows={1}
                                                                             value={row.data[col.id] || ''}
                                                                             onChange={(e) => {
                                                                                 const copy = { ...(sectionB as any) };
@@ -1642,7 +1705,7 @@ export const EvaluationForm: React.FC<Props> = ({
                                                                             }}
                                                                         />
                                                                     )
-                                                                ) : canEditTechnical() && !prefilledCells[`B-${row.id}-${col.id}`] ? (
+                                                                ) : canEditTechnical() && canEditAssignedColumn(col) && !prefilledCells[`B-${row.id}-${col.id}`] ? (
                                                                     // Evaluator mode - only edit if cell was NOT pre-filled by officer
                                                                     col.cellType === 'radio' ? (
                                                                         <div className="flex items-center gap-4 justify-center">
@@ -1676,8 +1739,9 @@ export const EvaluationForm: React.FC<Props> = ({
                                                                             </label>
                                                                         </div>
                                                                     ) : (
-                                                                        <input
-                                                                            className="form-input w-full"
+                                                                        <textarea
+                                                                            className="form-textarea w-full resize-y"
+                                                                            rows={1}
                                                                             value={row.data[col.id] || ''}
                                                                             onChange={(e) => {
                                                                                 const copy = { ...(sectionB as any) };
@@ -2151,7 +2215,19 @@ export const EvaluationForm: React.FC<Props> = ({
                             type="checkbox"
                             disabled={!canEdit('E')}
                             checked={Boolean(sectionE?.approved)}
-                            onChange={(e) => setSectionE({ ...(sectionE as any), approved: e.target.checked })}
+                            onChange={(e) => {
+                                const checked = e.target.checked;
+                                const next = { ...(sectionE as any), approved: checked };
+                                if (checked) {
+                                    if (!next.preparedBy && currentUserName) {
+                                        next.preparedBy = currentUserName;
+                                    }
+                                    if (!next.approvalDate) {
+                                        next.approvalDate = new Date().toISOString().split('T')[0];
+                                    }
+                                }
+                                setSectionE(next);
+                            }}
                             className="form-checkbox"
                         />
                         <label htmlFor="sectionE-approved" className="text-sm">

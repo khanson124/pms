@@ -1145,6 +1145,7 @@ enum HODFormStatus {
 
 enum EDFormStatus {
   PENDING
+  ASSIGNED_TO_ED
   APPROVED
   REJECTED
 }

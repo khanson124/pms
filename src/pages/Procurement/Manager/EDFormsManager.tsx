@@ -8,6 +8,7 @@ import IconPlus from '../../../components/Icon/IconPlus';
 import IconChecks from '../../../components/Icon/IconChecks';
 import { evaluationService } from '../../../services/evaluationService';
 import { getAuthHeaders } from '../../../utils/api';
+import Swal from 'sweetalert2';
 
 type EDForm = {
     id: number;
@@ -126,7 +127,11 @@ const EDFormsManager = () => {
 
     const handleAssignSubmit = async () => {
         if (!selectedForm || !selectedED) {
-            alert('Please select an Executive Director');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Missing Selection',
+                text: 'Please select an Executive Director.',
+            });
             return;
         }
 
@@ -146,10 +151,19 @@ const EDFormsManager = () => {
             );
             setShowAssignModal(false);
             setSelectedForm(null);
-            alert('Form assigned successfully. ED will receive a notification.');
+            Swal.fire({
+                icon: 'success',
+                title: 'Assigned',
+                text: 'Form assigned successfully. The ED will receive a notification.',
+            });
         } catch (err) {
             console.error('Failed to assign form:', err);
-            alert('Failed to assign form. Please try again.');
+            const message = err instanceof Error ? err.message : 'Failed to assign form. Please try again.';
+            Swal.fire({
+                icon: 'error',
+                title: 'Assignment Failed',
+                text: message,
+            });
         } finally {
             setAssignLoading(false);
         }
@@ -332,9 +346,9 @@ const EDFormsManager = () => {
                                         <td className="px-6 py-4 text-gray-500">{formatDate(form.createdAt)}</td>
                                         <td className="px-6 py-4">
                                             <div className="flex gap-2">
-                                                <button onClick={() => handleViewDetails(form)} className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs font-medium">
+                                                <Link to={`/procurement/forms/ed-approval/${form.id}`} className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs font-medium">
                                                     View
-                                                </button>
+                                                </Link>
                                                 {form.status === 'PENDING' && (
                                                     <Link
                                                         to={`/procurement/forms/ed-approval/${form.id}`}
@@ -522,7 +536,11 @@ const EDFormsManager = () => {
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Select Executive Director</label>
                                 <select
                                     value={selectedED || ''}
-                                    onChange={(e) => setSelectedED(parseInt(e.target.value))}
+                                    onChange={(e) => {
+                                        const raw = e.target.value;
+                                        const parsed = Number(raw);
+                                        setSelectedED(Number.isFinite(parsed) ? parsed : null);
+                                    }}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 >
                                     <option value="">-- Select an Executive Director --</option>

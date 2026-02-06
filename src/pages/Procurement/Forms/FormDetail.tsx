@@ -7,7 +7,7 @@ import IconDownload from '../../../components/Icon/IconDownload';
 import IconEdit from '../../../components/Icon/IconEdit';
 import IconCircleCheck from '../../../components/Icon/IconCircleCheck';
 import IconX from '../../../components/Icon/IconX';
-import { HOE_FORM_DETAIL, FormDetail } from '../../../lib/hoeApprovalFormDefinition';
+import { HOE_FORM_DETAIL, type FormDetail } from '../../../lib/hoeApprovalFormDefinition';
 
 const FORM_DETAILS: Record<string, FormDetail> = {
     'hoe-approval-form': HOE_FORM_DETAIL,

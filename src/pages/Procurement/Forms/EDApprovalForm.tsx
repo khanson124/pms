@@ -6,6 +6,7 @@ import IconArrowLeft from '../../../components/Icon/IconArrowLeft';
 import IconCircleCheck from '../../../components/Icon/IconCircleCheck';
 import IconX from '../../../components/Icon/IconX';
 import { evaluationService } from '../../../services/evaluationService';
+import { getUser } from '../../../utils/auth';
 import { HOE_FORM_DETAIL, FormField, FormSection } from '../../../lib/hoeApprovalFormDefinition';
 
 interface EDApprovalFormData {
@@ -66,6 +67,15 @@ const EDApprovalForm = () => {
 
     const [formValues, setFormValues] = useState<Record<string, string | boolean>>({});
     const [comments, setComments] = useState('');
+    const isExecutiveUser = (() => {
+        try {
+            const user = getUser();
+            const roles = (user?.roles || (user?.role ? [user.role] : [])).map((r) => String(r).toUpperCase());
+            return roles.some((r) => r.includes('EXECUTIVE'));
+        } catch {
+            return false;
+        }
+    })();
 
     useEffect(() => {
         dispatch(setPageTitle('ED Approval Form'));
@@ -208,14 +218,18 @@ const EDApprovalForm = () => {
                     <button type="button" className="btn btn-outline-primary" onClick={handleSave} disabled={saving || submitting}>
                         {saving ? 'Saving...' : 'Save Draft'}
                     </button>
-                    <button type="button" className="btn btn-danger gap-2" onClick={() => handleSubmit(false)} disabled={saving || submitting}>
-                        <IconX className="w-4 h-4" />
-                        Reject
-                    </button>
-                    <button type="button" className="btn btn-success gap-2" onClick={() => handleSubmit(true)} disabled={saving || submitting}>
-                        <IconCircleCheck className="w-4 h-4" />
-                        Approve
-                    </button>
+                    {isExecutiveUser && form.status === 'ASSIGNED_TO_ED' && (
+                        <>
+                            <button type="button" className="btn btn-danger gap-2" onClick={() => handleSubmit(false)} disabled={saving || submitting}>
+                                <IconX className="w-4 h-4" />
+                                Reject
+                            </button>
+                            <button type="button" className="btn btn-success gap-2" onClick={() => handleSubmit(true)} disabled={saving || submitting}>
+                                <IconCircleCheck className="w-4 h-4" />
+                                Approve
+                            </button>
+                        </>
+                    )}
                 </div>
             )}
 
