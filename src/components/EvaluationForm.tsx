@@ -33,6 +33,31 @@ type Props = {
     prefilledCells?: Record<string, boolean>; // Track cells that were pre-filled by officer
 };
 
+const PROCUREMENT_METHOD_OPTIONS = ['International Competitive Bidding', 'National Competitive Bidding', 'Restricted Bidding', 'Single Source', 'Emergency Single Source'] as const;
+const ADVERTISEMENT_METHOD_OPTIONS = ['International Advertisement', 'National Advertisement', 'GOJEP', 'Email'] as const;
+const CONTRACT_TYPE_OPTIONS = ['Goods', 'Consulting Services', 'Non-Consulting Services', 'Works'] as const;
+const RETENDER_REASON_OPTIONS = [
+    { code: 'a', label: 'All bids non-responsive' },
+    { code: 'b', label: 'Awarded supplier refused to enter into contract' },
+    { code: 'c', label: 'Bid price exceeding comparable estimate' },
+    { code: 'd', label: 'Cancelled due to procedural irregularity' },
+    { code: 'e', label: 'Change in bill of quantities' },
+    { code: 'f', label: 'Incorrect specification' },
+    { code: 'g', label: 'Material irregularities in tender documents issued by Procuring Entity' },
+    { code: 'h', label: 'No bid received' },
+    { code: 'i', label: 'Re-scoping of requirements' },
+    { code: 'j', label: 'VFM cannot be achieved' },
+    { code: 'k', label: 'Other' },
+] as const;
+const AWARD_CRITERIA_OPTIONS = ['Lowest Cost', 'Most Advantageous Bid'] as const;
+
+const normalizeYesNo = (value: any): 'Yes' | 'No' | '' => {
+    if (value === true) return 'Yes';
+    if (value === false) return 'No';
+    if (value === 'Yes' || value === 'No') return value;
+    return '';
+};
+
 // Full evaluation form matching NewEvaluation structure with conditional editability
 export const EvaluationForm: React.FC<Props> = ({
     mode,
@@ -400,9 +425,9 @@ export const EvaluationForm: React.FC<Props> = ({
                     </div>
 
                     {/* Editable Fields if Section A is assigned */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-4">
                         <div>
-                            <label className="block mb-1 text-sm font-semibold">Comparable Estimate</label>
+                            <label className="block mb-1 text-sm font-semibold">1. Comparable Estimate</label>
                             <input
                                 type="text"
                                 className="form-input w-full"
@@ -415,33 +440,320 @@ export const EvaluationForm: React.FC<Props> = ({
                             />
                         </div>
                         <div>
-                            <label className="block mb-1 text-sm font-semibold">Funded By</label>
+                            <label className="block mb-1 text-sm font-semibold">2. Funded By</label>
                             <input
                                 className="form-input w-full"
                                 disabled={!canEdit('A')}
-                                value={sectionA?.fundedBy || ''}
+                                value={(sectionA as any)?.fundedBy || ''}
                                 onChange={(e) => setSectionA({ ...(sectionA as any), fundedBy: e.target.value })}
                             />
                         </div>
                         <div>
-                            <label className="block mb-1 text-sm font-semibold">Tender Closing Date</label>
-                            <input
-                                type="date"
-                                className="form-input w-full"
-                                disabled={!canEdit('A')}
-                                value={sectionA?.tenderClosingDate || ''}
-                                onChange={(e) => setSectionA({ ...(sectionA as any), tenderClosingDate: e.target.value })}
-                            />
+                            <label className="block mb-1 text-sm font-semibold">3. Tender Closing Date & Time</label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="date"
+                                    className="form-input flex-1"
+                                    disabled={!canEdit('A')}
+                                    value={(sectionA as any)?.tenderClosingDate || ''}
+                                    onChange={(e) => setSectionA({ ...(sectionA as any), tenderClosingDate: e.target.value })}
+                                />
+                                <input
+                                    type="time"
+                                    className="form-input w-32"
+                                    disabled={!canEdit('A')}
+                                    value={(sectionA as any)?.tenderClosingTime || ''}
+                                    onChange={(e) => setSectionA({ ...(sectionA as any), tenderClosingTime: e.target.value })}
+                                />
+                            </div>
                         </div>
                         <div>
-                            <label className="block mb-1 text-sm font-semibold">Tender Opening Date</label>
+                            <label className="block mb-1 text-sm font-semibold">4. Tender Opening Date & Time</label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="date"
+                                    className="form-input flex-1"
+                                    disabled={!canEdit('A')}
+                                    value={(sectionA as any)?.tenderOpeningDate || ''}
+                                    onChange={(e) => setSectionA({ ...(sectionA as any), tenderOpeningDate: e.target.value })}
+                                />
+                                <input
+                                    type="time"
+                                    className="form-input w-32"
+                                    disabled={!canEdit('A')}
+                                    value={(sectionA as any)?.tenderOpeningTime || ''}
+                                    onChange={(e) => setSectionA({ ...(sectionA as any), tenderOpeningTime: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                        <div className="ml-6">
+                            <label className="block mb-1 text-sm font-semibold">a. Actual Opening Date & Time</label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="date"
+                                    className="form-input flex-1"
+                                    disabled={!canEdit('A')}
+                                    value={(sectionA as any)?.actualOpeningDate || ''}
+                                    onChange={(e) => setSectionA({ ...(sectionA as any), actualOpeningDate: e.target.value })}
+                                />
+                                <input
+                                    type="time"
+                                    className="form-input w-32"
+                                    disabled={!canEdit('A')}
+                                    value={(sectionA as any)?.actualOpeningTime || ''}
+                                    onChange={(e) => setSectionA({ ...(sectionA as any), actualOpeningTime: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block mb-1 text-sm font-semibold">5. Procurement Method</label>
+                            <div className="space-y-2">
+                                {PROCUREMENT_METHOD_OPTIONS.map((method) => (
+                                    <label key={method} className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            className="form-checkbox"
+                                            disabled={!canEdit('A')}
+                                            checked={(sectionA as any)?.procurementMethod === method}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    setSectionA({ ...(sectionA as any), procurementMethod: method });
+                                                }
+                                            }}
+                                        />
+                                        <span>{method}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block mb-1 text-sm font-semibold">6. Method of Advertisement</label>
+                            <div className="space-y-2">
+                                {ADVERTISEMENT_METHOD_OPTIONS.map((method) => (
+                                    <label key={method} className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            className="form-checkbox"
+                                            disabled={!canEdit('A')}
+                                            checked={((sectionA as any)?.advertisementMethods || []).includes(method)}
+                                            onChange={(e) => {
+                                                const current = (sectionA as any)?.advertisementMethods || [];
+                                                const next = e.target.checked ? [...current, method] : current.filter((x: string) => x !== method);
+                                                setSectionA({ ...(sectionA as any), advertisementMethods: next });
+                                            }}
+                                        />
+                                        <span>{method}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block mb-1 text-sm font-semibold">7. Contract Type</label>
+                            <div className="space-y-2">
+                                {CONTRACT_TYPE_OPTIONS.map((type) => (
+                                    <label key={type} className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            className="form-checkbox"
+                                            disabled={!canEdit('A')}
+                                            checked={(sectionA as any)?.contractType === type}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    setSectionA({ ...(sectionA as any), contractType: type });
+                                                }
+                                            }}
+                                        />
+                                        <span>{type}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block mb-1 text-sm font-semibold">8. Bid Security</label>
+                            <div className="flex gap-4">
+                                {['Yes', 'No', 'N/A'].map((opt) => (
+                                    <label key={opt} className="flex items-center gap-2">
+                                        <input
+                                            type="radio"
+                                            name="bidSecurity"
+                                            disabled={!canEdit('A')}
+                                            value={opt}
+                                            checked={(sectionA as any)?.bidSecurity === opt}
+                                            onChange={(e) => setSectionA({ ...(sectionA as any), bidSecurity: e.target.value })}
+                                        />
+                                        <span>{opt}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block mb-1 text-sm font-semibold">9. Tender Period</label>
+                            <div className="flex gap-2 items-center mb-3">
+                                <input
+                                    type="date"
+                                    className="form-input flex-1"
+                                    disabled={!canEdit('A')}
+                                    value={(sectionA as any)?.tenderPeriodStartDate || ''}
+                                    onChange={(e) => setSectionA({ ...(sectionA as any), tenderPeriodStartDate: e.target.value })}
+                                />
+                                <span>to</span>
+                                <input
+                                    type="date"
+                                    className="form-input flex-1"
+                                    disabled={!canEdit('A')}
+                                    value={(sectionA as any)?.tenderPeriodEndDate || ''}
+                                    onChange={(e) => setSectionA({ ...(sectionA as any), tenderPeriodEndDate: e.target.value })}
+                                />
+                            </div>
+                            <div className="ml-6">
+                                <label className="block mb-1 text-sm font-semibold">a. Number of Days</label>
+                                <input
+                                    type="number"
+                                    className="form-input w-32"
+                                    disabled={!canEdit('A')}
+                                    value={(sectionA as any)?.tenderPeriodDays ?? ''}
+                                    onChange={(e) => setSectionA({ ...(sectionA as any), tenderPeriodDays: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block mb-1 text-sm font-semibold">10. Bid Validity Period</label>
                             <input
-                                type="date"
+                                type="text"
                                 className="form-input w-full"
                                 disabled={!canEdit('A')}
-                                value={sectionA?.tenderOpeningDate || ''}
-                                onChange={(e) => setSectionA({ ...(sectionA as any), tenderOpeningDate: e.target.value })}
+                                value={(sectionA as any)?.bidValidityDays ?? ''}
+                                onChange={(e) => setSectionA({ ...(sectionA as any), bidValidityDays: e.target.value })}
                             />
+                            <div className="ml-6 mt-3">
+                                <label className="block mb-1 text-sm font-semibold">a. Bid Validity Expiration Date</label>
+                                <input
+                                    type="date"
+                                    className="form-input"
+                                    disabled={!canEdit('A')}
+                                    value={(sectionA as any)?.bidValidityExpiration || ''}
+                                    onChange={(e) => setSectionA({ ...(sectionA as any), bidValidityExpiration: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block mb-1 text-sm font-semibold">11. Number of Bids Requested</label>
+                            <input
+                                type="number"
+                                className="form-input w-32"
+                                disabled={!canEdit('A')}
+                                value={(sectionA as any)?.numberOfBidsRequested ?? ''}
+                                onChange={(e) => setSectionA({ ...(sectionA as any), numberOfBidsRequested: e.target.value })}
+                            />
+                            <div className="ml-6 mt-3">
+                                <label className="block mb-1 text-sm font-semibold">a. Number of Bids Received</label>
+                                <input
+                                    type="number"
+                                    className="form-input w-32"
+                                    disabled={!canEdit('A')}
+                                    value={(sectionA as any)?.numberOfBidsReceived ?? ''}
+                                    onChange={(e) => setSectionA({ ...(sectionA as any), numberOfBidsReceived: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block mb-1 text-sm font-semibold">12. Arithmetic Error Identified</label>
+                            <div className="flex gap-4">
+                                {['Yes', 'No'].map((opt) => (
+                                    <label key={opt} className="flex items-center gap-2">
+                                        <input
+                                            type="radio"
+                                            name="arithmeticErrorIdentified"
+                                            disabled={!canEdit('A')}
+                                            value={opt}
+                                            checked={normalizeYesNo((sectionA as any)?.arithmeticErrorIdentified) === opt}
+                                            onChange={(e) => setSectionA({ ...(sectionA as any), arithmeticErrorIdentified: e.target.value })}
+                                        />
+                                        <span>{opt}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block mb-1 text-sm font-semibold">13. Re-tendered</label>
+                            <div className="flex gap-4">
+                                {['Yes', 'No'].map((opt) => (
+                                    <label key={opt} className="flex items-center gap-2">
+                                        <input
+                                            type="radio"
+                                            name="retender"
+                                            disabled={!canEdit('A')}
+                                            value={opt}
+                                            checked={normalizeYesNo((sectionA as any)?.retender) === opt}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                const next: any = { ...(sectionA as any), retender: val };
+                                                if (val === 'No') {
+                                                    next.retenderReasons = [];
+                                                    next.retenderOtherReason = '';
+                                                }
+                                                setSectionA(next);
+                                            }}
+                                        />
+                                        <span>{opt}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                        {normalizeYesNo((sectionA as any)?.retender) === 'Yes' && (
+                            <div className="ml-6">
+                                <label className="block mb-1 text-sm font-semibold">14. Reason for re-tender</label>
+                                <div className="space-y-2">
+                                    {RETENDER_REASON_OPTIONS.map((option) => (
+                                        <label key={option.code} className="flex items-center gap-2">
+                                            <input
+                                                type="checkbox"
+                                                className="form-checkbox"
+                                                disabled={!canEdit('A')}
+                                                checked={((sectionA as any)?.retenderReasons || []).includes(option.code)}
+                                                onChange={(e) => {
+                                                    const current = (sectionA as any)?.retenderReasons || [];
+                                                    const next = e.target.checked ? [...current, option.code] : current.filter((x: string) => x !== option.code);
+                                                    setSectionA({ ...(sectionA as any), retenderReasons: next });
+                                                }}
+                                            />
+                                            <span>
+                                                {option.code}. {option.label}
+                                            </span>
+                                        </label>
+                                    ))}
+                                </div>
+                                {((sectionA as any)?.retenderReasons || []).includes('k') && (
+                                    <div className="mt-3">
+                                        <label className="block mb-1 text-sm font-semibold">Other (please specify)</label>
+                                        <textarea
+                                            rows={2}
+                                            className="form-textarea"
+                                            disabled={!canEdit('A')}
+                                            value={(sectionA as any)?.retenderOtherReason || ''}
+                                            onChange={(e) => setSectionA({ ...(sectionA as any), retenderOtherReason: e.target.value })}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        <div>
+                            <label className="block mb-1 text-sm font-semibold">15. Contract Award Criteria</label>
+                            <div className="flex gap-4">
+                                {AWARD_CRITERIA_OPTIONS.map((criteria) => (
+                                    <label key={criteria} className="flex items-center gap-2">
+                                        <input
+                                            type="radio"
+                                            name="awardCriteria"
+                                            disabled={!canEdit('A')}
+                                            value={criteria}
+                                            checked={(sectionA as any)?.awardCriteria === criteria}
+                                            onChange={(e) => setSectionA({ ...(sectionA as any), awardCriteria: e.target.value })}
+                                        />
+                                        <span>{criteria === 'Lowest Cost' ? 'a. Lowest Cost' : 'b. Most Advantageous Bid'}</span>
+                                    </label>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>

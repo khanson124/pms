@@ -6,16 +6,7 @@ import IconArrowLeft from '../../../components/Icon/IconArrowLeft';
 import IconCircleCheck from '../../../components/Icon/IconCircleCheck';
 import IconX from '../../../components/Icon/IconX';
 import { evaluationService } from '../../../services/evaluationService';
-
-interface FormField {
-    id: string;
-    label: string;
-    type: 'text' | 'textarea' | 'select' | 'checkbox' | 'number';
-    placeholder?: string;
-    options?: string[];
-    required?: boolean;
-    value?: string;
-}
+import { HOE_FORM_DETAIL, FormField, FormSection } from '../../../lib/hoeApprovalFormDefinition';
 
 interface EDApprovalFormData {
     id: number;
@@ -27,7 +18,10 @@ interface EDApprovalFormData {
     formData?: {
         templateId: string;
         templateName: string;
-        sections?: Record<string, Record<string, any>>;
+        templateCode?: string;
+        sectionA?: Record<string, any>;
+        sectionB?: Record<string, any>;
+        sectionC?: Record<string, any>;
         evaluationReference?: string;
         requestReference?: string;
     };
@@ -54,6 +48,11 @@ interface EDApprovalFormData {
         sectionD?: unknown;
         sectionE?: unknown;
     };
+    approvedBy?: {
+        id: number;
+        name: string;
+        email: string;
+    } | null;
 }
 
 const EDApprovalForm = () => {
@@ -65,9 +64,7 @@ const EDApprovalForm = () => {
     const [saving, setSaving] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
-    const [justification, setJustification] = useState('');
-    const [riskAssessment, setRiskAssessment] = useState('');
-    const [alternatives, setAlternatives] = useState('');
+    const [formValues, setFormValues] = useState<Record<string, string | boolean>>({});
     const [comments, setComments] = useState('');
 
     useEffect(() => {
@@ -81,9 +78,7 @@ const EDApprovalForm = () => {
             setError(null);
             const data = (await evaluationService.getEdFormById(Number(id))) as EDApprovalFormData;
             setForm(data);
-            setJustification(data.justification || '');
-            setRiskAssessment(data.riskAssessment || '');
-            setAlternatives(data.alternatives || '');
+            setFormValues(buildInitialValues(data.formData, data.approvedBy?.name));
             setComments(data.comments || '');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load ED Approval Form');
@@ -97,15 +92,21 @@ const EDApprovalForm = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
+    const handleFieldChange = (fieldId: string, value: string | boolean) => {
+        setFormValues((prev) => ({
+            ...prev,
+            [fieldId]: value,
+        }));
+    };
+
     const handleSave = async () => {
         if (!form) return;
         try {
             setSaving(true);
+            const nextFormData = buildFormData(form.formData, formValues);
             await evaluationService.updateEdForm(form.id, {
-                justification,
-                riskAssessment,
-                alternatives,
-                comments,
+                formData: nextFormData,
+                comments: formValues.hoe_comments ? String(formValues.hoe_comments) : comments,
             });
             await loadForm();
         } catch (err) {
@@ -119,7 +120,8 @@ const EDApprovalForm = () => {
         if (!form) return;
         try {
             setSubmitting(true);
-            await evaluationService.submitEdForm(form.id, approved, comments);
+            const submitComments = formValues.hoe_comments ? String(formValues.hoe_comments) : comments;
+            await evaluationService.submitEdForm(form.id, approved, submitComments);
             await loadForm();
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to submit form');
@@ -152,139 +154,12 @@ const EDApprovalForm = () => {
 
     const isFinal = form.status === 'APPROVED' || form.status === 'REJECTED';
 
-    // If formData exists, render the actual template
-    if (form.formData) {
-        const sectionA = form.formData.sections?.sectionA || {};
-        const sectionB = form.formData.sections?.sectionB || {};
-        const sectionC = form.formData.sections?.sectionC || {};
-
-        return (
-            <div className="space-y-6">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                        <h2 className="text-2xl font-bold">{form.formData.templateName}</h2>
-                        <p className="text-white-dark">Form #{form.formNumber}</p>
-                    </div>
-                    <Link to="/procurement/forms" className="btn btn-outline-secondary gap-2">
-                        <IconArrowLeft />
-                        Back to Forms
-                    </Link>
-                </div>
-
-                {isFinal && <div className={`alert ${form.status === 'APPROVED' ? 'alert-success' : 'alert-danger'}`}>This form has been {form.status.toLowerCase()} and can no longer be edited.</div>}
-
-                {/* Section A: Procurement & Tendering Data */}
-                <div className="panel">
-                    <h3 className="text-xl font-semibold mb-4">Section A: Procurement & Tendering Data</h3>
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="form-label">1. Name of Procurement Activity & Ref. Code</label>
-                                <input type="text" className="form-input" value={sectionA.procurement_activity_name || ''} disabled />
-                            </div>
-                            <div>
-                                <label className="form-label">2. Unit</label>
-                                <input type="text" className="form-input" value={sectionA.unit || ''} disabled />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="form-label">3. Description of Goods/Services/Works</label>
-                            <textarea className="form-textarea" rows={3} value={sectionA.description_goods || ''} disabled></textarea>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="form-label">4. Contract Type</label>
-                                <input type="text" className="form-input" value={sectionA.contract_type || ''} disabled />
-                            </div>
-                            <div>
-                                <label className="form-label">5. Comparable Estimate</label>
-                                <input type="text" className="form-input" value={sectionA.comparable_estimate || ''} disabled />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Section B: Procurement Method & Evaluation */}
-                <div className="panel">
-                    <h3 className="text-xl font-semibold mb-4">Section B: Procurement Method & Evaluation</h3>
-                    <div className="space-y-4">
-                        <div>
-                            <label className="form-label">Procurement Method</label>
-                            <input type="text" className="form-input" value={sectionB.procurement_method || ''} disabled />
-                        </div>
-                        <div>
-                            <label className="form-label">Justification for Method</label>
-                            <textarea className="form-textarea" rows={3} value={sectionB.justification_method || ''} disabled></textarea>
-                        </div>
-                        <div>
-                            <label className="form-label">Evaluation Summary</label>
-                            <textarea className="form-textarea" rows={3} value={sectionB.evaluation_summary || ''} disabled></textarea>
-                        </div>
-                        <div>
-                            <label className="form-label">Number of Bids Received</label>
-                            <input type="number" className="form-input" value={sectionB.number_bidders || ''} disabled />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Section C: Head of Entity Decision */}
-                <div className="panel">
-                    <h3 className="text-xl font-semibold mb-4">Section C: Head of Entity Decision</h3>
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="form-label">Recommended Bidder</label>
-                                <input type="text" className="form-input" value={sectionC.recommended_bidder || ''} disabled />
-                            </div>
-                            <div>
-                                <label className="form-label">Contract Value</label>
-                                <input type="text" className="form-input" value={sectionC.contract_value || ''} disabled />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="form-label">Approval Recommendation</label>
-                            <textarea className="form-textarea" rows={3} value={sectionC.approval_recommendation || ''} onChange={(e) => setJustification(e.target.value)} disabled={isFinal} />
-                        </div>
-                        <div>
-                            <label className="form-label">Risk Assessment</label>
-                            <textarea className="form-textarea" rows={3} value={sectionC.risk_assessment || ''} onChange={(e) => setRiskAssessment(e.target.value)} disabled={isFinal} />
-                        </div>
-                        <div>
-                            <label className="form-label">Alternatives Considered</label>
-                            <textarea className="form-textarea" rows={3} value={sectionC.alternatives_considered || ''} onChange={(e) => setAlternatives(e.target.value)} disabled={isFinal} />
-                        </div>
-                        <div>
-                            <label className="form-label">Executive Director Comments</label>
-                            <textarea className="form-textarea" rows={3} value={comments} onChange={(e) => setComments(e.target.value)} disabled={isFinal} />
-                        </div>
-                    </div>
-                </div>
-
-                {!isFinal && (
-                    <div className="flex flex-wrap gap-2 justify-end">
-                        <button type="button" className="btn btn-outline-primary" onClick={handleSave} disabled={saving || submitting}>
-                            {saving ? 'Saving...' : 'Save Draft'}
-                        </button>
-                        <button type="button" className="btn btn-danger gap-2" onClick={() => handleSubmit(false)} disabled={saving || submitting}>
-                            <IconX className="w-4 h-4" />
-                            Reject
-                        </button>
-                        <button type="button" className="btn btn-success gap-2" onClick={() => handleSubmit(true)} disabled={saving || submitting}>
-                            <IconCircleCheck className="w-4 h-4" />
-                            Approve
-                        </button>
-                    </div>
-                )}
-            </div>
-        );
-    }
-
     // Fallback to simple form if no formData
     return (
         <div className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold">Head of Entity Approval Form</h2>
+                    <h2 className="text-2xl font-bold">{HOE_FORM_DETAIL.name}</h2>
                     <p className="text-white-dark">Form #{form.formNumber}</p>
                 </div>
                 <Link to="/procurement/forms" className="btn btn-outline-secondary gap-2">
@@ -295,48 +170,37 @@ const EDApprovalForm = () => {
 
             {isFinal && <div className={`alert ${form.status === 'APPROVED' ? 'alert-success' : 'alert-danger'}`}>This form has been {form.status.toLowerCase()} and can no longer be edited.</div>}
 
-            <div className="panel">
-                <h5 className="font-semibold text-lg mb-4">Request & Evaluation</h5>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                        <div className="text-white-dark">Request Reference</div>
-                        <div className="font-semibold">{form.request?.reference}</div>
-                    </div>
-                    <div>
-                        <div className="text-white-dark">Procurement Type</div>
-                        <div className="font-semibold">{form.procurementType}</div>
-                    </div>
-                    <div>
-                        <div className="text-white-dark">Total Amount</div>
-                        <div className="font-semibold">{form.totalAmount.toLocaleString()}</div>
-                    </div>
-                    <div>
-                        <div className="text-white-dark">Evaluation</div>
-                        <div className="font-semibold">{form.evaluation?.evalNumber || 'N/A'}</div>
-                    </div>
+            {/* BSJ Form Header */}
+            <div className="bg-white dark:bg-gray-800 border-2 border-gray-800 dark:border-gray-400 rounded-lg p-8 text-center">
+                <div className="flex justify-center mb-6">
+                    <img src="/assets/images/bsj-logo.png" alt="Bureau of Standards Jamaica Logo" className="h-16 drop-shadow-sm" />
                 </div>
+                <h1 className="text-lg font-bold text-gray-800 dark:text-white mb-2 uppercase">BUREAU OF STANDARDS JAMAICA</h1>
+                <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">{HOE_FORM_DETAIL.name}</h2>
+                <p className="text-gray-600 dark:text-gray-400">{HOE_FORM_DETAIL.description}</p>
             </div>
 
-            <div className="panel">
-                <h5 className="font-semibold text-lg mb-4">ED Form Details</h5>
-                <div className="space-y-4">
-                    <div>
-                        <label className="form-label">Justification</label>
-                        <textarea className="form-textarea" rows={4} value={justification} onChange={(e) => setJustification(e.target.value)} disabled={isFinal} />
+            {/* Form Sections */}
+            <div className="space-y-6">
+                {HOE_FORM_DETAIL.sections.map((section, idx) => (
+                    <div key={idx} className="p-6 border rounded-lg border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                        <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-3">{section.title}</h3>
+                        <p className="text-gray-700 dark:text-gray-300 mb-6">{section.content}</p>
+                        {section.fields && section.fields.length > 0 && (
+                            <div className="space-y-4">
+                                {section.fields.map((field) => (
+                                    <div key={field.id}>
+                                        <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">
+                                            {field.label}
+                                            {field.required && <span className="text-red-500 ml-1">*</span>}
+                                        </label>
+                                        {renderField(field, formValues[field.id], (value) => handleFieldChange(field.id, value), isFinal)}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                    <div>
-                        <label className="form-label">Risk Assessment</label>
-                        <textarea className="form-textarea" rows={3} value={riskAssessment} onChange={(e) => setRiskAssessment(e.target.value)} disabled={isFinal} />
-                    </div>
-                    <div>
-                        <label className="form-label">Alternatives</label>
-                        <textarea className="form-textarea" rows={3} value={alternatives} onChange={(e) => setAlternatives(e.target.value)} disabled={isFinal} />
-                    </div>
-                    <div>
-                        <label className="form-label">Comments</label>
-                        <textarea className="form-textarea" rows={3} value={comments} onChange={(e) => setComments(e.target.value)} disabled={isFinal} />
-                    </div>
-                </div>
+                ))}
             </div>
 
             {!isFinal && (
@@ -354,8 +218,149 @@ const EDApprovalForm = () => {
                     </button>
                 </div>
             )}
+
+            <div className="p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <h3 className="text-lg font-bold text-blue-900 dark:text-blue-100 mb-2">Instructions</h3>
+                <ul className="space-y-2 text-blue-800 dark:text-blue-200">
+                    <li className="flex gap-2">
+                        <span className="font-semibold">1.</span>
+                        <span>Download the form to complete and submit</span>
+                    </li>
+                    <li className="flex gap-2">
+                        <span className="font-semibold">2.</span>
+                        <span>Complete all required fields in each section</span>
+                    </li>
+                    <li className="flex gap-2">
+                        <span className="font-semibold">3.</span>
+                        <span>Ensure all signatories provide required signatures and dates</span>
+                    </li>
+                    <li className="flex gap-2">
+                        <span className="font-semibold">4.</span>
+                        <span>Submit the completed form through the procurement portal</span>
+                    </li>
+                </ul>
+            </div>
         </div>
     );
 };
 
 export default EDApprovalForm;
+
+function buildInitialValues(formData?: EDApprovalFormData['formData'], executiveDirectorName?: string | null) {
+    const values: Record<string, string | boolean> = {};
+    const sectionMap = getSectionMap(HOE_FORM_DETAIL.sections);
+    HOE_FORM_DETAIL.sections.forEach((section, idx) => {
+        section.fields?.forEach((field) => {
+            const sectionKey = sectionMap[idx];
+            const rawValue = sectionKey ? (formData as any)?.[sectionKey]?.[field.id] : undefined;
+            if (field.type === 'checkbox') {
+                values[field.id] = rawValue === true || rawValue === 'true';
+            } else {
+                values[field.id] = rawValue ?? '';
+            }
+        });
+    });
+
+    if (executiveDirectorName) {
+        if (!values.executive_director_name) {
+            values.executive_director_name = executiveDirectorName;
+        }
+        if (!values.executive_director_signature) {
+            values.executive_director_signature = executiveDirectorName;
+        }
+    }
+    return values;
+}
+
+function buildFormData(existing: EDApprovalFormData['formData'], values: Record<string, string | boolean>) {
+    const sectionMap = getSectionMap(HOE_FORM_DETAIL.sections);
+    const next = {
+        ...(existing || {}),
+        templateId: existing?.templateId || HOE_FORM_DETAIL.id,
+        templateName: existing?.templateName || HOE_FORM_DETAIL.name,
+        templateCode: existing?.templateCode || HOE_FORM_DETAIL.code,
+        sectionA: { ...(existing as any)?.sectionA },
+        sectionB: { ...(existing as any)?.sectionB },
+        sectionC: { ...(existing as any)?.sectionC },
+    } as any;
+
+    HOE_FORM_DETAIL.sections.forEach((section, idx) => {
+        const sectionKey = sectionMap[idx];
+        if (!sectionKey) return;
+        if (!next[sectionKey]) next[sectionKey] = {};
+        section.fields?.forEach((field) => {
+            const value = values[field.id];
+            if (field.type === 'checkbox') {
+                next[sectionKey][field.id] = value === true;
+            } else {
+                next[sectionKey][field.id] = value ?? '';
+            }
+        });
+    });
+    return next;
+}
+
+function getSectionMap(sections: FormSection[]) {
+    const map: Record<number, 'sectionA' | 'sectionB' | 'sectionC'> = {};
+    sections.forEach((_, idx) => {
+        if (idx === 0) map[idx] = 'sectionA';
+        if (idx === 1) map[idx] = 'sectionB';
+        if (idx === 2) map[idx] = 'sectionC';
+    });
+    return map;
+}
+
+function renderField(field: FormField, value: string | boolean | undefined, onChange: (value: string | boolean) => void, disabled: boolean) {
+    const commonProps = {
+        disabled,
+        className:
+            'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary',
+    };
+
+    if (field.type === 'textarea') {
+        return (
+            <textarea
+                rows={3}
+                placeholder={field.placeholder}
+                value={typeof value === 'string' ? value : ''}
+                onChange={(e) => onChange(e.target.value)}
+                {...commonProps}
+            />
+        );
+    }
+
+    if (field.type === 'select') {
+        return (
+            <select value={typeof value === 'string' ? value : ''} onChange={(e) => onChange(e.target.value)} {...commonProps}>
+                <option value="">-- Select --</option>
+                {field.options?.map((option) => (
+                    <option key={option} value={option}>
+                        {option}
+                    </option>
+                ))}
+            </select>
+        );
+    }
+
+    if (field.type === 'checkbox') {
+        return (
+            <input
+                type="checkbox"
+                checked={value === true}
+                onChange={(e) => onChange(e.target.checked)}
+                className="w-4 h-4 text-primary border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600"
+                disabled={disabled}
+            />
+        );
+    }
+
+    return (
+        <input
+            type={field.type === 'number' ? 'number' : 'text'}
+            placeholder={field.placeholder}
+            value={typeof value === 'string' ? value : ''}
+            onChange={(e) => onChange(e.target.value)}
+            {...commonProps}
+        />
+    );
+}

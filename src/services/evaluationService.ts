@@ -462,7 +462,16 @@ class EvaluationService {
         return result.data;
     }
 
-    async updateEdForm(formId: number, updates: { justification?: string; riskAssessment?: string; alternatives?: string; comments?: string }) {
+    async updateEdForm(
+        formId: number,
+        updates: {
+            justification?: string;
+            riskAssessment?: string;
+            alternatives?: string;
+            comments?: string;
+            formData?: Record<string, any>;
+        },
+    ) {
         const result = await this.fetchWithAuth(`/api/ed-forms/${formId}`, {
             method: 'PATCH',
             body: JSON.stringify(updates),

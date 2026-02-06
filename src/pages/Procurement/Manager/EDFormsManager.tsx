@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import IconEye from '../../../components/Icon/IconEye';
@@ -335,6 +336,14 @@ const EDFormsManager = () => {
                                                     View
                                                 </button>
                                                 {form.status === 'PENDING' && (
+                                                    <Link
+                                                        to={`/procurement/forms/ed-approval/${form.id}`}
+                                                        className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 text-xs font-medium"
+                                                    >
+                                                        Edit
+                                                    </Link>
+                                                )}
+                                                {form.status === 'PENDING' && (
                                                     <button onClick={() => handleAssignClick(form)} className="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 text-xs font-medium">
                                                         Assign
                                                     </button>
@@ -358,15 +367,22 @@ const EDFormsManager = () => {
                                 <h2 className="text-2xl font-bold">ED Approval Form</h2>
                                 <p className="text-gray-600">{selectedForm.formNumber}</p>
                             </div>
-                            <button
-                                onClick={() => {
-                                    setShowDetailModal(false);
-                                    setSelectedForm(null);
-                                }}
-                                className="text-gray-500 hover:text-gray-700"
-                            >
-                                <IconX className="w-6 h-6" />
-                            </button>
+                            <div className="flex items-center gap-3">
+                                {selectedForm.status === 'PENDING' && (
+                                    <Link to={`/procurement/forms/ed-approval/${selectedForm.id}`} className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 text-xs font-medium">
+                                        Edit Form
+                                    </Link>
+                                )}
+                                <button
+                                    onClick={() => {
+                                        setShowDetailModal(false);
+                                        setSelectedForm(null);
+                                    }}
+                                    className="text-gray-500 hover:text-gray-700"
+                                >
+                                    <IconX className="w-6 h-6" />
+                                </button>
+                            </div>
                         </div>
 
                         <div className="p-6 space-y-6">

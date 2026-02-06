@@ -7908,6 +7908,88 @@ app.post(
                                     }
                                 }
 
+                                // Extract Section A / C data for mapping
+                                let sectionAData: any = null;
+                                let sectionCData: any = null;
+                                if (completedEvaluation.sectionA) {
+                                    try {
+                                        sectionAData = typeof completedEvaluation.sectionA === 'string' ? JSON.parse(completedEvaluation.sectionA) : completedEvaluation.sectionA;
+                                    } catch (e) {
+                                        console.warn('Failed to parse sectionA:', e);
+                                    }
+                                }
+                                if (completedEvaluation.sectionC) {
+                                    try {
+                                        const raw = typeof completedEvaluation.sectionC === 'string' ? JSON.parse(completedEvaluation.sectionC) : completedEvaluation.sectionC;
+                                        if (Array.isArray(raw)) {
+                                            sectionCData = raw[0]?.data || raw[0] || null;
+                                        } else {
+                                            sectionCData = raw;
+                                        }
+                                    } catch (e) {
+                                        console.warn('Failed to parse sectionC:', e);
+                                    }
+                                }
+
+                                const mapProcurementMethod = (value: any) => {
+                                    if (!value) return '';
+                                    const v = String(value).toUpperCase();
+                                    if (v.includes('INTERNATIONAL')) return 'International Competitive Bidding';
+                                    if (v.includes('NATIONAL')) return 'National Competitive Bidding';
+                                    if (v.includes('RESTRICTED')) return 'Restricted Bidding';
+                                    if (v.includes('EMERGENCY')) return 'Emergency Single Source';
+                                    if (v.includes('SINGLE')) return 'Single Source';
+                                    return String(value);
+                                };
+
+                                const mapContractType = (value: any) => {
+                                    if (!value) return '';
+                                    const v = String(value).toUpperCase();
+                                    if (v.includes('GOODS')) return 'Goods';
+                                    if (v.includes('CONSULTING')) return 'Consulting Services';
+                                    if (v.includes('NON')) return 'Non-Consulting Services';
+                                    if (v.includes('WORK')) return 'Works';
+                                    return String(value);
+                                };
+
+                                const mapAwardCriteria = (value: any) => {
+                                    if (!value) return '';
+                                    const v = String(value).toUpperCase();
+                                    if (v.includes('LOWEST')) return 'Lowest Cost';
+                                    if (v.includes('MOST')) return 'Most Advantageous Bid';
+                                    return String(value);
+                                };
+
+                                const retenderReasonLabels: Record<string, string> = {
+                                    a: 'All bids non-responsive',
+                                    b: 'Awarded supplier refused to enter into contract',
+                                    c: 'Bid price exceeding comparable estimate',
+                                    d: 'Cancelled due to procedural irregularity',
+                                    e: 'Change in bill of quantities',
+                                    f: 'Incorrect specification',
+                                    g: 'Material irregularities in tender documents issued by Procuring Entity',
+                                    h: 'No bid received',
+                                    i: 'Re-scoping of requirements',
+                                    j: 'VFM cannot be achieved',
+                                    k: 'Other',
+                                };
+
+                                const mapRetenderReason = (reasons: any) => {
+                                    if (!reasons) return '';
+                                    const list = Array.isArray(reasons) ? reasons : [reasons];
+                                    const mapped = list
+                                        .map((r: any) => (retenderReasonLabels[String(r).toLowerCase()] ? retenderReasonLabels[String(r).toLowerCase()] : String(r)))
+                                        .filter(Boolean);
+                                    return mapped[0] || '';
+                                };
+
+                                const yesNoValue = (value: any) => {
+                                    if (value === true) return 'Yes';
+                                    if (value === false) return 'No';
+                                    if (value === 'Yes' || value === 'No' || value === 'N/A') return value;
+                                    return '';
+                                };
+
                                 // Generate form number
                                 const now = new Date();
                                 const year = now.getFullYear();
@@ -7926,24 +8008,40 @@ app.post(
                                         procurement_activity_name: `${request.reference || ''} - ${completedEvaluation.rfqTitle || ''}`,
                                         unit: '',
                                         description_goods: completedEvaluation.description || '',
-                                        contract_type: triggeringType,
-                                        comparable_estimate: `JMD $${totalAmount.toLocaleString()}`,
+                                        contract_type: mapContractType(sectionAData?.contractType) || triggeringType,
+                                        comparable_estimate: sectionAData?.comparableEstimate ? `JMD $${Number(sectionAData.comparableEstimate).toLocaleString()}` : `JMD $${totalAmount.toLocaleString()}`,
                                         approved_supplier: '',
                                         ppc_registration_category: '',
                                         procurement_case_number: request.procurementCaseNumber || '',
                                         date_case_received: request.dateReceived || '',
-                                        procurement_method: '',
+                                        procurement_method: mapProcurementMethod(sectionAData?.procurementMethod),
                                         justification_procurement_method: '',
+                                        method_advertisement: Array.isArray(sectionAData?.advertisementMethods) ? sectionAData.advertisementMethods[0] || '' : sectionAData?.advertisementMethods || '',
+                                        tender_period_from: sectionAData?.tenderPeriodStartDate || '',
+                                        tender_period_days: sectionAData?.tenderPeriodDays || '',
+                                        bid_validity_date: sectionAData?.bidValidityExpiration || '',
+                                        bids_requested: sectionAData?.numberOfBidsRequested || '',
+                                        bids_received: sectionAData?.numberOfBidsReceived || '',
+                                        re_tendered: yesNoValue(sectionAData?.retender),
+                                        reason_re_tender: mapRetenderReason(sectionAData?.retenderReasons),
+                                        other_reason: sectionAData?.retenderOtherReason || '',
+                                        contract_award_criteria: mapAwardCriteria(sectionAData?.awardCriteria),
+                                        contractor_recommended: sectionCData?.recommendedSupplier || '',
+                                        reason_selection: sectionCData?.comments || sectionCData?.criticalIssues || '',
+                                        amount_awarded_without_gct: '',
+                                        gct_amount: '',
+                                        amount_inclusive_gct: sectionCData?.recommendedAmountInclusiveGCT ? `JMD $${Number(sectionCData.recommendedAmountInclusiveGCT).toLocaleString()}` : '',
+                                        variance: '',
                                     },
 
                                     // Section B: Procurement Method & Evaluation
                                     sectionB: {
                                         shortlist_criteria: '',
-                                        number_bidders: 0,
+                                        number_bidders: sectionAData?.numberOfBidsReceived || 0,
                                         evaluation_criteria: '',
                                         evaluation_method: '',
-                                        preferred_bidder: '',
-                                        contract_value: `JMD $${totalAmount.toLocaleString()}`,
+                                        preferred_bidder: sectionCData?.recommendedSupplier || '',
+                                        contract_value: sectionCData?.recommendedAmountInclusiveGCT ? `JMD $${Number(sectionCData.recommendedAmountInclusiveGCT).toLocaleString()}` : `JMD $${totalAmount.toLocaleString()}`,
                                         evaluation_summary: riskAssessment,
                                     },
 
@@ -8451,6 +8549,9 @@ app.patch(
         const { id } = req.params;
         const userObj: any = (req as any).user;
         const userId = parseInt(userObj?.sub || userObj?.id);
+        const roles: string[] = userObj?.roles || [];
+        const isProcurement = roles.some((r: string) => String(r).toUpperCase().includes('PROCUREMENT') || String(r).toUpperCase().includes('ADMIN'));
+        const isExecutive = roles.some((r: string) => String(r).toUpperCase().includes('EXECUTIVE'));
         const updates = req.body || {};
 
         const form = await (prisma as any).eDApprovalForm.findUnique({
@@ -8461,13 +8562,17 @@ app.patch(
             throw new NotFoundError('ED Approval Form not found');
         }
 
-        // Check access: Only the assigned ED can update
-        if (form.approvedById && form.approvedById !== userId) {
-            throw new BadRequestError('You do not have permission to update this form');
+        // Check access: Procurement can update only before assignment; assigned ED can update after assignment
+        if (form.approvedById) {
+            if (form.approvedById !== userId) {
+                throw new BadRequestError('You do not have permission to update this form');
+            }
+        } else if (!isProcurement || isExecutive) {
+            throw new BadRequestError('Only procurement can update unassigned ED forms');
         }
 
         // Allow only specific fields to be updated
-        const allowedFields = ['justification', 'riskAssessment', 'alternatives', 'comments'];
+        const allowedFields = ['justification', 'riskAssessment', 'alternatives', 'comments', 'formData'];
         const cleanUpdates: any = {};
         for (const key of allowedFields) {
             if (key in updates) {
