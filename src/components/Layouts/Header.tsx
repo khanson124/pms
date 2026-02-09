@@ -655,7 +655,7 @@ const Header = () => {
                                                 {notifications.map((notification) => {
                                                     const isUnread = !notification.readAt;
                                                     const notificationTypeIcons: Record<
-                                                        'MENTION' | 'STAGE_CHANGED' | 'IDEA_APPROVED' | 'THRESHOLD_EXCEEDED' | 'EVALUATION_VERIFIED' | 'EVALUATION_RETURNED',
+                                                        'MENTION' | 'STAGE_CHANGED' | 'IDEA_APPROVED' | 'THRESHOLD_EXCEEDED' | 'EVALUATION_VERIFIED' | 'EVALUATION_RETURNED' | 'BUG_REPORT',
                                                         string
                                                     > = {
                                                         MENTION: '👤',
@@ -664,6 +664,7 @@ const Header = () => {
                                                         THRESHOLD_EXCEEDED: '⚠️',
                                                         EVALUATION_VERIFIED: '📝',
                                                         EVALUATION_RETURNED: '↩️',
+                                                        BUG_REPORT: '🐞',
                                                     };
                                                     const icon = notificationTypeIcons[notification.type] ?? '🔔';
 

@@ -669,7 +669,9 @@ const Requests = () => {
                 });
                 const data: ApiResponse = await res.json().catch(() => ({}) as ApiResponse);
                 if (!res.ok) {
-                    throw new Error(data?.message || data?.error || 'Failed to hide request');
+                    const apiErrors = data?.errors ? Object.values(data.errors).flat() : [];
+                    const apiError = apiErrors.length > 0 ? apiErrors[0] : null;
+                    throw new Error(data?.message || apiError || 'Failed to hide request');
                 }
                 await fetchRequests();
                 await MySwal.fire({ icon: 'success', title: 'Request hidden', text: 'The request has been moved to Hidden Requests.' });

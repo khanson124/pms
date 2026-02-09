@@ -127,10 +127,27 @@ export const EvaluationForm: React.FC<Props> = ({
         const assigneeLower = assignee.toLowerCase();
         const nameLower = currentUser.name.toLowerCase();
         const emailLower = currentUser.email.toLowerCase();
+        const hasName = nameLower.length > 0;
+        const hasEmail = emailLower.length > 0;
         return (
-            (nameLower && (assigneeLower === nameLower || nameLower.includes(assigneeLower) || assigneeLower.includes(nameLower))) ||
-            (emailLower && (assigneeLower === emailLower || emailLower.includes(assigneeLower) || assigneeLower.includes(emailLower)))
+            (hasName && (assigneeLower === nameLower || nameLower.includes(assigneeLower) || assigneeLower.includes(nameLower))) ||
+            (hasEmail && (assigneeLower === emailLower || emailLower.includes(assigneeLower) || assigneeLower.includes(emailLower)))
         );
+    };
+
+    type EvaluationAttachment = { id: number; filePath: string; originalName: string };
+
+    const isEvaluationAttachment = (value: unknown): value is EvaluationAttachment => {
+        if (!value || typeof value !== 'object') return false;
+        const record = value as Record<string, unknown>;
+        return typeof record.id === 'number' && typeof record.filePath === 'string' && typeof record.originalName === 'string';
+    };
+
+    const getEvaluationAttachments = (value: Evaluation | null | undefined): EvaluationAttachment[] => {
+        if (!value || typeof value !== 'object' || !('attachments' in value)) return [];
+        const attachments = (value as { attachments?: unknown }).attachments;
+        if (!Array.isArray(attachments)) return [];
+        return attachments.filter(isEvaluationAttachment);
     };
 
     const getColumnDisplayName = (column: { name?: string; assigneeName?: string }) => {
@@ -157,19 +174,15 @@ export const EvaluationForm: React.FC<Props> = ({
     const [verifyingSection, setVerifyingSection] = useState<string | null>(null);
     const [verifyNotes, setVerifyNotes] = useState<Record<string, string>>({});
     const [attachments, setAttachments] = useState<File[]>([]);
-    const [existingAttachments, setExistingAttachments] = useState<any[]>(evaluation?.attachments || []);
+    const [existingAttachments, setExistingAttachments] = useState<EvaluationAttachment[]>(getEvaluationAttachments(evaluation));
     const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const canEdit = (sec: 'A' | 'B' | 'C' | 'D' | 'E') => canEditSections.includes(sec);
 
     React.useEffect(() => {
-        if (evaluation?.attachments && Array.isArray(evaluation.attachments)) {
-            setExistingAttachments(evaluation.attachments);
-        } else {
-            setExistingAttachments([]);
-        }
-    }, [evaluation?.attachments]);
+        setExistingAttachments(getEvaluationAttachments(evaluation));
+    }, [evaluation]);
 
     // Auto-populate "Prepared By" field in Section E with current user's name
     React.useEffect(() => {
@@ -178,7 +191,7 @@ export const EvaluationForm: React.FC<Props> = ({
                 const user = getUser();
                 if (user?.name) {
                     // Initialize sectionE if it doesn't exist
-                    const currentSectionE = sectionE || {};
+                    const currentSectionE: SectionE = sectionE ?? { preparedBy: '', finalRecommendation: '', approved: false };
                     // Only set if not already populated
                     if (!currentSectionE.preparedBy) {
                         setSectionE({
@@ -186,7 +199,7 @@ export const EvaluationForm: React.FC<Props> = ({
                             preparedBy: user.name,
                             finalRecommendation: currentSectionE.finalRecommendation || '',
                             approved: currentSectionE.approved || false,
-                        } as SectionE);
+                        });
                     }
                 }
             } catch (err) {
@@ -201,7 +214,8 @@ export const EvaluationForm: React.FC<Props> = ({
     // Get section status
     const getSectionStatus = (sec: 'A' | 'B' | 'C' | 'D' | 'E'): string => {
         const statusKey = `section${sec}Status` as keyof typeof evaluation;
-        return (evaluation?.[statusKey] as string) || 'NOT_STARTED';
+        const rawStatus = evaluation?.[statusKey];
+        return typeof rawStatus === 'string' ? rawStatus : 'NOT_STARTED';
     };
 
     // Check if user can verify a section (procurement officer and section is submitted)

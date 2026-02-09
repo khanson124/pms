@@ -10,9 +10,6 @@ import IconFile from '@/components/Icon/IconFile';
 import IconChecks from '@/components/Icon/IconChecks';
 import IconClock from '@/components/Icon/IconClock';
 import IconEye from '@/components/Icon/IconEye';
-import IconUser from '@/components/Icon/IconUser';
-import IconTrendingUp from '@/components/Icon/IconTrendingUp';
-import IconChartSquare from '@/components/Icon/IconChartSquare';
 import IconThumbUp from '@/components/Icon/IconThumbUp';
 import IconX from '@/components/Icon/IconX';
 import IconDownload from '@/components/Icon/IconDownload';
@@ -32,7 +29,6 @@ const ExecutiveDirectorDashboard = () => {
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
-                setLoading(true);
                 const token = getToken();
                 const apiUrl = getApiUrl();
 
@@ -104,7 +100,7 @@ const ExecutiveDirectorDashboard = () => {
             } catch (error) {
                 console.error('Error fetching executive dashboard data:', error);
             } finally {
-                setLoading(false);
+                // no-op
             }
         };
 
@@ -497,8 +493,8 @@ const ExecutiveDirectorDashboard = () => {
                                                 signOff.action === 'Approved'
                                                     ? 'bg-success-light text-success'
                                                     : signOff.action === 'Conditionally Approved'
-                                                    ? 'bg-warning-light text-warning'
-                                                    : 'bg-danger-light text-danger'
+                                                      ? 'bg-warning-light text-warning'
+                                                      : 'bg-danger-light text-danger'
                                             }`}
                                         >
                                             {signOff.action === 'Approved' || signOff.action === 'Conditionally Approved' ? <IconThumbUp className="h-4 w-4" /> : <IconX className="h-4 w-4" />}

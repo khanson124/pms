@@ -220,8 +220,12 @@ const EvaluationDetail = () => {
                 // Fallback: if user is assigned in Section B table headers but has no assignment record
                 if (!sections.has('B') && evaluation?.sectionB?.bidders?.[0]) {
                     const user = getUser();
-                    const userName = String(user?.name || '').trim().toLowerCase();
-                    const userEmail = String(user?.email || '').trim().toLowerCase();
+                    const userName = String(user?.name || '')
+                        .trim()
+                        .toLowerCase();
+                    const userEmail = String(user?.email || '')
+                        .trim()
+                        .toLowerCase();
                     const isMatch = (assigneeRaw: string) => {
                         const assignee = assigneeRaw.trim().toLowerCase();
                         if (!assignee) return false;
@@ -237,11 +241,9 @@ const EvaluationDetail = () => {
                         const match = name.match(/\(([^)]+)\)\s*$/);
                         return match ? match[1]?.trim() || '' : '';
                     };
-                    const tables = [
-                        evaluation.sectionB.bidders[0].eligibilityRequirements,
-                        evaluation.sectionB.bidders[0].complianceMatrix,
-                        evaluation.sectionB.bidders[0].technicalEvaluation,
-                    ].filter(Boolean) as Array<{ columns?: any[] }>;
+                    const tables = [evaluation.sectionB.bidders[0].eligibilityRequirements, evaluation.sectionB.bidders[0].complianceMatrix, evaluation.sectionB.bidders[0].technicalEvaluation].filter(
+                        Boolean,
+                    ) as Array<{ columns?: any[] }>;
                     const hasAssignedColumn = tables.some((table) => (table.columns || []).some((col) => isMatch(extractAssignee(col))));
                     if (hasAssignedColumn) {
                         sections.add('B');
@@ -1218,6 +1220,7 @@ const EvaluationDetail = () => {
 
                                                     try {
                                                         await evaluationService.removeAssignment(assignment.id);
+                                                        if (!evaluation?.id) return;
                                                         const updated = await evaluationService.getAllAssignments(evaluation.id);
                                                         setCurrentAssignments(updated || []);
 
