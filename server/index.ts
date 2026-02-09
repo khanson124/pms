@@ -7977,9 +7977,7 @@ app.post(
                                 const mapRetenderReason = (reasons: any) => {
                                     if (!reasons) return '';
                                     const list = Array.isArray(reasons) ? reasons : [reasons];
-                                    const mapped = list
-                                        .map((r: any) => (retenderReasonLabels[String(r).toLowerCase()] ? retenderReasonLabels[String(r).toLowerCase()] : String(r)))
-                                        .filter(Boolean);
+                                    const mapped = list.map((r: any) => (retenderReasonLabels[String(r).toLowerCase()] ? retenderReasonLabels[String(r).toLowerCase()] : String(r))).filter(Boolean);
                                     return mapped[0] || '';
                                 };
 
@@ -8009,7 +8007,9 @@ app.post(
                                         unit: '',
                                         description_goods: completedEvaluation.description || '',
                                         contract_type: mapContractType(sectionAData?.contractType) || triggeringType,
-                                        comparable_estimate: sectionAData?.comparableEstimate ? `JMD $${Number(sectionAData.comparableEstimate).toLocaleString()}` : `JMD $${totalAmount.toLocaleString()}`,
+                                        comparable_estimate: sectionAData?.comparableEstimate
+                                            ? `JMD $${Number(sectionAData.comparableEstimate).toLocaleString()}`
+                                            : `JMD $${totalAmount.toLocaleString()}`,
                                         approved_supplier: '',
                                         ppc_registration_category: '',
                                         procurement_case_number: request.procurementCaseNumber || '',
@@ -8041,7 +8041,9 @@ app.post(
                                         evaluation_criteria: '',
                                         evaluation_method: '',
                                         preferred_bidder: sectionCData?.recommendedSupplier || '',
-                                        contract_value: sectionCData?.recommendedAmountInclusiveGCT ? `JMD $${Number(sectionCData.recommendedAmountInclusiveGCT).toLocaleString()}` : `JMD $${totalAmount.toLocaleString()}`,
+                                        contract_value: sectionCData?.recommendedAmountInclusiveGCT
+                                            ? `JMD $${Number(sectionCData.recommendedAmountInclusiveGCT).toLocaleString()}`
+                                            : `JMD $${totalAmount.toLocaleString()}`,
                                         evaluation_summary: riskAssessment,
                                     },
 
@@ -8363,7 +8365,6 @@ app.post(
             const updated = await (prisma as any).evaluation.update({
                 where: { id: parseInt(id) },
                 data: {
-                    status: 'CANCELLED',
                     cancelled: true,
                     cancelledAt: new Date(),
                     cancelledBy: userId,
@@ -8381,7 +8382,7 @@ app.post(
         await prisma.$executeRawUnsafe(
             `UPDATE Evaluation SET cancelled=1, cancelledAt=NOW(), cancelledBy=${userId}, cancelReason=${
                 cancelReason ? `'${cancelReason.replace(/'/g, "''")}'` : 'NULL'
-            }, status='CANCELLED', updatedAt=NOW() WHERE id = ${parseInt(id)}`,
+            }, updatedAt=NOW() WHERE id = ${parseInt(id)}`,
         );
 
         res.json({ success: true, message: 'Evaluation cancelled successfully', meta: { fallback: true } });
