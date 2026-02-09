@@ -902,7 +902,7 @@ const Requests = () => {
                         <p className="text-xs text-rose-600 dark:text-rose-400 mt-1">Returned or denied</p>
                     </div>
                 </div>
-            )
+            )}
 
             {/* Threshold notification banner for procurement officers */}
             {thresholdNotifications && thresholdNotifications.count > 0 && (
@@ -920,354 +920,320 @@ const Requests = () => {
                 </div>
             )}
 
-            {/* Filter & Search controls */}
-            <div className="mb-4 flex flex-wrap items-center gap-2 justify-between">
-                <div className="flex flex-wrap items-center gap-2">
-                    <button
-                        className={`px-3 py-1.5 rounded border text-sm ${!showMineOnly ? 'bg-primary text-white border-primary' : 'border-gray-300 dark:border-gray-600'}`}
-                        onClick={() => {
-                            if (location.pathname.endsWith('/mine')) {
-                                navigate({ pathname: '/apps/requests', search: location.search });
-                            }
-                        }}
-                        type="button"
-                        aria-pressed={!showMineOnly}
-                        aria-label="Show all requests"
-                    >
-                        All Requests
-                    </button>
-                    <button
-                        className={`px-3 py-1.5 rounded border text-sm ${showMineOnly ? 'bg-primary text-white border-primary' : 'border-gray-300 dark:border-gray-600'}`}
-                        onClick={() => {
-                            if (!location.pathname.endsWith('/mine')) {
-                                navigate({ pathname: '/apps/requests/mine', search: location.search });
-                            }
-                        }}
-                        type="button"
-                        aria-pressed={showMineOnly}
-                        aria-label="Show my requests"
-                    >
-                        My Requests
-                    </button>
-
-                    <input
-                        type="text"
-                        value={query}
-                        <div className="panel" aria-busy={isLoading}>
-                            <div className="mb-5 space-y-4">
-                                <div className="flex flex-wrap items-center justify-between gap-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                                            <IconClipboardText className="h-5 w-5 text-primary" />
-                                        </div>
-                                        <div>
-                                            <h5 className="text-xl font-bold">Requests Workspace</h5>
-                                            <p className="text-xs text-white-dark">
-                                                {filteredRequests.length} of {requests.length} requests
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        <button
-                                            className={`btn btn-sm ${!showMineOnly ? 'btn-primary' : 'btn-outline-primary'}`}
-                                            onClick={() => {
-                                                if (location.pathname.endsWith('/mine')) {
-                                                    navigate({ pathname: '/apps/requests', search: location.search });
-                                                }
-                                            }}
-                                            type="button"
-                                            aria-pressed={!showMineOnly}
-                                            aria-label="Show all requests"
-                                        >
-                                            All Requests
-                                        </button>
-                                        <button
-                                            className={`btn btn-sm ${showMineOnly ? 'btn-primary' : 'btn-outline-primary'}`}
-                                            onClick={() => {
-                                                if (!location.pathname.endsWith('/mine')) {
-                                                    navigate({ pathname: '/apps/requests/mine', search: location.search });
-                                                }
-                                            }}
-                                            type="button"
-                                            aria-pressed={showMineOnly}
-                                            aria-label="Show my requests"
-                                        >
-                                            My Requests
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="flex flex-wrap gap-3 items-center">
-                                    <div className="relative flex-1 min-w-[220px]">
-                                        <input
-                                            type="text"
-                                            value={query}
-                                            onChange={(e) => {
-                                                setQuery(e.target.value);
-                                                setPage(1);
-                                            }}
-                                            placeholder="Search by ID, title, requester, department"
-                                            className="form-input pl-10 pr-10"
-                                            aria-label="Search requests"
-                                        />
-                                        <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                        {query && (
-                                            <button
-                                                onClick={() => {
-                                                    setQuery('');
-                                                    setPage(1);
-                                                }}
-                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                                type="button"
-                                                aria-label="Clear search"
-                                            >
-                                                <IconX className="h-4 w-4" />
-                                            </button>
-                                        )}
-                                    </div>
-                                    <select
-                                        value={statusFilter}
-                                        onChange={(e) => {
-                                            setStatusFilter(e.target.value);
-                                            setPage(1);
-                                        }}
-                                        className="form-select min-w-[160px]"
-                                        aria-label="Filter by status"
-                                    >
-                                        <option value="">All Statuses</option>
-                                        {[
-                                            ...new Set(
-                                                requests
-                                                    .map((r) => r.status)
-                                                    .map((s) => s && s.trim())
-                                                    .filter(Boolean),
-                                            ),
-                                        ]
-                                            .map((s) => ({ raw: s as string, norm: normalizeStatus(s as string) }))
-                                            .sort((a, b) => a.norm.localeCompare(b.norm))
-                                            .map(({ raw, norm }) => (
-                                                <option key={raw} value={norm}>
-                                                    {norm}
-                                                </option>
-                                            ))}
-                                    </select>
-                                    <select
-                                        value={departmentFilter}
-                                        onChange={(e) => {
-                                            setDepartmentFilter(e.target.value);
-                                            setPage(1);
-                                        }}
-                                        className="form-select min-w-[180px]"
-                                        aria-label="Filter by department"
-                                    >
-                                        <option value="">All Departments</option>
-                                        {[...new Set(requests.map((f) => f.department).filter(Boolean) as string[])]
-                                            .sort((a, b) => a.localeCompare(b))
-                                            .map((dep) => (
-                                                <option key={dep} value={dep}>
-                                                    {dep}
-                                                </option>
-                                            ))}
-                                    </select>
-                                </div>
+            <div className="panel" aria-busy={isLoading}>
+                <div className="mb-5 space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                                <IconClipboardText className="h-5 w-5 text-primary" />
                             </div>
-                                <th className="px-4 py-3 text-left">Department</th>
-                                <div className="overflow-visible">
-                                    <div className="mb-5 flex items-center justify-between">
-                                        <div className="space-y-2">
-                                            <SkeletonLine className="w-48" />
-                                            <SkeletonLine className="w-32" />
-                                        </div>
-                                        <SkeletonLine className="w-32" />
-                                    </div>
-                                    <table className="table-hover w-full">
-                                        <thead>
-                                            <tr>
-                                                <th className="px-4 py-3 text-left">ID</th>
-                                                <th className="px-4 py-3 text-left">Title</th>
-                                                <th className="px-4 py-3 text-left">Requester</th>
-                                                <th className="px-4 py-3 text-left">Department</th>
-                                                <th className="px-4 py-3 text-left">Assigned To</th>
-                                                <th className="px-4 py-3 text-left">Status</th>
-                                                <th className="px-4 py-3 text-left">Comments</th>
-                                                <th className="px-4 py-3 text-left">Date</th>
-                                                <th className="px-4 py-3 text-left">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="text-sm">
-                                            <SkeletonTableRow columns={9} />
-                                            <SkeletonTableRow columns={9} />
-                                            <SkeletonTableRow columns={9} />
-                                            <SkeletonTableRow columns={9} />
-                                            <SkeletonTableRow columns={9} />
-                                        </tbody>
-                                    </table>
-                                </div>
+                            <div>
+                                <h5 className="text-xl font-bold">Requests Workspace</h5>
+                                <p className="text-xs text-white-dark">
+                                    {filteredRequests.length} of {requests.length} requests
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                className={`btn btn-sm ${!showMineOnly ? 'btn-primary' : 'btn-outline-primary'}`}
+                                onClick={() => {
+                                    if (location.pathname.endsWith('/mine')) {
+                                        navigate({ pathname: '/apps/requests', search: location.search });
+                                    }
+                                }}
+                                type="button"
+                                aria-pressed={!showMineOnly}
+                                aria-label="Show all requests"
+                            >
+                                All Requests
+                            </button>
+                            <button
+                                className={`btn btn-sm ${showMineOnly ? 'btn-primary' : 'btn-outline-primary'}`}
+                                onClick={() => {
+                                    if (!location.pathname.endsWith('/mine')) {
+                                        navigate({ pathname: '/apps/requests/mine', search: location.search });
+                                    }
+                                }}
+                                type="button"
+                                aria-pressed={showMineOnly}
+                                aria-label="Show my requests"
+                            >
+                                My Requests
+                            </button>
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap gap-3 items-center">
+                        <div className="relative flex-1 min-w-[220px]">
+                            <input
+                                type="text"
+                                value={query}
+                                onChange={(e) => {
+                                    setQuery(e.target.value);
+                                    setPage(1);
+                                }}
+                                placeholder="Search by ID, title, requester, department"
+                                className="form-input pl-10 pr-10"
+                                aria-label="Search requests"
+                            />
+                            <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            {query && (
+                                <button
+                                    onClick={() => {
+                                        setQuery('');
+                                        setPage(1);
+                                    }}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    type="button"
+                                    aria-label="Clear search"
+                                >
+                                    <IconX className="h-4 w-4" />
+                                </button>
                             )}
-                            {error && !isLoading && <div className="p-6 text-center text-sm text-red-600">{error}</div>}
-                            {!isLoading && !error && filteredRequests.length === 0 && (
-                                <div className="text-center py-16">
-                                    <svg className="w-20 h-20 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={1.5}
-                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                        />
-                                    </svg>
-                                    <p className="font-semibold text-lg text-gray-700 dark:text-gray-300">
-                                        {query || statusFilter || departmentFilter ? 'No requests match your filters' : 'No requests found'}
-                                    </p>
-                                    <p className="text-sm text-white-dark mt-1">{requests.length === 0 ? 'Create your first request to get started.' : 'Try adjusting your search or filters.'}</p>
-                                    {(query || statusFilter || departmentFilter) && (
-                                        <button
-                                            onClick={() => {
-                                                setQuery('');
-                                                setStatusFilter('');
-                                                setDepartmentFilter('');
-                                                setPage(1);
-                                            }}
-                                            className="btn btn-primary btn-sm mt-4"
-                                            type="button"
-                                        >
-                                            Clear All Filters
-                                        </button>
-                                    )}
-                                </div>
-                            )}
-                            {!isLoading && !error && filteredRequests.length > 0 && (
-                                <div className="overflow-visible">
-                                    <table className="table-hover w-full">
-                                        <thead>
-                                            <tr>
-                                                <th className="px-4 py-3 text-left">ID</th>
-                                                <th className="px-4 py-3 text-left">Title</th>
-                                                <th className="px-4 py-3 text-left">Requester</th>
-                                                <th className="px-4 py-3 text-left">Department</th>
-                                                <th className="px-4 py-3 text-left">Assigned To</th>
-                                                <th className="px-4 py-3 text-left">Status</th>
-                                                <th className="px-4 py-3 text-left">Comments</th>
-                                                <th className="px-4 py-3 text-left">Date</th>
-                                                <th className="px-4 py-3 text-left">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="text-sm">
-                                            {paged.map((r) => {
-                                                const badge = getStatusBadge(r.status);
+                        </div>
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => {
+                                setStatusFilter(e.target.value);
+                                setPage(1);
+                            }}
+                            className="form-select min-w-[160px]"
+                            aria-label="Filter by status"
+                        >
+                            <option value="">All Statuses</option>
+                            {[
+                                ...new Set(
+                                    requests
+                                        .map((r) => r.status)
+                                        .map((s) => s && s.trim())
+                                        .filter(Boolean),
+                                ),
+                            ]
+                                .map((s) => ({ raw: s as string, norm: normalizeStatus(s as string) }))
+                                .sort((a, b) => a.norm.localeCompare(b.norm))
+                                .map(({ raw, norm }) => (
+                                    <option key={raw} value={norm}>
+                                        {norm}
+                                    </option>
+                                ))}
+                        </select>
+                        <select
+                            value={departmentFilter}
+                            onChange={(e) => {
+                                setDepartmentFilter(e.target.value);
+                                setPage(1);
+                            }}
+                            className="form-select min-w-[180px]"
+                            aria-label="Filter by department"
+                        >
+                            <option value="">All Departments</option>
+                            {[...new Set(requests.map((f) => f.department).filter(Boolean) as string[])]
+                                .sort((a, b) => a.localeCompare(b))
+                                .map((dep) => (
+                                    <option key={dep} value={dep}>
+                                        {dep}
+                                    </option>
+                                ))}
+                        </select>
+                    </div>
+                </div>
+                {isLoading && (
+                    <div className="overflow-visible">
+                        <div className="mb-5 flex items-center justify-between">
+                            <div className="space-y-2">
+                                <SkeletonLine className="w-48" />
+                                <SkeletonLine className="w-32" />
+                            </div>
+                            <SkeletonLine className="w-32" />
+                        </div>
+                        <table className="table-hover w-full">
+                            <thead>
+                                <tr>
+                                    <th className="px-4 py-3 text-left">ID</th>
+                                    <th className="px-4 py-3 text-left">Title</th>
+                                    <th className="px-4 py-3 text-left">Requester</th>
+                                    <th className="px-4 py-3 text-left">Department</th>
+                                    <th className="px-4 py-3 text-left">Assigned To</th>
+                                    <th className="px-4 py-3 text-left">Status</th>
+                                    <th className="px-4 py-3 text-left">Comments</th>
+                                    <th className="px-4 py-3 text-left">Date</th>
+                                    <th className="px-4 py-3 text-left">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="text-sm">
+                                <SkeletonTableRow columns={9} />
+                                <SkeletonTableRow columns={9} />
+                                <SkeletonTableRow columns={9} />
+                                <SkeletonTableRow columns={9} />
+                                <SkeletonTableRow columns={9} />
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+                {error && !isLoading && <div className="p-6 text-center text-sm text-red-600">{error}</div>}
+                {!isLoading && !error && filteredRequests.length === 0 && (
+                    <div className="text-center py-16">
+                        <svg className="w-20 h-20 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1.5}
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                        </svg>
+                        <p className="font-semibold text-lg text-gray-700 dark:text-gray-300">{query || statusFilter || departmentFilter ? 'No requests match your filters' : 'No requests found'}</p>
+                        <p className="text-sm text-white-dark mt-1">{requests.length === 0 ? 'Create your first request to get started.' : 'Try adjusting your search or filters.'}</p>
+                        {(query || statusFilter || departmentFilter) && (
+                            <button
+                                onClick={() => {
+                                    setQuery('');
+                                    setStatusFilter('');
+                                    setDepartmentFilter('');
+                                    setPage(1);
+                                }}
+                                className="btn btn-primary btn-sm mt-4"
+                                type="button"
+                            >
+                                Clear All Filters
+                            </button>
+                        )}
+                    </div>
+                )}
+                {!isLoading && !error && filteredRequests.length > 0 && (
+                    <div className="overflow-visible">
+                        <table className="table-hover w-full">
+                            <thead>
+                                <tr>
+                                    <th className="px-4 py-3 text-left">ID</th>
+                                    <th className="px-4 py-3 text-left">Title</th>
+                                    <th className="px-4 py-3 text-left">Requester</th>
+                                    <th className="px-4 py-3 text-left">Department</th>
+                                    <th className="px-4 py-3 text-left">Assigned To</th>
+                                    <th className="px-4 py-3 text-left">Status</th>
+                                    <th className="px-4 py-3 text-left">Comments</th>
+                                    <th className="px-4 py-3 text-left">Date</th>
+                                    <th className="px-4 py-3 text-left">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="text-sm">
+                                {paged.map((r) => {
+                                    const badge = getStatusBadge(r.status);
 
-                                                // Check if this request exceeds executive threshold
-                                                const procurementTypes = Array.isArray(r.procurementType) ? r.procurementType : [];
-                                                const thresholdAlert = checkExecutiveThreshold(r.totalEstimated || 0, procurementTypes);
-                                                const thresholdBadge = getThresholdBadge(thresholdAlert);
-                                                const showThresholdAlert = shouldShowThresholdNotification(currentUserRoles) && thresholdAlert.isRequired;
+                                    // Check if this request exceeds executive threshold
+                                    const procurementTypes = Array.isArray(r.procurementType) ? r.procurementType : [];
+                                    const thresholdAlert = checkExecutiveThreshold(r.totalEstimated || 0, procurementTypes);
+                                    const thresholdBadge = getThresholdBadge(thresholdAlert);
+                                    const showThresholdAlert = shouldShowThresholdNotification(currentUserRoles) && thresholdAlert.isRequired;
 
-                                                return (
-                                                    <tr key={r.id} className="border-t last:border-b hover:bg-slate-50 dark:hover:bg-slate-700">
-                                                        <td className="px-4 py-3 font-medium">{r.id}</td>
-                                                        <td className="px-4 py-3">
-                                                            <div className="flex flex-col gap-1">
-                                                                <span>{r.title}</span>
-                                                                {showThresholdAlert && (
-                                                                    <div className="flex items-center gap-1">
-                                                                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${thresholdBadge.className}`}>
-                                                                            <span>{thresholdBadge.icon}</span>
-                                                                            {thresholdBadge.text}
-                                                                        </span>
-                                                                    </div>
-                                                                )}
-                                                                {r.isCombined && r.lotNumber && (
-                                                                    <div className="flex items-center gap-1">
-                                                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700">
-                                                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                <path
-                                                                                    strokeLinecap="round"
-                                                                                    strokeLinejoin="round"
-                                                                                    strokeWidth={2}
-                                                                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                                                                                />
-                                                                            </svg>
-                                                                            LOT-{r.lotNumber}
-                                                                            {r.combinedRequestId && (
-                                                                                <button
-                                                                                    type="button"
-                                                                                    className="ml-1 hover:underline"
-                                                                                    onClick={(e) => {
-                                                                                        e.stopPropagation();
-                                                                                        navigate(`/apps/requests/combined/${r.combinedRequestId}`);
-                                                                                    }}
-                                                                                    title="View combined request"
-                                                                                >
-                                                                                    →
-                                                                                </button>
-                                                                            )}
-                                                                        </span>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-3">{r.requester}</td>
-                                                        <td className="px-4 py-3">{r.department}</td>
-                                                        <td className="px-4 py-3">
-                                                            {r.currentAssigneeName ? (
-                                                                <span className="text-blue-600 dark:text-blue-400 font-medium">{r.currentAssigneeName}</span>
-                                                            ) : (
-                                                                <span className="text-gray-400 dark:text-gray-500 italic">—</span>
-                                                            )}
-                                                        </td>
-                                                        <td className="px-4 py-3">
-                                                            <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${badge.bg} ${badge.text}`} aria-label={`Status: ${badge.label}`}>
-                                                                {badge.label}
+                                    return (
+                                        <tr key={r.id} className="border-t last:border-b hover:bg-slate-50 dark:hover:bg-slate-700">
+                                            <td className="px-4 py-3 font-medium">{r.id}</td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex flex-col gap-1">
+                                                    <span>{r.title}</span>
+                                                    {showThresholdAlert && (
+                                                        <div className="flex items-center gap-1">
+                                                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${thresholdBadge.className}`}>
+                                                                <span>{thresholdBadge.icon}</span>
+                                                                {thresholdBadge.text}
                                                             </span>
-                                                        </td>
-                                                        <td className="px-4 py-3 max-w-xs">
-                                                            <div className="truncate text-gray-600 dark:text-gray-400 text-xs" title={r.statusComment || r.rejectionNote || '—'}>
-                                                                {r.statusComment || r.rejectionNote || '—'}
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-3">{formatDate(r.date)}</td>
-                                                        <td className="px-4 py-3">
-                                                            <div className="flex items-center gap-2">
-                                                                <button
-                                                                    className="p-1.5 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600"
-                                                                    onClick={() => viewDetails(r)}
-                                                                    title="View details"
-                                                                >
-                                                                    <IconEye className="h-4 w-4" />
-                                                                </button>
-                                                                <button
-                                                                    className="p-1.5 rounded hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600"
-                                                                    onClick={() => printRequest(r)}
-                                                                    title="Print request"
-                                                                >
-                                                                    <IconPrinter className="h-4 w-4" />
-                                                                </button>
-                                                                {isProcurementRole && (
+                                                        </div>
+                                                    )}
+                                                    {r.isCombined && r.lotNumber && (
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700">
+                                                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path
+                                                                        strokeLinecap="round"
+                                                                        strokeLinejoin="round"
+                                                                        strokeWidth={2}
+                                                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                                                                    />
+                                                                </svg>
+                                                                LOT-{r.lotNumber}
+                                                                {r.combinedRequestId && (
                                                                     <button
-                                                                        className="p-1.5 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-indigo-600"
-                                                                        onClick={() => openCommentModal(r)}
-                                                                        title="Update status comment"
+                                                                        type="button"
+                                                                        className="ml-1 hover:underline"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            navigate(`/apps/requests/combined/${r.combinedRequestId}`);
+                                                                        }}
+                                                                        title="View combined request"
                                                                     >
-                                                                        <IconEdit className="h-4 w-4" />
+                                                                        →
                                                                     </button>
                                                                 )}
-                                                                {isAdmin && (
-                                                                    <button
-                                                                        className="p-1.5 rounded hover:bg-orange-50 dark:hover:bg-orange-900/20 text-orange-600 disabled:opacity-50"
-                                                                        onClick={() => handleHideRequest(r)}
-                                                                        title="Hide request"
-                                                                        disabled={hideActionId === r.id}
-                                                                    >
-                                                                        {hideActionId === r.id ? <span className="text-xs font-semibold">...</span> : <IconArchive className="h-4 w-4" />}
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3">{r.requester}</td>
+                                            <td className="px-4 py-3">{r.department}</td>
+                                            <td className="px-4 py-3">
+                                                {r.currentAssigneeName ? (
+                                                    <span className="text-blue-600 dark:text-blue-400 font-medium">{r.currentAssigneeName}</span>
+                                                ) : (
+                                                    <span className="text-gray-400 dark:text-gray-500 italic">—</span>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${badge.bg} ${badge.text}`} aria-label={`Status: ${badge.label}`}>
+                                                    {badge.label}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 max-w-xs">
+                                                <div className="truncate text-gray-600 dark:text-gray-400 text-xs" title={r.statusComment || r.rejectionNote || '—'}>
+                                                    {r.statusComment || r.rejectionNote || '—'}
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3">{formatDate(r.date)}</td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex items-center gap-2">
+                                                    <button className="p-1.5 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600" onClick={() => viewDetails(r)} title="View details">
+                                                        <IconEye className="h-4 w-4" />
+                                                    </button>
+                                                    <button className="p-1.5 rounded hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600" onClick={() => printRequest(r)} title="Print request">
+                                                        <IconPrinter className="h-4 w-4" />
+                                                    </button>
+                                                    {isProcurementRole && (
+                                                        <button
+                                                            className="p-1.5 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-indigo-600"
+                                                            onClick={() => openCommentModal(r)}
+                                                            title="Update status comment"
+                                                        >
+                                                            <IconEdit className="h-4 w-4" />
+                                                        </button>
+                                                    )}
+                                                    {isAdmin && (
+                                                        <button
+                                                            className="p-1.5 rounded hover:bg-orange-50 dark:hover:bg-orange-900/20 text-orange-600 disabled:opacity-50"
+                                                            onClick={() => handleHideRequest(r)}
+                                                            title="Hide request"
+                                                            disabled={hideActionId === r.id}
+                                                        >
+                                                            {hideActionId === r.id ? <span className="text-xs font-semibold">...</span> : <IconArchive className="h-4 w-4" />}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+                {!isLoading && !error && filteredRequests.length > pageSize && (
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-white-dark">
+                        <span>
+                            Showing {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, filteredRequests.length)} of {filteredRequests.length}
+                        </span>
+                        <div className="flex items-center gap-2">
+                            <button className="px-3 py-1 rounded border disabled:opacity-50" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
+                                Prev
+                            </button>
                             <span>
                                 Page {page} of {pageCount}
                             </span>
