@@ -1103,7 +1103,7 @@ export const EvaluationForm: React.FC<Props> = ({
                                                                             }}
                                                                         />
                                                                     )
-                                                                ) : canEditTechnical() && canEditAssignedColumn(col.name) && !prefilledCells[`B-${row.id}-${col.id}`] ? (
+                                                                ) : canEditTechnical() && canEditAssignedColumn(col) && !prefilledCells[`B-${row.id}-${col.id}`] ? (
                                                                     // Evaluator mode - only edit if cell was NOT pre-filled by officer
                                                                     col.cellType === 'radio' ? (
                                                                         <div className="flex items-center gap-4 justify-center">
@@ -1387,7 +1387,7 @@ export const EvaluationForm: React.FC<Props> = ({
                                                                             }}
                                                                         />
                                                                     )
-                                                                ) : canEditTechnical() && canEditAssignedColumn(col.name) && !prefilledCells[`B-${row.id}-${col.id}`] ? (
+                                                                ) : canEditTechnical() && canEditAssignedColumn(col) && !prefilledCells[`B-${row.id}-${col.id}`] ? (
                                                                     // Evaluator mode - only edit if cell was NOT pre-filled by officer
                                                                     col.cellType === 'radio' ? (
                                                                         <div className="flex items-center gap-4 justify-center">

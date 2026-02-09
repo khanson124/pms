@@ -210,10 +210,40 @@ const NewEvaluation = () => {
     const [manualRecipient, setManualRecipient] = useState('');
     const [selectedSections, setSelectedSections] = useState<Array<'A' | 'B' | 'C' | 'D' | 'E'>>(['B', 'C']);
 
+    const normalizeUsers = (users: any[]) =>
+        (Array.isArray(users) ? users : [])
+            .map((u: any) => ({
+                id: typeof u.id === 'number' ? u.id : parseInt(String(u.userId ?? u.id), 10),
+                email: String(u.email || ''),
+                name: u.name ?? null,
+                roles: Array.isArray(u.roles) ? u.roles : [],
+            }))
+            .filter((u: any) => Number.isFinite(u.id));
+
+    const loadAvailableUsers = async () => {
+        if (availableUsers.length > 0) return;
+        try {
+            const resp = await fetch(getApiUrl('/api/admin/users'), {
+                headers: getAuthHeadersSync(),
+            });
+            if (resp.ok) {
+                const users = await resp.json();
+                setAvailableUsers(normalizeUsers(users));
+            }
+        } catch {
+            // ignore
+        }
+    };
+
+    useEffect(() => {
+        loadAvailableUsers();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     const totalSteps = 5; // Background, Section A, Section B, Section C, Sections D & E
 
     // Section B - Compliance Matrix (fully customizable table)
-    type ComplianceColumn = { id: string; name: string; width?: string };
+    type ComplianceColumn = { id: string; name: string; width?: string; assigneeId?: number | null; assigneeName?: string | null };
     type ComplianceRow = { id: string; data: Record<string, string> };
 
     const [complianceColumns, setComplianceColumns] = useState<ComplianceColumn[]>([
@@ -249,7 +279,7 @@ const NewEvaluation = () => {
 
     const addComplianceColumn = () => {
         const colId = `col-${Date.now()}`;
-        const newCol: ComplianceColumn = { id: colId, name: 'New Column', width: 'auto' };
+        const newCol: ComplianceColumn = { id: colId, name: 'New Column', width: 'auto', assigneeId: null, assigneeName: '' };
         setComplianceColumns((cols) => [...cols, newCol]);
         setComplianceRows((rows) => rows.map((r) => ({ ...r, data: { ...r.data, [colId]: '' } })));
     };
@@ -264,7 +294,7 @@ const NewEvaluation = () => {
     };
 
     // Section B.A - Eligibility Requirements (fully customizable table)
-    type EligibilityColumn = { id: string; name: string; width?: string };
+    type EligibilityColumn = { id: string; name: string; width?: string; assigneeId?: number | null; assigneeName?: string | null };
     type EligibilityRow = { id: string; data: Record<string, string> };
 
     const [eligibilityColumns, setEligibilityColumns] = useState<EligibilityColumn[]>([
@@ -296,7 +326,7 @@ const NewEvaluation = () => {
 
     const addEligibilityColumn = () => {
         const colId = `col-${Date.now()}`;
-        const newCol: EligibilityColumn = { id: colId, name: 'New Column', width: 'auto' };
+        const newCol: EligibilityColumn = { id: colId, name: 'New Column', width: 'auto', assigneeId: null, assigneeName: '' };
         setEligibilityColumns((cols) => [...cols, newCol]);
         setEligibilityRows((rows) => rows.map((r) => ({ ...r, data: { ...r.data, [colId]: '' } })));
     };
@@ -311,7 +341,7 @@ const NewEvaluation = () => {
     };
 
     // Section B.C - Technical Evaluation (fully customizable table with cell types)
-    type TechnicalColumn = { id: string; name: string; width?: string; cellType?: 'text' | 'radio' };
+    type TechnicalColumn = { id: string; name: string; width?: string; cellType?: 'text' | 'radio'; assigneeId?: number | null; assigneeName?: string | null };
     type TechnicalRow = { id: string; data: Record<string, string> };
 
     const [technicalColumns, setTechnicalColumns] = useState<TechnicalColumn[]>([
@@ -351,7 +381,7 @@ const NewEvaluation = () => {
 
     const addTechnicalColumn = () => {
         const colId = `col-${Date.now()}`;
-        const newCol: TechnicalColumn = { id: colId, name: 'New Column', width: 'auto', cellType: 'text' };
+        const newCol: TechnicalColumn = { id: colId, name: 'New Column', width: 'auto', cellType: 'text', assigneeId: null, assigneeName: '' };
         setTechnicalColumns((cols) => [...cols, newCol]);
         // Add empty data for this column in all existing rows
         setTechnicalRows((rows) => rows.map((r) => ({ ...r, data: { ...r.data, [colId]: '' } })));
@@ -573,16 +603,7 @@ const NewEvaluation = () => {
                 });
                 if (resp.ok) {
                     const users = await resp.json();
-                    // Normalize user objects to ensure numeric `id`
-                    const normalized = (Array.isArray(users) ? users : [])
-                        .map((u: any) => ({
-                            id: typeof u.id === 'number' ? u.id : parseInt(String(u.userId ?? u.id), 10),
-                            email: String(u.email || ''),
-                            name: u.name ?? null,
-                            roles: Array.isArray(u.roles) ? u.roles : [],
-                        }))
-                        .filter((u: any) => Number.isFinite(u.id));
-                    setAvailableUsers(normalized);
+                    setAvailableUsers(normalizeUsers(users));
                 }
             } catch {
                 // ignore
@@ -1358,26 +1379,50 @@ const NewEvaluation = () => {
                                             <tr className="bg-gray-100 dark:bg-gray-800">
                                                 {eligibilityColumns.map((col) => (
                                                     <th key={col.id} className="border border-gray-300 dark:border-gray-600 px-2 py-2" style={{ width: col.width }}>
-                                                        <div className="flex items-center gap-2">
-                                                            <input
-                                                                type="text"
-                                                                className="form-input text-sm font-semibold bg-transparent border-0 p-1"
-                                                                value={col.name}
-                                                                onChange={(e) => updateEligibilityColumnName(col.id, e.target.value)}
-                                                                placeholder="Column name"
-                                                            />
-                                                            {eligibilityColumns.length > 1 && (
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => removeEligibilityColumn(col.id)}
-                                                                    className="text-danger hover:bg-danger hover:text-white p-1 rounded transition-colors"
-                                                                    title="Remove column"
-                                                                >
-                                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                                    </svg>
-                                                                </button>
-                                                            )}
+                                                        <div className="flex flex-col gap-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <input
+                                                                    type="text"
+                                                                    className="form-input text-sm font-semibold bg-transparent border-0 p-1"
+                                                                    value={col.name}
+                                                                    onChange={(e) => updateEligibilityColumnName(col.id, e.target.value)}
+                                                                    placeholder="Column name"
+                                                                />
+                                                                {eligibilityColumns.length > 1 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => removeEligibilityColumn(col.id)}
+                                                                        className="text-danger hover:bg-danger hover:text-white p-1 rounded transition-colors"
+                                                                        title="Remove column"
+                                                                    >
+                                                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                                        </svg>
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                            <select
+                                                                className="form-select text-xs py-1 px-2"
+                                                                value={col.assigneeId ?? ''}
+                                                                onChange={(e) => {
+                                                                    const nextId = e.target.value ? Number(e.target.value) : null;
+                                                                    const selectedUser = availableUsers.find((u) => Number(u.id) === Number(nextId));
+                                                                    setEligibilityColumns((cols) =>
+                                                                        cols.map((c) =>
+                                                                            c.id === col.id
+                                                                                ? { ...c, assigneeId: nextId, assigneeName: selectedUser?.name || selectedUser?.email || '' }
+                                                                                : c,
+                                                                        ),
+                                                                    );
+                                                                }}
+                                                            >
+                                                                <option value="">Assign evaluator…</option>
+                                                                {availableUsers.map((u) => (
+                                                                    <option key={String(u.id)} value={String(u.id)}>
+                                                                        {u.name || u.email || `User ${u.id}`}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
                                                         </div>
                                                     </th>
                                                 ))}
@@ -1436,26 +1481,50 @@ const NewEvaluation = () => {
                                             <tr className="bg-gray-100 dark:bg-gray-800">
                                                 {complianceColumns.map((col) => (
                                                     <th key={col.id} className="border border-gray-300 dark:border-gray-600 px-2 py-2" style={{ width: col.width }}>
-                                                        <div className="flex items-center gap-2">
-                                                            <input
-                                                                type="text"
-                                                                className="form-input text-sm font-semibold bg-transparent border-0 p-1"
-                                                                value={col.name}
-                                                                onChange={(e) => updateComplianceColumnName(col.id, e.target.value)}
-                                                                placeholder="Column name"
-                                                            />
-                                                            {complianceColumns.length > 1 && (
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => removeComplianceColumn(col.id)}
-                                                                    className="text-danger hover:bg-danger hover:text-white p-1 rounded transition-colors"
-                                                                    title="Remove column"
-                                                                >
-                                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                                    </svg>
-                                                                </button>
-                                                            )}
+                                                        <div className="flex flex-col gap-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <input
+                                                                    type="text"
+                                                                    className="form-input text-sm font-semibold bg-transparent border-0 p-1"
+                                                                    value={col.name}
+                                                                    onChange={(e) => updateComplianceColumnName(col.id, e.target.value)}
+                                                                    placeholder="Column name"
+                                                                />
+                                                                {complianceColumns.length > 1 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => removeComplianceColumn(col.id)}
+                                                                        className="text-danger hover:bg-danger hover:text-white p-1 rounded transition-colors"
+                                                                        title="Remove column"
+                                                                    >
+                                                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                                        </svg>
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                            <select
+                                                                className="form-select text-xs py-1 px-2"
+                                                                value={col.assigneeId ?? ''}
+                                                                onChange={(e) => {
+                                                                    const nextId = e.target.value ? Number(e.target.value) : null;
+                                                                    const selectedUser = availableUsers.find((u) => Number(u.id) === Number(nextId));
+                                                                    setComplianceColumns((cols) =>
+                                                                        cols.map((c) =>
+                                                                            c.id === col.id
+                                                                                ? { ...c, assigneeId: nextId, assigneeName: selectedUser?.name || selectedUser?.email || '' }
+                                                                                : c,
+                                                                        ),
+                                                                    );
+                                                                }}
+                                                            >
+                                                                <option value="">Assign evaluator…</option>
+                                                                {availableUsers.map((u) => (
+                                                                    <option key={String(u.id)} value={String(u.id)}>
+                                                                        {u.name || u.email || `User ${u.id}`}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
                                                         </div>
                                                     </th>
                                                 ))}
@@ -1547,6 +1616,26 @@ const NewEvaluation = () => {
                                                                     <option value="radio">Yes/No</option>
                                                                 </select>
                                                             </div>
+                                                            <select
+                                                                className="form-select text-xs py-1 px-2"
+                                                                value={col.assigneeId ?? ''}
+                                                                onChange={(e) => {
+                                                                    const nextId = e.target.value ? Number(e.target.value) : null;
+                                                                    const selectedUser = availableUsers.find((u) => Number(u.id) === Number(nextId));
+                                                                    setTechnicalColumns((cols) =>
+                                                                        cols.map((c) =>
+                                                                            c.id === col.id ? { ...c, assigneeId: nextId, assigneeName: selectedUser?.name || selectedUser?.email || '' } : c,
+                                                                        ),
+                                                                    );
+                                                                }}
+                                                            >
+                                                                <option value="">Assign evaluator…</option>
+                                                                {availableUsers.map((u) => (
+                                                                    <option key={String(u.id)} value={String(u.id)}>
+                                                                        {u.name || u.email || `User ${u.id}`}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
                                                         </div>
                                                     </th>
                                                 ))}

@@ -32,7 +32,6 @@ coverage/
 *.temp
 
 # Database
-*.db
 *.sqlite
 *.sqlite3
 
