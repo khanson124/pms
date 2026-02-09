@@ -78,6 +78,7 @@ const Header = () => {
     // Determine current module based on route
     const isInnovationHub = location.pathname.startsWith('/innovation');
     const currentModule = isInnovationHub ? 'innovation' : 'procurement';
+    const helpState = { module: isInnovationHub ? 'IH' : 'PMS' };
     const procurementLocked = moduleLocks.procurement.locked;
     const innovationLocked = moduleLocks.innovation.locked;
 
@@ -802,12 +803,12 @@ const Header = () => {
                                                         {isCommitteeMember
                                                             ? 'Committee'
                                                             : isProcurementManager
-                                                            ? 'Procurement Manager'
-                                                            : isSupplier
-                                                            ? 'Supplier'
-                                                            : isRequester
-                                                            ? 'User'
-                                                            : 'Procurement Officer'}
+                                                              ? 'Procurement Manager'
+                                                              : isSupplier
+                                                                ? 'Supplier'
+                                                                : isRequester
+                                                                  ? 'User'
+                                                                  : 'Procurement Officer'}
                                                     </span>
                                                 )}
                                             </div>
@@ -816,7 +817,7 @@ const Header = () => {
                                     {navigationMenus.length > 0 ? (
                                         navigationMenus.map((menu) => (
                                             <li key={menu.id}>
-                                                <Link to={menu.path} className="dark:hover:text-white">
+                                                <Link to={menu.path} state={menu.menuId === 'help-support' ? helpState : undefined} className="dark:hover:text-white">
                                                     {menu.menuId === 'my-profile' && <IconUser className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />}
                                                     {menu.menuId === 'account-settings' && (
                                                         <svg className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -855,7 +856,7 @@ const Header = () => {
                                                 </Link>
                                             </li>
                                             <li>
-                                                <Link to="/help" className="dark:hover:text-white">
+                                                <Link to="/help" state={helpState} className="dark:hover:text-white">
                                                     <IconInfoCircle className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />
                                                     Help & Support
                                                 </Link>

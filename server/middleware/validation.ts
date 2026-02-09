@@ -93,6 +93,27 @@ export const requestActionSchema = z.object({
     }),
 });
 
+// Bug report schemas
+export const createBugReportSchema = z.object({
+    body: z.object({
+        title: z.string().min(3).max(120),
+        description: z.string().min(10).max(4000),
+        stepsToReproduce: z.string().max(4000).optional(),
+        expectedBehavior: z.string().max(2000).optional(),
+        actualBehavior: z.string().max(2000).optional(),
+        severity: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']),
+        module: z.enum(['PMS', 'IH', 'OTHER']),
+        pageUrl: z.string().url().optional(),
+        userAgent: z.string().max(500).optional(),
+    }),
+});
+
+export const updateBugReportStatusSchema = z.object({
+    body: z.object({
+        status: z.enum(['NEW', 'TRIAGED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED']),
+    }),
+});
+
 /**
  * Generic validation middleware factory
  * Validates request against a Zod schema and returns 400 if invalid

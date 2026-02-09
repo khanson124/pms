@@ -95,6 +95,7 @@ const RolePermissionManagement = lazy(() => import('../pages/Procurement/Admin/R
 const BulkUserManagement = lazy(() => import('../pages/Procurement/Admin/BulkUserManagement'));
 const SystemConfiguration = lazy(() => import('../pages/Procurement/Admin/SystemConfiguration'));
 const HiddenRequests = lazy(() => import('../pages/Procurement/Admin/HiddenRequests'));
+const BugReports = lazy(() => import('../pages/Procurement/Admin/BugReports'));
 
 // Forms Pages
 const FormSelection = lazy(() => import('../pages/Procurement/Forms/FormSelection'));
@@ -133,6 +134,7 @@ const ExecutiveDigitalSignoffs = lazy(() => import('../pages/Procurement/Executi
 import Profile from '../pages/Procurement/Users/Profile';
 const AccountSetting = lazy(() => import('../pages/Procurement/Users/AccountSetting'));
 const HelpSupport = lazy(() => import('../pages/HelpSupport'));
+const ReportBug = lazy(() => import('../pages/ReportBug'));
 
 // Module Selector (legacy)
 
@@ -953,6 +955,14 @@ const routes = [
             </AdminRoute>
         ),
     },
+    {
+        path: '/procurement/admin/bug-reports',
+        element: (
+            <AdminRoute>
+                <BugReports />
+            </AdminRoute>
+        ),
+    },
 
     // ============================================
     // USER PAGES
@@ -972,7 +982,10 @@ const routes = [
     {
         path: '/help',
         element: <HelpSupport />,
-        layout: 'blank',
+    },
+    {
+        path: '/help/report-bug',
+        element: <ReportBug />,
     },
 
     // ============================================

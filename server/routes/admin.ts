@@ -5,6 +5,7 @@ import express, { Router, Request, Response } from 'express';
 import { AuditAction } from '@prisma/client';
 import { prisma } from '../prismaClient.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { validate, updateBugReportStatusSchema } from '../middleware/validation.js';
 import { logger } from '../config/logger.js';
 import bcryptjs from 'bcryptjs';
 
@@ -228,6 +229,81 @@ router.get('/departments', adminOnly, async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/admin/bug-reports - List bug reports with pagination and filters
+ */
+router.get('/bug-reports', adminOnly, async (req: Request, res: Response) => {
+    try {
+        const limit = Math.min(parseInt(req.query.limit as string, 10) || 50, 200);
+        const offset = parseInt(req.query.offset as string, 10) || 0;
+        const status = req.query.status as string | undefined;
+        const severity = req.query.severity as string | undefined;
+
+        if (isNaN(limit) || isNaN(offset)) {
+            return res.status(400).json({ success: false, message: 'Invalid pagination parameters' });
+        }
+
+        const where: any = {
+            ...(status ? { status } : {}),
+            ...(severity ? { severity } : {}),
+        };
+
+        const [reports, total] = await Promise.all([
+            prisma.bugReport.findMany({
+                where,
+                orderBy: { createdAt: 'desc' },
+                take: limit,
+                skip: offset,
+                include: {
+                    reportedBy: {
+                        select: { id: true, name: true, email: true, department: { select: { id: true, name: true, code: true } } },
+                    },
+                },
+            }),
+            prisma.bugReport.count({ where }),
+        ]);
+
+        return res.json({
+            success: true,
+            data: reports,
+            pagination: {
+                total,
+                limit,
+                offset,
+                hasMore: offset + reports.length < total,
+            },
+        });
+    } catch (error) {
+        logger.error('Failed to fetch bug reports', { error });
+        return res.status(500).json({ success: false, message: 'Failed to fetch bug reports' });
+    }
+});
+
+/**
+ * PATCH /api/admin/bug-reports/:id/status - Update bug report status
+ */
+router.patch('/bug-reports/:id/status', adminOnly, validate(updateBugReportStatusSchema), async (req: Request, res: Response) => {
+    try {
+        const id = parseInt(req.params.id, 10);
+        if (isNaN(id)) {
+            return res.status(400).json({ success: false, message: 'Invalid bug report ID' });
+        }
+
+        const status = req.body.status as string;
+        const resolvedAt = ['RESOLVED', 'CLOSED'].includes(status) ? new Date() : null;
+
+        const updated = await prisma.bugReport.update({
+            where: { id },
+            data: { status, resolvedAt },
+        });
+
+        return res.json({ success: true, data: updated });
+    } catch (error) {
+        logger.error('Failed to update bug report status', { error });
+        return res.status(500).json({ success: false, message: 'Failed to update bug report status' });
+    }
+});
+
+/**
  * GET /api/admin/permissions - Get all permissions
  */
 router.get('/permissions', adminOnly, async (req: Request, res: Response) => {
@@ -256,8 +332,8 @@ router.get('/permissions', adminOnly, async (req: Request, res: Response) => {
                 defaultPermissions.map((perm) =>
                     prisma.permission.create({
                         data: perm,
-                    })
-                )
+                    }),
+                ),
             );
 
             return res.json(created);
@@ -530,8 +606,8 @@ router.get('/system-config', adminOnly, async (req: Request, res: Response) => {
                 defaults.map((cfg) =>
                     prisma.systemConfig.create({
                         data: cfg,
-                    })
-                )
+                    }),
+                ),
             );
 
             // Convert created configs to object
@@ -1040,8 +1116,8 @@ router.post('/roles/:id/permissions', adminOnly, async (req: Request, res: Respo
                         roleId,
                         permissionId,
                     },
-                })
-            )
+                }),
+            ),
         );
 
         res.json({ success: true, message: 'Permissions assigned', count: assigned.length });
@@ -1918,7 +1994,7 @@ router.post('/bulk-password-reset', adminOnly, async (req: Request, res: Respons
                     email: user.email,
                     token,
                 });
-            })
+            }),
         );
 
         res.json({

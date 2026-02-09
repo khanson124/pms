@@ -16,7 +16,7 @@ const API_URL = getApiUrl();
 export interface Notification {
     id: number;
     userId: number;
-    type: 'MENTION' | 'STAGE_CHANGED' | 'IDEA_APPROVED' | 'THRESHOLD_EXCEEDED' | 'EVALUATION_VERIFIED' | 'EVALUATION_RETURNED';
+    type: 'MENTION' | 'STAGE_CHANGED' | 'IDEA_APPROVED' | 'THRESHOLD_EXCEEDED' | 'EVALUATION_VERIFIED' | 'EVALUATION_RETURNED' | 'BUG_REPORT';
     message: string;
     data?: any;
     readAt: string | null;

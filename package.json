@@ -103,6 +103,7 @@
         "react-dom": "^18.3.1",
         "react-export-table-to-excel": "^1.0.6",
         "react-flatpickr": "^3.10.13",
+        "react-hook-form": "^7.52.2",
         "react-images-uploading": "^3.1.7",
         "react-loading-skeleton": "^3.5.0",
         "react-popper": "^2.3.0",
@@ -123,6 +124,7 @@
         "swiper": "^11.1.9",
         "web-vitals": "^4.2.3",
         "winston": "^3.18.3",
+        "@hookform/resolvers": "^3.9.1",
         "yup": "^1.4.0",
         "zod": "^4.1.12"
     },
