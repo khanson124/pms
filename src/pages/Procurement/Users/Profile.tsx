@@ -284,12 +284,20 @@ const Profile = () => {
         return statusMap[status] || { class: 'bg-secondary', label: status };
     };
 
-    const getUserRoles = () => {
-        if (!user?.roles || user.roles.length === 0) return 'User';
+    const normalizeRoleName = (role: any) => {
+        if (!role) return '';
+        if (typeof role === 'string') return role;
+        if (role?.name) return String(role.name);
+        if (role?.role?.name) return String(role.role.name);
+        return String(role);
+    };
+
+    const getUserRoles = (sourceRoles?: Array<any>) => {
+        if (!sourceRoles || sourceRoles.length === 0) return 'User';
 
         // Check for admin role (handles both 'ADMIN' and 'ADMINISTRATOR')
-        const isAdmin = user.roles.some((role: any) => {
-            const roleStr = typeof role === 'string' ? role : String(role);
+        const isAdmin = sourceRoles.some((role: any) => {
+            const roleStr = normalizeRoleName(role);
             return roleStr.toUpperCase() === 'ADMIN' || roleStr.toUpperCase() === 'ADMINISTRATOR';
         });
 
@@ -310,10 +318,11 @@ const Profile = () => {
             ADMINISTRATOR: 'Administrator',
         };
 
-        return (user.roles as Array<any>)
+        return (sourceRoles as Array<any>)
             .map((role: any) => {
-                const roleStr = typeof role === 'string' ? role : String(role);
-                return roleLabels[roleStr.toUpperCase()] || roleStr;
+                const roleStr = normalizeRoleName(role);
+                const key = roleStr.toUpperCase().replace(/\s+/g, '_');
+                return roleLabels[key] || roleStr;
             })
             .join(', ');
     };
@@ -321,8 +330,10 @@ const Profile = () => {
     const isRtl = useSelector((state: IRootState) => state.themeConfig.rtlClass) === 'rtl';
 
     // Normalize user roles to CODE format (e.g., 'Procurement Manager' -> 'PROCUREMENT_MANAGER') for reliable checks
-    const roleCodes: string[] = Array.isArray(user?.roles)
-        ? (user!.roles as Array<any>).map((r: any) => (typeof r === 'string' ? r : String(r))).map((s: string) => s.toUpperCase().replace(/\s+/g, '_'))
+    const roleCodes: string[] = Array.isArray((profileData as any)?.roles || user?.roles)
+        ? (((profileData as any)?.roles || user?.roles) as Array<any>)
+              .map((r: any) => normalizeRoleName(r))
+              .map((s: string) => s.toUpperCase().replace(/\s+/g, '_'))
         : [];
 
     if (isLoading) {
@@ -391,13 +402,13 @@ const Profile = () => {
                                     <input id="photo-upload" type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" disabled={uploadingPhoto} aria-label="Upload profile photo" />
                                 </div>
                                 <p className="font-semibold text-primary text-xl text-center break-words max-w-[180px]">{userName}</p>
-                                <p className="text-sm text-white-dark mt-1 text-center">{getUserRoles()}</p>
+                                <p className="text-sm text-white-dark mt-1 text-center">{getUserRoles((displayUser as any)?.roles || user?.roles)}</p>
                                 {displayUser?.email && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">(ID: {displayUser.id})</p>}
                             </div>
                             <ul className="mt-6 flex flex-col max-w-[220px] m-auto space-y-3 font-semibold text-white-dark text-sm">
                                 <li className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors">
                                     <IconShoppingBag className="shrink-0 w-5 h-5 text-primary" />
-                                    <span className="truncate">{getUserRoles()}</span>
+                                    <span className="truncate">{getUserRoles((displayUser as any)?.roles || user?.roles)}</span>
                                 </li>
                                 {userDepartment && userDepartment !== 'Not assigned' && (
                                     <li className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors">
@@ -781,7 +792,7 @@ const Profile = () => {
                                             </div>
                                             <div>
                                                 <p className="text-sm font-semibold text-[#515365] dark:text-white-light">Active Account</p>
-                                                <p className="text-xs text-white-dark mt-0.5">{getUserRoles()}</p>
+                                                <p className="text-xs text-white-dark mt-0.5">{getUserRoles((displayUser as any)?.roles || user?.roles)}</p>
                                             </div>
                                         </div>
                                     </div>

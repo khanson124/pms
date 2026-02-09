@@ -100,9 +100,12 @@ const EvaluationList = () => {
         }
     };
 
+    const getEffectiveStatus = (e: Evaluation): EvaluationStatus => (e.cancelled ? 'CANCELLED' : e.status);
+
     const filteredEvaluations = useMemo(() => {
         return evaluations.filter((e) => {
-            const displayStatus = statusMap[e.status];
+            const effectiveStatus = getEffectiveStatus(e);
+            const displayStatus = statusMap[effectiveStatus];
             if (statusFilter !== 'ALL' && displayStatus !== statusFilter) return false;
             if (search) {
                 const haystack = `${e.evalNumber} ${e.rfqNumber} ${e.rfqTitle} ${e.evaluator || ''} ${e.description || ''}`.toLowerCase();
@@ -117,13 +120,14 @@ const EvaluationList = () => {
     const stats = useMemo(() => {
         const base = { total: evaluations.length, pending: 0, inProgress: 0, committeeReview: 0, completed: 0, validated: 0, rejected: 0, cancelled: 0 };
         for (const e of evaluations) {
-            if (e.status === 'PENDING') base.pending++;
-            else if (e.status === 'IN_PROGRESS') base.inProgress++;
-            else if (e.status === 'COMMITTEE_REVIEW') base.committeeReview++;
-            else if (e.status === 'COMPLETED') base.completed++;
-            else if (e.status === 'VALIDATED') base.validated++;
-            else if (e.status === 'REJECTED') base.rejected++;
-            else if (e.status === 'CANCELLED') base.cancelled++;
+            const status = getEffectiveStatus(e);
+            if (status === 'PENDING') base.pending++;
+            else if (status === 'IN_PROGRESS') base.inProgress++;
+            else if (status === 'COMMITTEE_REVIEW') base.committeeReview++;
+            else if (status === 'COMPLETED') base.completed++;
+            else if (status === 'VALIDATED') base.validated++;
+            else if (status === 'REJECTED') base.rejected++;
+            else if (status === 'CANCELLED') base.cancelled++;
         }
         return base;
     }, [evaluations]);
@@ -490,7 +494,9 @@ const EvaluationList = () => {
                                                 <td className="whitespace-nowrap">{formatDate(evaluation.dueDate)}</td>
                                                 <td>
                                                     <div className="flex flex-wrap items-center gap-1">
-                                                        <span className={`badge ${getStatusBadge(evaluation.status)} whitespace-nowrap`}>{statusMap[evaluation.status]}</span>
+                                                        <span className={`badge ${getStatusBadge(getEffectiveStatus(evaluation))} whitespace-nowrap`}>
+                                                            {statusMap[getEffectiveStatus(evaluation)]}
+                                                        </span>
                                                         {isCommittee && hasNewSubmissions(evaluation) && (
                                                             <span className="badge bg-info whitespace-nowrap" title="Submitted sections awaiting verification">
                                                                 New

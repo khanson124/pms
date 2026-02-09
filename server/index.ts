@@ -6251,7 +6251,10 @@ app.get(
                     evaluations = evaluations.filter((e: any) => e.createdBy === userId || assignedIds.has(e.id));
                 }
 
-                const normalized = evaluations.map((e: any) => (e?.status === 'COMMITTEE_REVIEW' ? { ...e, status: 'IN_PROGRESS' } : e));
+                const normalized = evaluations.map((e: any) => {
+                    if (e?.cancelled) return { ...e, status: 'CANCELLED' };
+                    return e?.status === 'COMMITTEE_REVIEW' ? { ...e, status: 'IN_PROGRESS' } : e;
+                });
                 return res.json({ success: true, data: normalized });
             } catch (error: any) {
                 // If the table doesn't exist or query fails, return empty array
@@ -6918,9 +6921,12 @@ app.post(
                     for (const row of table.rows) {
                         if (row.data && typeof row.data === 'object') {
                             for (const [cellId, value] of Object.entries(row.data)) {
-                                if (value && String(value).trim() !== '') {
-                                    prefilledCells[`B-${row.id}-${cellId}`] = true;
-                                }
+                                if (value === null || value === undefined) continue;
+                                const trimmed = String(value).trim();
+                                if (!trimmed) continue;
+                                const lower = trimmed.toLowerCase();
+                                if (lower === '-' || lower === '—' || lower === 'n/a' || lower === 'na') continue;
+                                prefilledCells[`B-${row.id}-${cellId}`] = true;
                             }
                         }
                     }

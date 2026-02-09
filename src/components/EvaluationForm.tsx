@@ -106,16 +106,22 @@ export const EvaluationForm: React.FC<Props> = ({
     const currentUser = useMemo(() => {
         try {
             const user = getUser();
-            const name = String(user?.name || '').trim();
+            const name = String((user as any)?.name || (user as any)?.full_name || '').trim();
             const email = String(user?.email || '').trim();
-            return { name, email };
+            const idRaw = (user as any)?.id ?? (user as any)?.userId;
+            const id = Number(idRaw);
+            return { name, email, id: Number.isFinite(id) ? id : null };
         } catch {
-            return { name: '', email: '' };
+            return { name: '', email: '', id: null };
         }
     }, []);
 
     const canEditAssignedColumn = (column: { name?: string; assigneeName?: string } | null): boolean => {
-        if ((!currentUser.name && !currentUser.email) || !column) return false;
+        if ((!currentUser.name && !currentUser.email && !currentUser.id) || !column) return false;
+        const assigneeId = Number((column as any)?.assigneeId);
+        if (Number.isFinite(assigneeId) && currentUser.id && assigneeId === currentUser.id) {
+            return true;
+        }
         const explicit = String(column.assigneeName || '').trim();
         const parsed = (() => {
             const name = column.name || '';
@@ -1144,7 +1150,7 @@ export const EvaluationForm: React.FC<Props> = ({
                                                                             }}
                                                                         />
                                                                     )
-                                                                ) : canEditTechnical() && canEditAssignedColumn(col) && !prefilledCells[`B-${row.id}-${col.id}`] ? (
+                                                                ) : canEditTechnical() && canEditAssignedColumn(col) && !(prefilledCells[`B-${row.id}-${col.id}`] && String(row.data?.[col.id] || '').trim() !== '') ? (
                                                                     // Evaluator mode - only edit if cell was NOT pre-filled by officer
                                                                     col.cellType === 'radio' ? (
                                                                         <div className="flex items-center gap-4 justify-center">
@@ -1428,7 +1434,7 @@ export const EvaluationForm: React.FC<Props> = ({
                                                                             }}
                                                                         />
                                                                     )
-                                                                ) : canEditTechnical() && canEditAssignedColumn(col) && !prefilledCells[`B-${row.id}-${col.id}`] ? (
+                                                                ) : canEditTechnical() && canEditAssignedColumn(col) && !(prefilledCells[`B-${row.id}-${col.id}`] && String(row.data?.[col.id] || '').trim() !== '') ? (
                                                                     // Evaluator mode - only edit if cell was NOT pre-filled by officer
                                                                     col.cellType === 'radio' ? (
                                                                         <div className="flex items-center gap-4 justify-center">
@@ -1746,7 +1752,7 @@ export const EvaluationForm: React.FC<Props> = ({
                                                                             }}
                                                                         />
                                                                     )
-                                                                ) : canEditTechnical() && canEditAssignedColumn(col) && !prefilledCells[`B-${row.id}-${col.id}`] ? (
+                                                                ) : canEditTechnical() && canEditAssignedColumn(col) && !(prefilledCells[`B-${row.id}-${col.id}`] && String(row.data?.[col.id] || '').trim() !== '') ? (
                                                                     // Evaluator mode - only edit if cell was NOT pre-filled by officer
                                                                     col.cellType === 'radio' ? (
                                                                         <div className="flex items-center gap-4 justify-center">
