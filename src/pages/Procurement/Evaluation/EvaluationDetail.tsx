@@ -217,6 +217,37 @@ const EvaluationDetail = () => {
                     }
                 }
 
+                // Fallback: if user is assigned in Section B table headers but has no assignment record
+                if (!sections.has('B') && evaluation?.sectionB?.bidders?.[0]) {
+                    const user = getUser();
+                    const userName = String(user?.name || '').trim().toLowerCase();
+                    const userEmail = String(user?.email || '').trim().toLowerCase();
+                    const isMatch = (assigneeRaw: string) => {
+                        const assignee = assigneeRaw.trim().toLowerCase();
+                        if (!assignee) return false;
+                        return (
+                            (userName && (assignee === userName || assignee.includes(userName) || userName.includes(assignee))) ||
+                            (userEmail && (assignee === userEmail || assignee.includes(userEmail) || userEmail.includes(assignee)))
+                        );
+                    };
+                    const extractAssignee = (col: any) => {
+                        const explicit = String(col?.assigneeName || '').trim();
+                        if (explicit) return explicit;
+                        const name = String(col?.name || '');
+                        const match = name.match(/\(([^)]+)\)\s*$/);
+                        return match ? match[1]?.trim() || '' : '';
+                    };
+                    const tables = [
+                        evaluation.sectionB.bidders[0].eligibilityRequirements,
+                        evaluation.sectionB.bidders[0].complianceMatrix,
+                        evaluation.sectionB.bidders[0].technicalEvaluation,
+                    ].filter(Boolean) as Array<{ columns?: any[] }>;
+                    const hasAssignedColumn = tables.some((table) => (table.columns || []).some((col) => isMatch(extractAssignee(col))));
+                    if (hasAssignedColumn) {
+                        sections.add('B');
+                    }
+                }
+
                 setCanEditSections(Array.from(sections));
 
                 // Store my assignment for complete button
@@ -228,7 +259,7 @@ const EvaluationDetail = () => {
             }
         };
         if (id) loadAssignments();
-    }, [id, isProcurement, assignmentsRefreshKey]);
+    }, [id, isProcurement, assignmentsRefreshKey, evaluation]);
 
     // Load available users and all assignments for procurement
     useEffect(() => {

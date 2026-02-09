@@ -1,7 +1,7 @@
 export interface FormField {
     id: string;
     label: string;
-    type: 'text' | 'textarea' | 'select' | 'checkbox' | 'number';
+    type: 'text' | 'textarea' | 'select' | 'checkbox' | 'number' | 'date';
     placeholder?: string;
     options?: string[];
     required?: boolean;
@@ -105,7 +105,7 @@ export const HOE_FORM_DETAIL: FormDetail = {
                 {
                     id: 'ppc_expiration_date',
                     label: '7b. PPC Expiration Date',
-                    type: 'text',
+                    type: 'date',
                     placeholder: 'date PPC expires',
                 },
                 {
@@ -117,7 +117,7 @@ export const HOE_FORM_DETAIL: FormDetail = {
                 {
                     id: 'tcc_expiration_date',
                     label: '8a. TCC Expiration Date',
-                    type: 'text',
+                    type: 'date',
                     placeholder: 'date TCC expires',
                 },
                 {
@@ -137,7 +137,7 @@ export const HOE_FORM_DETAIL: FormDetail = {
                 {
                     id: 'tender_period_from',
                     label: '11. Tender Period From',
-                    type: 'text',
+                    type: 'date',
                     placeholder: 'insert tender period',
                 },
                 {
@@ -149,7 +149,7 @@ export const HOE_FORM_DETAIL: FormDetail = {
                 {
                     id: 'bid_validity_date',
                     label: '12. Bid Validity Expiration Date',
-                    type: 'text',
+                    type: 'date',
                     placeholder: 'insert bid validity expiration',
                 },
                 {
@@ -271,7 +271,7 @@ export const HOE_FORM_DETAIL: FormDetail = {
                 {
                     id: 'hpp_date',
                     label: '22b. Date',
-                    type: 'text',
+                    type: 'date',
                     placeholder: 'Date of review',
                     required: true,
                 },
@@ -319,7 +319,7 @@ export const HOE_FORM_DETAIL: FormDetail = {
                 {
                     id: 'executive_director_date',
                     label: '25b. Date',
-                    type: 'text',
+                    type: 'date',
                     placeholder: 'Date of approval/rejection',
                     required: true,
                 },

@@ -7,6 +7,7 @@ import IconCircleCheck from '../../../components/Icon/IconCircleCheck';
 import IconX from '../../../components/Icon/IconX';
 import { evaluationService } from '../../../services/evaluationService';
 import { getUser } from '../../../utils/auth';
+import Swal from 'sweetalert2';
 import { HOE_FORM_DETAIL, FormField, FormSection } from '../../../lib/hoeApprovalFormDefinition';
 
 interface EDApprovalFormData {
@@ -109,10 +110,37 @@ const EDApprovalForm = () => {
         }));
     };
 
+    const validateRequiredFields = (values: Record<string, string | boolean>) => {
+        const missing: string[] = [];
+        HOE_FORM_DETAIL.sections.forEach((section) => {
+            section.fields?.forEach((field) => {
+                if (!field.required) return;
+                const value = values[field.id];
+                const isEmpty =
+                    field.type === 'checkbox' ? value !== true : value === undefined || value === null || String(value).trim() === '';
+                if (isEmpty) {
+                    missing.push(field.label);
+                }
+            });
+        });
+        return missing;
+    };
+
     const handleSave = async () => {
         if (!form) return;
         try {
             setSaving(true);
+            const missing = validateRequiredFields(formValues);
+            if (missing.length > 0) {
+                await Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Required Fields',
+                    html: `<div style="text-align:left"><p>You can save a draft, but some required fields are still missing:</p><ul>${missing
+                        .slice(0, 8)
+                        .map((m) => `<li>${m}</li>`)
+                        .join('')}</ul>${missing.length > 8 ? `<p>+ ${missing.length - 8} more</p>` : ''}</div>`,
+                });
+            }
             const nextFormData = buildFormData(form.formData, formValues);
             await evaluationService.updateEdForm(form.id, {
                 formData: nextFormData,
@@ -130,7 +158,30 @@ const EDApprovalForm = () => {
         if (!form) return;
         try {
             setSubmitting(true);
-            const submitComments = formValues.hoe_comments ? String(formValues.hoe_comments) : comments;
+            const submittedAction = approved ? 'Approved' : 'Rejected';
+            const valuesWithAction = {
+                ...formValues,
+                action_taken: submittedAction,
+            };
+            const missing = validateRequiredFields(valuesWithAction);
+            if (missing.length > 0) {
+                await Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Required Fields',
+                    html: `<div style="text-align:left"><p>Please complete the required fields:</p><ul>${missing
+                        .slice(0, 8)
+                        .map((m) => `<li>${m}</li>`)
+                        .join('')}</ul>${missing.length > 8 ? `<p>+ ${missing.length - 8} more</p>` : ''}</div>`,
+                });
+                return;
+            }
+
+            const nextFormData = buildFormData(form.formData, valuesWithAction);
+            await evaluationService.updateEdForm(form.id, {
+                formData: nextFormData,
+                comments: valuesWithAction.hoe_comments ? String(valuesWithAction.hoe_comments) : comments,
+            });
+            const submitComments = valuesWithAction.hoe_comments ? String(valuesWithAction.hoe_comments) : comments;
             await evaluationService.submitEdForm(form.id, approved, submitComments);
             await loadForm();
         } catch (err) {
@@ -269,6 +320,8 @@ function buildInitialValues(formData?: EDApprovalFormData['formData'], executive
             const rawValue = sectionKey ? (formData as any)?.[sectionKey]?.[field.id] : undefined;
             if (field.type === 'checkbox') {
                 values[field.id] = rawValue === true || rawValue === 'true';
+            } else if (field.type === 'date') {
+                values[field.id] = normalizeDateValue(rawValue);
             } else {
                 values[field.id] = rawValue ?? '';
             }
@@ -356,6 +409,17 @@ function renderField(field: FormField, value: string | boolean | undefined, onCh
         );
     }
 
+    if (field.type === 'date') {
+        return (
+            <input
+                type="date"
+                value={typeof value === 'string' ? normalizeDateValue(value) : ''}
+                onChange={(e) => onChange(e.target.value)}
+                {...commonProps}
+            />
+        );
+    }
+
     if (field.type === 'checkbox') {
         return (
             <input
@@ -377,4 +441,25 @@ function renderField(field: FormField, value: string | boolean | undefined, onCh
             {...commonProps}
         />
     );
+}
+
+function normalizeDateValue(value: unknown) {
+    if (!value) return '';
+    const raw = String(value).trim();
+    if (!raw) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+    const isoMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})T/);
+    if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+    const slash = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (slash) {
+        const a = parseInt(slash[1], 10);
+        const b = parseInt(slash[2], 10);
+        const year = slash[3];
+        const day = a > 12 ? a : b > 12 ? b : a; // default to DD/MM
+        const month = a > 12 ? b : b > 12 ? a : b;
+        const dd = String(day).padStart(2, '0');
+        const mm = String(month).padStart(2, '0');
+        return `${year}-${mm}-${dd}`;
+    }
+    return raw;
 }

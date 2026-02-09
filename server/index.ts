@@ -8363,6 +8363,7 @@ app.post(
             const updated = await (prisma as any).evaluation.update({
                 where: { id: parseInt(id) },
                 data: {
+                    status: 'CANCELLED',
                     cancelled: true,
                     cancelledAt: new Date(),
                     cancelledBy: userId,
@@ -8380,7 +8381,7 @@ app.post(
         await prisma.$executeRawUnsafe(
             `UPDATE Evaluation SET cancelled=1, cancelledAt=NOW(), cancelledBy=${userId}, cancelReason=${
                 cancelReason ? `'${cancelReason.replace(/'/g, "''")}'` : 'NULL'
-            }, updatedAt=NOW() WHERE id = ${parseInt(id)}`,
+            }, status='CANCELLED', updatedAt=NOW() WHERE id = ${parseInt(id)}`,
         );
 
         res.json({ success: true, message: 'Evaluation cancelled successfully', meta: { fallback: true } });
