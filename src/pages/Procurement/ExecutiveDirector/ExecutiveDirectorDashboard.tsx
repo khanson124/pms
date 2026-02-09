@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { IRootState } from '@/store';
@@ -6,101 +6,50 @@ import { setPageTitle } from '@/store/themeConfigSlice';
 import ReactApexChart from 'react-apexcharts';
 import PerfectScrollbar from 'react-perfect-scrollbar';
 import IconDollarSignCircle from '@/components/Icon/IconDollarSignCircle';
-import IconFile from '@/components/Icon/IconFile';
 import IconChecks from '@/components/Icon/IconChecks';
 import IconClock from '@/components/Icon/IconClock';
 import IconEye from '@/components/Icon/IconEye';
-import IconUser from '@/components/Icon/IconUser';
-import IconTrendingUp from '@/components/Icon/IconTrendingUp';
-import IconChartSquare from '@/components/Icon/IconChartSquare';
 import IconThumbUp from '@/components/Icon/IconThumbUp';
 import IconX from '@/components/Icon/IconX';
-import IconDownload from '@/components/Icon/IconDownload';
 import IconPencil from '@/components/Icon/IconPencil';
 import IconLock from '@/components/Icon/IconLock';
-import IconCircleCheck from '@/components/Icon/IconCircleCheck';
-import { getApiUrl } from '@/config/api';
-import { getToken } from '@/utils/auth';
+import { evaluationService } from '@/services/evaluationService';
 
 const ExecutiveDirectorDashboard = () => {
     const dispatch = useDispatch();
     useEffect(() => {
         dispatch(setPageTitle('Executive Director Dashboard'));
-    });
+    }, [dispatch]);
+
+    type EDForm = {
+        id: number;
+        formNumber: string;
+        totalAmount: number;
+        status: 'PENDING' | 'ASSIGNED_TO_ED' | 'APPROVED' | 'REJECTED';
+        createdAt: string;
+        approvedAt?: string | null;
+        request?: { reference?: string | null; totalEstimated?: number | null; procurementType?: string | null } | null;
+        evaluation?: { evalNumber?: string | null } | null;
+    };
+
+    const [edForms, setEdForms] = useState<EDForm[]>([]);
+
+    const formatCurrency = (value: number) =>
+        new Intl.NumberFormat('en-JM', { style: 'currency', currency: 'JMD', maximumFractionDigits: 0 }).format(value || 0);
+
+    const formatDate = (value?: string | null) => {
+        if (!value) return '-';
+        const d = new Date(value);
+        return Number.isNaN(d.getTime()) ? '-' : d.toLocaleDateString();
+    };
 
     // Fetch real data from API
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
                 setLoading(true);
-                const token = getToken();
-                const apiUrl = getApiUrl();
-
-                // Fetch requests and derive pending executive approvals
-                const approvalsResponse = await fetch(`${apiUrl}/requests`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                });
-
-                if (approvalsResponse.ok) {
-                    const approvalsData = await approvalsResponse.json();
-                    // Filter for EXECUTIVE_REVIEW status
-                    const executiveApprovals = approvalsData.filter((item: any) => item.status === 'EXECUTIVE_REVIEW');
-                    setPendingApprovals(executiveApprovals);
-                }
-
-                // Fetch all requests for statistics (reuse same endpoint)
-                const requestsResponse = await fetch(`${apiUrl}/requests`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                });
-
-                if (requestsResponse.ok) {
-                    const allRequests = await requestsResponse.json();
-
-                    // Calculate statistics
-                    const pending = allRequests.filter((r: any) => r.status === 'EXECUTIVE_REVIEW').length;
-                    const approved = allRequests.filter((r: any) => r.statusHistory?.some((h: any) => h.status === 'FINANCE_APPROVED' && h.comment?.includes('Executive'))).length;
-
-                    const totalBudget = allRequests.filter((r: any) => r.status === 'EXECUTIVE_REVIEW').reduce((sum: number, r: any) => sum + (Number(r.totalEstimated) || 0), 0);
-
-                    // Get recent approvals (requests that moved from EXECUTIVE_REVIEW to FINANCE_APPROVED)
-                    const recent = allRequests
-                        .filter((r: any) => r.statusHistory?.some((h: any) => h.status === 'FINANCE_APPROVED'))
-                        .sort((a: any, b: any) => {
-                            const aDate = a.statusHistory?.find((h: any) => h.status === 'FINANCE_APPROVED')?.createdAt;
-                            const bDate = b.statusHistory?.find((h: any) => h.status === 'FINANCE_APPROVED')?.createdAt;
-                            return new Date(bDate).getTime() - new Date(aDate).getTime();
-                        })
-                        .slice(0, 5)
-                        .map((r: any) => {
-                            const approvalHistory = r.statusHistory?.find((h: any) => h.status === 'FINANCE_APPROVED');
-                            return {
-                                id: r.id,
-                                action: 'Approved',
-                                description: r.title,
-                                amount: Number(r.totalEstimated) || 0,
-                                signedDate: approvalHistory?.createdAt?.split('T')[0] || '',
-                                vendor: r.vendor || 'N/A',
-                                processing: 'Digital Signature',
-                            };
-                        });
-
-                    setRecentSignOffs(recent);
-
-                    setStats({
-                        pendingSignOffs: pending,
-                        completedApprovals: approved,
-                        totalBudgetValue: totalBudget,
-                        thisQuarterApprovals: approved,
-                        avgProcessingTime: 1.2, // TODO: Calculate from actual data
-                        complianceRate: 98.5, // TODO: Calculate from actual data
-                    });
-                }
+                const forms = (await evaluationService.getEdForms()) as EDForm[];
+                setEdForms(forms || []);
             } catch (error) {
                 console.error('Error fetching executive dashboard data:', error);
             } finally {
@@ -114,13 +63,6 @@ const ExecutiveDirectorDashboard = () => {
     const isDark = useSelector((state: IRootState) => state.themeConfig.theme === 'dark' || state.themeConfig.isDarkMode);
     const isRtl = useSelector((state: IRootState) => state.themeConfig.rtlClass) === 'rtl' ? true : false;
 
-    const [signOffModal, setSignOffModal] = useState(false);
-    const [selectedApproval, setSelectedApproval] = useState<any>(null);
-    const [digitalSignature, setDigitalSignature] = useState('');
-    const [documentModal, setDocumentModal] = useState(false);
-    const [selectedDocument, setSelectedDocument] = useState<any>(null);
-    const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
-    const [recentSignOffs, setRecentSignOffs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     // Executive-level statistics
@@ -134,15 +76,80 @@ const ExecutiveDirectorDashboard = () => {
     });
 
     // Executive approval trends chart
+    const derived = useMemo(() => {
+        const pending = edForms.filter((f) => f.status === 'ASSIGNED_TO_ED' || f.status === 'PENDING');
+        const approved = edForms.filter((f) => f.status === 'APPROVED' && f.approvedAt);
+        const rejected = edForms.filter((f) => f.status === 'REJECTED' && f.approvedAt);
+
+        const totalBudgetValue = pending.reduce((sum, f) => sum + (Number(f.totalAmount) || 0), 0);
+
+        const now = new Date();
+        const quarter = Math.floor(now.getMonth() / 3);
+        const quarterStart = new Date(now.getFullYear(), quarter * 3, 1);
+        const completedThisQuarter = approved.filter((f) => new Date(f.approvedAt as string) >= quarterStart).length;
+
+        const avgProcessingTime =
+            approved.length === 0
+                ? 0
+                : approved.reduce((sum, f) => {
+                      const created = new Date(f.createdAt).getTime();
+                      const approvedAt = new Date(f.approvedAt as string).getTime();
+                      const days = Math.max(0, (approvedAt - created) / (1000 * 60 * 60 * 24));
+                      return sum + days;
+                  }, 0) / approved.length;
+
+        const recentSignOffs = [...approved, ...rejected]
+            .sort((a, b) => new Date(b.approvedAt as string).getTime() - new Date(a.approvedAt as string).getTime())
+            .slice(0, 5)
+            .map((f) => ({
+                id: f.id,
+                action: f.status === 'APPROVED' ? 'Approved' : 'Rejected',
+                description: f.request?.reference || f.evaluation?.evalNumber || f.formNumber,
+                amount: Number(f.totalAmount) || 0,
+                signedDate: f.approvedAt ? String(f.approvedAt).split('T')[0] : '',
+                processing: 'ED Approval Form',
+            }));
+
+        const pendingApprovals = pending.map((f) => ({
+            id: f.id,
+            formNumber: f.formNumber,
+            requestRef: f.request?.reference || '-',
+            evaluationRef: f.evaluation?.evalNumber || '-',
+            amount: Number(f.totalAmount) || 0,
+            createdAt: f.createdAt,
+            status: f.status,
+        }));
+
+        return { pendingApprovals, recentSignOffs, totalBudgetValue, completedThisQuarter, avgProcessingTime };
+    }, [edForms]);
+
+    useEffect(() => {
+        setStats((prev) => ({
+            ...prev,
+            pendingSignOffs: derived.pendingApprovals.length,
+            completedApprovals: derived.completedThisQuarter,
+            totalBudgetValue: derived.totalBudgetValue,
+            thisQuarterApprovals: derived.completedThisQuarter,
+            avgProcessingTime: Number(derived.avgProcessingTime.toFixed(1)),
+        }));
+    }, [derived]);
+
     const approvalTrendsChart = {
         series: [
             {
                 name: 'Approved Amount ($000s)',
-                data: [125, 180, 95, 220, 165, 240, 195, 275, 210, 190, 155, 145],
+                data: Array.from({ length: 12 }, (_, idx) => {
+                    const total = edForms
+                        .filter((f) => f.status === 'APPROVED' && f.approvedAt && new Date(f.approvedAt).getMonth() === idx)
+                        .reduce((sum, f) => sum + (Number(f.totalAmount) || 0), 0);
+                    return Math.round(total / 1000);
+                }),
             },
             {
                 name: 'Number of Approvals',
-                data: [8, 12, 6, 15, 11, 18, 14, 20, 16, 13, 10, 9],
+                data: Array.from({ length: 12 }, (_, idx) =>
+                    edForms.filter((f) => f.status === 'APPROVED' && f.approvedAt && new Date(f.approvedAt).getMonth() === idx).length,
+                ),
             },
         ],
         options: {
@@ -285,72 +292,16 @@ const ExecutiveDirectorDashboard = () => {
         },
     };
 
-    const handleSignOff = (approval: any) => {
-        setSelectedApproval(approval);
-        setSignOffModal(true);
-    };
-
-    const handleViewDocuments = (approval: any) => {
-        // Handle view documents action
-        setSelectedDocument(approval);
-        setDocumentModal(true);
-    };
-
-    const submitDigitalSignature = (action: 'approve' | 'reject') => {
-        if (!digitalSignature.trim()) {
-            alert('Please provide your digital signature/comments');
-            return;
-        }
-
-        // Process approval action
-        // Implement digital signature logic
-        setSignOffModal(false);
-        setSelectedApproval(null);
-        setDigitalSignature('');
-    };
-
-    const downloadDocument = (document: any) => {
-        // Implement document download logic
-        // In a real app, this would trigger a file download
-        alert(`Downloading ${document.name}...`);
-    };
-
-    const getStatusBadge = (status: string) => {
+    const statusPill = (status: EDForm['status']) => {
         switch (status) {
-            case 'Pending Executive Approval':
+            case 'ASSIGNED_TO_ED':
                 return 'badge-outline-warning';
-            case 'Approved':
+            case 'APPROVED':
                 return 'badge-outline-success';
-            case 'Rejected':
+            case 'REJECTED':
                 return 'badge-outline-danger';
             default:
                 return 'badge-outline-primary';
-        }
-    };
-
-    const getPriorityBadge = (priority: string) => {
-        switch (priority) {
-            case 'High':
-                return 'badge-outline-danger';
-            case 'Medium':
-                return 'badge-outline-warning';
-            case 'Low':
-                return 'badge-outline-info';
-            default:
-                return 'badge-outline-primary';
-        }
-    };
-
-    const getTypeBadge = (type: string) => {
-        switch (type) {
-            case 'Major Contract':
-                return 'badge-outline-primary';
-            case 'Capital Expenditure':
-                return 'badge-outline-success';
-            case 'Service Contract':
-                return 'badge-outline-info';
-            default:
-                return 'badge-outline-secondary';
         }
     };
 
@@ -426,60 +377,49 @@ const ExecutiveDirectorDashboard = () => {
                     <div className="panel">
                         <div className="mb-5 flex items-center justify-between">
                             <h5 className="text-lg font-semibold dark:text-white-light">Pending Executive Sign-offs</h5>
-                            <Link to="/procurement/approvals" className="font-semibold text-primary hover:underline">
+                            <Link to="/procurement/forms" className="font-semibold text-primary hover:underline">
                                 View All
                             </Link>
                         </div>
                         <div className="space-y-4">
-                            {pendingApprovals.map((approval) => (
-                                <div key={approval.id} className="rounded-lg border border-[#e0e6ed] p-4 dark:border-[#253b5c]">
-                                    <div className="mb-3 flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <h6 className="font-semibold">{approval.approvalNumber}</h6>
-                                            <span className={`badge ${getTypeBadge(approval.type)}`}>{approval.type}</span>
-                                            <span className={`badge ${getPriorityBadge(approval.priority)}`}>{approval.priority}</span>
+                            {loading && <div className="text-sm text-gray-500">Loading approvals...</div>}
+                            {!loading && derived.pendingApprovals.length === 0 && <div className="text-sm text-gray-500">No pending sign-offs.</div>}
+                            {!loading &&
+                                derived.pendingApprovals.map((approval) => (
+                                    <div key={approval.id} className="rounded-lg border border-[#e0e6ed] p-4 dark:border-[#253b5c]">
+                                        <div className="mb-3 flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <h6 className="font-semibold">{approval.formNumber}</h6>
+                                                <span className={`badge ${statusPill(approval.status)}`}>{approval.status.replace(/_/g, ' ')}</span>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <Link to={`/procurement/forms/ed-approval/${approval.id}`} className="btn btn-outline-info btn-sm" title="Open Form">
+                                                    <IconEye className="h-4 w-4" />
+                                                </Link>
+                                            </div>
                                         </div>
-                                        <div className="flex gap-2">
-                                            <button onClick={() => handleViewDocuments(approval)} className="btn btn-outline-info btn-sm" title="View Documents">
-                                                <IconEye className="h-4 w-4" />
-                                            </button>
-                                            <button onClick={() => handleSignOff(approval)} className="btn btn-success btn-sm" title="Sign Off">
-                                                <IconPencil className="h-4 w-4" />
-                                            </button>
+                                        <p className="mb-2 font-medium">Request: {approval.requestRef}</p>
+                                        <div className="mb-3 flex items-center justify-between">
+                                            <span className="text-lg font-bold text-primary">{formatCurrency(approval.amount)}</span>
+                                            <span className="text-sm text-white-dark">Created: {formatDate(approval.createdAt)}</span>
                                         </div>
-                                    </div>
-                                    <p className="mb-2 font-medium">{approval.description}</p>
-                                    <div className="mb-3 flex items-center justify-between">
-                                        <span className="text-lg font-bold text-primary">${approval.amount.toLocaleString()}</span>
-                                        <span className="text-sm text-white-dark">Due: {approval.dueDate}</span>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4 text-xs text-white-dark">
-                                        <div>
-                                            <p>
-                                                <strong>Vendor:</strong> {approval.vendor}
-                                            </p>
-                                            <p>
-                                                <strong>Requestor:</strong> {approval.requestor}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <p>
-                                                <strong>Dept. Head:</strong> {approval.departmentHead}
-                                            </p>
-                                            <p>
-                                                <strong>Budget Code:</strong> {approval.budgetCode}
-                                            </p>
+                                        <div className="grid grid-cols-2 gap-4 text-xs text-white-dark">
+                                            <div>
+                                                <p>
+                                                    <strong>Evaluation:</strong> {approval.evaluationRef}
+                                                </p>
+                                                <p>
+                                                    <strong>Form #:</strong> {approval.formNumber}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p>
+                                                    <strong>Status:</strong> {approval.status.replace(/_/g, ' ')}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="mt-2 flex items-center justify-between text-xs">
-                                        <span className="text-white-dark">Contract Period: {approval.contractPeriod}</span>
-                                        <span className="flex items-center gap-1 text-white-dark">
-                                            <IconFile className="h-3 w-3" />
-                                            {approval.documents} documents
-                                        </span>
-                                    </div>
-                                </div>
-                            ))}
+                                ))}
                         </div>
                     </div>
 
@@ -490,7 +430,10 @@ const ExecutiveDirectorDashboard = () => {
                         </div>
                         <PerfectScrollbar className="relative h-[400px] pr-3 -mr-3">
                             <div className="space-y-4">
-                                {recentSignOffs.map((signOff) => (
+                                {loading && <div className="text-sm text-gray-500">Loading sign-offs...</div>}
+                                {!loading && derived.recentSignOffs.length === 0 && <div className="text-sm text-gray-500">No recent sign-offs.</div>}
+                                {!loading &&
+                                    derived.recentSignOffs.map((signOff) => (
                                     <div key={signOff.id} className="flex items-start gap-3">
                                         <div
                                             className={`flex h-8 w-8 items-center justify-center rounded-full ${
@@ -519,13 +462,11 @@ const ExecutiveDirectorDashboard = () => {
                                             </div>
                                             <p className="text-sm font-medium">{signOff.description}</p>
                                             <div className="flex items-center gap-2 text-xs text-white-dark">
-                                                <span>Vendor: {signOff.vendor}</span>
-                                                <span>Amount: ${signOff.amount.toLocaleString()}</span>
+                                                <span>Amount: {formatCurrency(signOff.amount)}</span>
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-xs text-white-dark">Signed: {signOff.signedDate}</span>
                                             </div>
-                                            {signOff.condition && <p className="text-xs text-warning mt-1">Note: {signOff.condition}</p>}
                                         </div>
                                     </div>
                                 ))}
@@ -534,193 +475,6 @@ const ExecutiveDirectorDashboard = () => {
                     </div>
                 </div>
             </div>
-
-            {/* Digital Sign-off Modal */}
-            {signOffModal && selectedApproval && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                    <div className="w-full max-w-3xl rounded-lg bg-white p-6 dark:bg-[#1b2e4b]">
-                        <div className="mb-4 flex items-center justify-between">
-                            <h4 className="text-lg font-semibold flex items-center gap-2">
-                                <IconPencil />
-                                Executive Digital Sign-off
-                            </h4>
-                            <button onClick={() => setSignOffModal(false)} className="text-white-dark hover:text-danger" title="Close Modal">
-                                <IconX />
-                            </button>
-                        </div>
-
-                        <div className="mb-6 rounded-lg border border-[#e0e6ed] p-4 dark:border-[#253b5c]">
-                            <div className="mb-4 grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="text-sm font-medium text-white-dark">Approval Number</label>
-                                    <p className="font-semibold">{selectedApproval.approvalNumber}</p>
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-white-dark">Type</label>
-                                    <p className="font-semibold">{selectedApproval.type}</p>
-                                </div>
-                            </div>
-
-                            <div className="mb-4">
-                                <label className="text-sm font-medium text-white-dark">Description</label>
-                                <p className="font-semibold">{selectedApproval.description}</p>
-                            </div>
-
-                            <div className="mb-4 grid grid-cols-3 gap-4">
-                                <div>
-                                    <label className="text-sm font-medium text-white-dark">Vendor</label>
-                                    <p>{selectedApproval.vendor}</p>
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-white-dark">Amount</label>
-                                    <p className="text-lg font-bold text-primary">${selectedApproval.amount.toLocaleString()}</p>
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-white-dark">Contract Period</label>
-                                    <p>{selectedApproval.contractPeriod}</p>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="text-sm font-medium text-white-dark">Requesting Department</label>
-                                    <p>{selectedApproval.requestor}</p>
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-white-dark">Department Head Approval</label>
-                                    <p className="flex items-center gap-1 text-success">
-                                        <IconCircleCheck className="h-4 w-4" />
-                                        {selectedApproval.departmentHead}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="mb-6">
-                            <label className="mb-2 block text-sm font-medium">Digital Signature & Comments</label>
-                            <textarea
-                                value={digitalSignature}
-                                onChange={(e) => setDigitalSignature(e.target.value)}
-                                className="form-textarea resize-none"
-                                rows={4}
-                                placeholder="Enter your digital signature, comments, or conditions for this approval..."
-                            />
-                        </div>
-
-                        <div className="flex items-center justify-end gap-2">
-                            <button onClick={() => submitDigitalSignature('approve')} className="btn btn-success" disabled={!digitalSignature.trim()}>
-                                <IconChecks className="mr-2" />
-                                Approve & Sign
-                            </button>
-                            <button onClick={() => submitDigitalSignature('reject')} className="btn btn-danger" disabled={!digitalSignature.trim()}>
-                                <IconX className="mr-2" />
-                                Reject with Comments
-                            </button>
-                            <button onClick={() => handleViewDocuments(selectedApproval)} className="btn btn-outline-primary">
-                                <IconDownload className="mr-2" />
-                                View Documents
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Document Viewer Modal */}
-
-            {documentModal && selectedDocument && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-75">
-                    <div className="w-full max-w-4xl rounded-lg bg-white p-6 dark:bg-[#1b2e4b] max-h-[90vh] overflow-hidden flex flex-col">
-                        <div className="mb-4 flex items-center justify-between">
-                            <h4 className="text-lg font-semibold flex items-center gap-2">
-                                <IconFile />
-                                Documents - {selectedDocument.approvalNumber}
-                            </h4>
-                            <button onClick={() => setDocumentModal(false)} className="text-white-dark hover:text-danger" title="Close Modal">
-                                <IconX />
-                            </button>
-                        </div>
-
-                        <div className="mb-4 rounded-lg border border-[#e0e6ed] p-4 dark:border-[#253b5c]">
-                            <div className="grid grid-cols-3 gap-4 text-sm">
-                                <div>
-                                    <span className="font-medium text-white-dark">Approval:</span>
-                                    <p className="font-semibold">{selectedDocument.description}</p>
-                                </div>
-                                <div>
-                                    <span className="font-medium text-white-dark">Vendor:</span>
-                                    <p className="font-semibold">{selectedDocument.vendor}</p>
-                                </div>
-                                <div>
-                                    <span className="font-medium text-white-dark">Total Documents:</span>
-                                    <p className="font-semibold">{selectedDocument.documents} files</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex-1 overflow-hidden">
-                            <h6 className="mb-3 font-semibold">Document List</h6>
-                            <div className="overflow-y-auto max-h-[400px] space-y-3">
-                                {selectedDocument.documentList?.map((doc: any) => (
-                                    <div
-                                        key={doc.id}
-                                        className="flex items-center justify-between rounded-lg border border-[#e0e6ed] p-4 dark:border-[#253b5c] hover:bg-gray-50 dark:hover:bg-gray-800"
-                                    >
-                                        <div className="flex items-center gap-3 flex-1">
-                                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-light text-primary">
-                                                <IconFile className="h-5 w-5" />
-                                            </div>
-                                            <div className="flex-1">
-                                                <h6 className="font-semibold text-sm">{doc.name}</h6>
-                                                <div className="flex items-center gap-4 text-xs text-white-dark">
-                                                    <span>Type: {doc.type}</span>
-                                                    <span>Size: {doc.size}</span>
-                                                    <span>Category: {doc.category}</span>
-                                                </div>
-                                                <div className="flex items-center gap-2 text-xs text-white-dark mt-1">
-                                                    <span>Uploaded by: {doc.uploadedBy}</span>
-                                                    <span>•</span>
-                                                    <span>{doc.uploadedDate}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <button onClick={() => downloadDocument(doc)} className="btn btn-outline-primary btn-sm" title="Download Document">
-                                                <IconDownload className="h-4 w-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    // In a real app, this would open a document viewer
-                                                    alert(`Opening ${doc.name} for preview...`);
-                                                }}
-                                                className="btn btn-outline-success btn-sm"
-                                                title="Preview Document"
-                                            >
-                                                <IconEye className="h-4 w-4" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="mt-4 flex justify-end gap-2 border-t border-[#e0e6ed] pt-4 dark:border-[#253b5c]">
-                            <button
-                                onClick={() => {
-                                    // In production, this would create a ZIP package of all documents
-                                    alert(`Preparing download package for all ${selectedDocument.documents} documents...`);
-                                }}
-                                className="btn btn-primary"
-                            >
-                                <IconDownload className="mr-2" />
-                                Download All Documents
-                            </button>
-                            <button onClick={() => setDocumentModal(false)} className="btn btn-outline-secondary">
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };
