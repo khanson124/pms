@@ -181,7 +181,18 @@ const SubmitIdea = () => {
                         if (active) setDuplicateMatches([]);
                     } else {
                         const data = await res.json();
-                        if (active) setDuplicateMatches(data.matches || []);
+                        const rawMatches = Array.isArray(data.matches) ? data.matches : [];
+                        const normalizedMatches = rawMatches.map((m: any) => {
+                            const rawScore = typeof m.score === 'number' ? m.score : typeof m.similarity === 'number' ? m.similarity / 100 : 0;
+                            return {
+                                id: m.id,
+                                title: m.title || 'Untitled Idea',
+                                snippet: m.snippet || m.description || '',
+                                score: Number.isFinite(rawScore) ? rawScore : 0,
+                                submittedAt: m.submittedAt || '',
+                            };
+                        });
+                        if (active) setDuplicateMatches(normalizedMatches);
                     }
                 }
             } catch (err) {
