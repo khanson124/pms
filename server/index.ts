@@ -1628,6 +1628,21 @@ app.post('/api/ideas/:id/approve', authMiddleware, requireCommittee, async (req,
                     },
                 })
                 .catch((err: any) => console.error('Failed to create approval message:', err));
+
+            // Send email notification to idea submitter
+            if (updated.submitter?.email) {
+                await emailService
+                    .sendEmail(
+                        updated.submitter.email,
+                        `Innovation Idea Approved: ${updated.title}`,
+                        `<p>Dear ${updated.submitter?.name || updated.submitter.email},</p>
+                        <p>Great news! Your innovation idea "<strong>${updated.title}</strong>" has been approved by the Innovation Committee.</p>
+                        ${notes ? `<p><strong>Reviewer Notes:</strong> ${notes}</p>` : ''}
+                        <p>You can view the idea status in the Innovation Hub.</p>
+                        <p style="font-size:12px;color:#666;">This is an automated message from the Procurement Management System.</p>`,
+                    )
+                    .catch((err: any) => console.error('Failed to send approval email:', err));
+            }
         }
 
         // Emit WebSocket event
@@ -1693,6 +1708,21 @@ app.post('/api/ideas/:id/reject', authMiddleware, requireCommittee, async (req, 
                     },
                 })
                 .catch((err: any) => console.error('Failed to create rejection message:', err));
+
+            // Send email notification to idea submitter
+            if (updated.submitter?.email) {
+                await emailService
+                    .sendEmail(
+                        updated.submitter.email,
+                        `Innovation Idea Review: ${updated.title}`,
+                        `<p>Dear ${updated.submitter?.name || updated.submitter.email},</p>
+                        <p>Thank you for submitting your innovation idea "<strong>${updated.title}</strong>". After review, the committee is unable to proceed with this idea at this time.</p>
+                        ${notes ? `<p><strong>Reviewer Feedback:</strong> ${notes}</p>` : ''}
+                        <p>We encourage you to continue innovating and submitting new ideas.</p>
+                        <p style="font-size:12px;color:#666;">This is an automated message from the Procurement Management System.</p>`,
+                    )
+                    .catch((err: any) => console.error('Failed to send rejection email:', err));
+            }
         }
 
         // Invalidate ideas cache
@@ -1773,6 +1803,21 @@ app.post('/api/ideas/:id/promote', authMiddleware, requireCommittee, async (req,
                     },
                 })
                 .catch((err: any) => console.error('Failed to create promotion message:', err));
+
+            // Send email notification to idea submitter
+            if (idea.submitter?.email) {
+                await emailService
+                    .sendEmail(
+                        idea.submitter.email,
+                        `Innovation Idea Promoted: ${idea.title}`,
+                        `<p>Dear ${idea.submitter?.name || idea.submitter.email},</p>
+                        <p>Congratulations! Your innovation idea "<strong>${idea.title}</strong>" has been promoted to an official project.</p>
+                        <p><strong>Project Code:</strong> ${code}</p>
+                        <p>The project team will be in touch with next steps.</p>
+                        <p style="font-size:12px;color:#666;">This is an automated message from the Procurement Management System.</p>`,
+                    )
+                    .catch((err: any) => console.error('Failed to send promotion email:', err));
+            }
         }
 
         // Fetch updated idea to return full data
@@ -1809,6 +1854,28 @@ app.post('/api/ideas/batch/approve', authMiddleware, requireCommittee, batchLimi
         // Emit WebSocket event
         emitBatchApproval(ideaIds, 'APPROVE', result.updated);
 
+        // Email submitters of approved ideas
+        try {
+            const approvedIdeas = await prisma.idea.findMany({
+                where: { id: { in: ideaIds.filter((id) => !result.failed.includes(id)) } },
+                include: { submitter: { select: { name: true, email: true } } },
+            });
+            for (const idea of approvedIdeas) {
+                if (!idea.submitter?.email) continue;
+                await emailService.sendEmail(
+                    idea.submitter.email,
+                    `Innovation Idea Approved: ${idea.title}`,
+                    `<p>Dear ${idea.submitter?.name || idea.submitter.email},</p>
+                    <p>Your innovation idea "<strong>${idea.title}</strong>" has been approved by the Innovation Committee.</p>
+                    ${notes ? `<p><strong>Reviewer Notes:</strong> ${notes}</p>` : ''}
+                    <p>You can view the idea status in the Innovation Hub.</p>
+                    <p style="font-size:12px;color:#666;">This is an automated message from the Procurement Management System.</p>`,
+                );
+            }
+        } catch (err) {
+            console.warn('Failed to send batch approval emails:', err);
+        }
+
         return res.json({
             message: `Approved ${result.updated} ideas`,
             updated: result.updated,
@@ -1840,6 +1907,28 @@ app.post('/api/ideas/batch/reject', authMiddleware, requireCommittee, batchLimit
 
         // Emit WebSocket event
         emitBatchApproval(ideaIds, 'REJECT', result.updated);
+
+        // Email submitters of rejected ideas
+        try {
+            const rejectedIdeas = await prisma.idea.findMany({
+                where: { id: { in: ideaIds.filter((id) => !result.failed.includes(id)) } },
+                include: { submitter: { select: { name: true, email: true } } },
+            });
+            for (const idea of rejectedIdeas) {
+                if (!idea.submitter?.email) continue;
+                await emailService.sendEmail(
+                    idea.submitter.email,
+                    `Innovation Idea Review: ${idea.title}`,
+                    `<p>Dear ${idea.submitter?.name || idea.submitter.email},</p>
+                    <p>Thank you for submitting your innovation idea "<strong>${idea.title}</strong>". After review, the committee is unable to proceed with this idea at this time.</p>
+                    ${notes ? `<p><strong>Reviewer Feedback:</strong> ${notes}</p>` : ''}
+                    <p>We encourage you to continue innovating and submitting new ideas.</p>
+                    <p style="font-size:12px;color:#666;">This is an automated message from the Procurement Management System.</p>`,
+                );
+            }
+        } catch (err) {
+            console.warn('Failed to send batch rejection emails:', err);
+        }
 
         return res.json({
             message: `Rejected ${result.updated} ideas`,
