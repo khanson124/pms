@@ -52,6 +52,33 @@ const RETENDER_REASON_OPTIONS = [
 ] as const;
 const AWARD_CRITERIA_OPTIONS = ['Lowest Cost', 'Most Advantageous Bid'] as const;
 
+const PROCUREMENT_METHOD_CHOICES = [
+    { label: 'International Competitive Bidding', value: 'INTERNATIONAL_COMPETITIVE_BIDDING' },
+    { label: 'National Competitive Bidding', value: 'NATIONAL_COMPETITIVE_BIDDING' },
+    { label: 'Restricted Bidding', value: 'RESTRICTED_BIDDING' },
+    { label: 'Single Source', value: 'SINGLE_SOURCE' },
+    { label: 'Emergency Single Source', value: 'EMERGENCY_SINGLE_SOURCE' },
+] as const;
+
+const CONTRACT_TYPE_CHOICES = [
+    { label: 'Goods', value: 'GOODS' },
+    { label: 'Consulting Services', value: 'CONSULTING_SERVICES' },
+    { label: 'Non-Consulting Services', value: 'NON_CONSULTING_SERVICES' },
+    { label: 'Works', value: 'WORKS' },
+] as const;
+
+const normalizeProcurementMethod = (value: string | undefined) => {
+    if (!value) return '';
+    const match = PROCUREMENT_METHOD_CHOICES.find((choice) => choice.value === value || choice.label === value);
+    return match?.value || value;
+};
+
+const normalizeContractType = (value: string | undefined) => {
+    if (!value) return '';
+    const match = CONTRACT_TYPE_CHOICES.find((choice) => choice.value === value || choice.label === value);
+    return match?.value || value;
+};
+
 const normalizeYesNo = (value: any): 'Yes' | 'No' | '' => {
     if (value === true) return 'Yes';
     if (value === false) return 'No';
@@ -76,17 +103,19 @@ export const EvaluationForm: React.FC<Props> = ({
     sectionCActions,
     prefilledCells = {},
 }) => {
-    const currentUserName = useMemo(() => {
+    const currentUser = useMemo(() => {
         try {
             const user = getUser();
-            return String(user?.name || '').trim();
+            const name = String(user?.name || '').trim();
+            const email = String(user?.email || '').trim();
+            return { name, email };
         } catch {
-            return '';
+            return { name: '', email: '' };
         }
     }, []);
 
     const canEditAssignedColumn = (column: { name?: string; assigneeName?: string } | null): boolean => {
-        if (!currentUserName || !column) return false;
+        if ((!currentUser.name && !currentUser.email) || !column) return false;
         const explicit = String(column.assigneeName || '').trim();
         const parsed = (() => {
             const name = column.name || '';
@@ -96,8 +125,12 @@ export const EvaluationForm: React.FC<Props> = ({
         const assignee = explicit || parsed;
         if (!assignee) return false;
         const assigneeLower = assignee.toLowerCase();
-        const userLower = currentUserName.toLowerCase();
-        return assigneeLower === userLower || userLower.includes(assigneeLower) || assigneeLower.includes(userLower);
+        const nameLower = currentUser.name.toLowerCase();
+        const emailLower = currentUser.email.toLowerCase();
+        return (
+            (nameLower && (assigneeLower === nameLower || nameLower.includes(assigneeLower) || assigneeLower.includes(nameLower))) ||
+            (emailLower && (assigneeLower === emailLower || emailLower.includes(assigneeLower) || assigneeLower.includes(emailLower)))
+        );
     };
 
     const getColumnDisplayName = (column: { name?: string; assigneeName?: string }) => {
@@ -540,22 +573,26 @@ export const EvaluationForm: React.FC<Props> = ({
                         <div>
                             <label className="block mb-1 text-sm font-semibold">5. Procurement Method</label>
                             <div className="space-y-2">
-                                {PROCUREMENT_METHOD_OPTIONS.map((method) => (
-                                    <label key={method} className="flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            className="form-checkbox"
-                                            disabled={!canEdit('A')}
-                                            checked={(sectionA as any)?.procurementMethod === method}
-                                            onChange={(e) => {
-                                                if (e.target.checked) {
-                                                    setSectionA({ ...(sectionA as any), procurementMethod: method });
-                                                }
-                                            }}
-                                        />
-                                        <span>{method}</span>
-                                    </label>
-                                ))}
+                                {PROCUREMENT_METHOD_CHOICES.map((method) => {
+                                    const isChecked = normalizeProcurementMethod((sectionA as any)?.procurementMethod) === method.value;
+                                    return (
+                                        <label key={method.value} className="flex items-center gap-2">
+                                            <input
+                                                type="checkbox"
+                                                className="form-checkbox"
+                                                disabled={!canEdit('A')}
+                                                checked={isChecked}
+                                                onChange={(e) => {
+                                                    setSectionA({
+                                                        ...(sectionA as any),
+                                                        procurementMethod: e.target.checked ? method.value : '',
+                                                    });
+                                                }}
+                                            />
+                                            <span>{method.label}</span>
+                                        </label>
+                                    );
+                                })}
                             </div>
                         </div>
                         <div>
@@ -582,22 +619,26 @@ export const EvaluationForm: React.FC<Props> = ({
                         <div>
                             <label className="block mb-1 text-sm font-semibold">7. Contract Type</label>
                             <div className="space-y-2">
-                                {CONTRACT_TYPE_OPTIONS.map((type) => (
-                                    <label key={type} className="flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            className="form-checkbox"
-                                            disabled={!canEdit('A')}
-                                            checked={(sectionA as any)?.contractType === type}
-                                            onChange={(e) => {
-                                                if (e.target.checked) {
-                                                    setSectionA({ ...(sectionA as any), contractType: type });
-                                                }
-                                            }}
-                                        />
-                                        <span>{type}</span>
-                                    </label>
-                                ))}
+                                {CONTRACT_TYPE_CHOICES.map((type) => {
+                                    const isChecked = normalizeContractType((sectionA as any)?.contractType) === type.value;
+                                    return (
+                                        <label key={type.value} className="flex items-center gap-2">
+                                            <input
+                                                type="checkbox"
+                                                className="form-checkbox"
+                                                disabled={!canEdit('A')}
+                                                checked={isChecked}
+                                                onChange={(e) => {
+                                                    setSectionA({
+                                                        ...(sectionA as any),
+                                                        contractType: e.target.checked ? type.value : '',
+                                                    });
+                                                }}
+                                            />
+                                            <span>{type.label}</span>
+                                        </label>
+                                    );
+                                })}
                             </div>
                         </div>
                         <div>
@@ -2219,8 +2260,9 @@ export const EvaluationForm: React.FC<Props> = ({
                                 const checked = e.target.checked;
                                 const next = { ...(sectionE as any), approved: checked };
                                 if (checked) {
-                                    if (!next.preparedBy && currentUserName) {
-                                        next.preparedBy = currentUserName;
+                                    const fallbackName = currentUser.name || currentUser.email;
+                                    if (!next.preparedBy && fallbackName) {
+                                        next.preparedBy = fallbackName;
                                     }
                                     if (!next.approvalDate) {
                                         next.approvalDate = new Date().toISOString().split('T')[0];

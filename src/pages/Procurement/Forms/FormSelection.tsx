@@ -91,6 +91,14 @@ export default function FormSelection() {
     const categories = ['All', ...new Set(forms.map((f) => f.category))];
     const filteredForms = selectedCategory === 'All' ? forms : forms.filter((f) => f.category === selectedCategory);
 
+    const formatCurrency = (value: number) =>
+        new Intl.NumberFormat('en-JM', {
+            style: 'currency',
+            currency: 'JMD',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+        }).format(value);
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -131,7 +139,7 @@ export default function FormSelection() {
                                             <td className="font-semibold text-primary">{form.formNumber}</td>
                                             <td>{form.request?.reference || '-'}</td>
                                             <td>{form.evaluation?.evalNumber || '-'}</td>
-                                            <td>{form.totalAmount.toLocaleString()}</td>
+                                            <td>{formatCurrency(form.totalAmount)}</td>
                                             <td>{form.status}</td>
                                             <td>
                                                 <Link to={`/procurement/forms/ed-approval/${form.id}`} className="btn btn-sm btn-outline-primary gap-1">

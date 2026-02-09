@@ -19,7 +19,7 @@ import { evaluationService, type Evaluation, type EvaluationStatus } from '../..
 import { getUser } from '../../../utils/auth';
 import { SkeletonLine, SkeletonStats, SkeletonTableRow } from '../../../components/SkeletonLoading';
 
-type DisplayStatus = 'Pending' | 'In Progress' | 'Awaiting Verification' | 'Completed' | 'Validated' | 'Rejected';
+type DisplayStatus = 'Pending' | 'In Progress' | 'Awaiting Verification' | 'Completed' | 'Validated' | 'Rejected' | 'Cancelled';
 
 const statusMap: Record<EvaluationStatus, DisplayStatus> = {
     PENDING: 'Pending',
@@ -28,6 +28,7 @@ const statusMap: Record<EvaluationStatus, DisplayStatus> = {
     COMPLETED: 'Completed',
     VALIDATED: 'Validated',
     REJECTED: 'Rejected',
+    CANCELLED: 'Cancelled',
 };
 
 const EvaluationList = () => {
@@ -114,7 +115,7 @@ const EvaluationList = () => {
     }, [evaluations, search, statusFilter, dueBefore, dueAfter]);
 
     const stats = useMemo(() => {
-        const base = { total: evaluations.length, pending: 0, inProgress: 0, committeeReview: 0, completed: 0, validated: 0, rejected: 0 };
+        const base = { total: evaluations.length, pending: 0, inProgress: 0, committeeReview: 0, completed: 0, validated: 0, rejected: 0, cancelled: 0 };
         for (const e of evaluations) {
             if (e.status === 'PENDING') base.pending++;
             else if (e.status === 'IN_PROGRESS') base.inProgress++;
@@ -122,6 +123,7 @@ const EvaluationList = () => {
             else if (e.status === 'COMPLETED') base.completed++;
             else if (e.status === 'VALIDATED') base.validated++;
             else if (e.status === 'REJECTED') base.rejected++;
+            else if (e.status === 'CANCELLED') base.cancelled++;
         }
         return base;
     }, [evaluations]);
@@ -200,6 +202,8 @@ const EvaluationList = () => {
             case 'PENDING':
                 return 'bg-info';
             case 'REJECTED':
+                return 'bg-danger';
+            case 'CANCELLED':
                 return 'bg-danger';
             default:
                 return 'bg-secondary';
@@ -375,6 +379,7 @@ const EvaluationList = () => {
                                     <option value="Completed">{t('evaluation.status.completed', 'Completed')}</option>
                                     <option value="Validated">{t('evaluation.status.validated', 'Validated')}</option>
                                     <option value="Rejected">Rejected</option>
+                                    <option value="Cancelled">Cancelled</option>
                                 </select>
                                 <div className="flex gap-2 items-center">
                                     <label className="text-xs text-white-dark whitespace-nowrap">Due:</label>
