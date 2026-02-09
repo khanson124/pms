@@ -75,15 +75,22 @@ const Header = () => {
         isRequester,
     } = detectedRoles;
 
-    // Determine current module based on route
-    const isInnovationHub = location.pathname.startsWith('/innovation');
-    const currentModule = isInnovationHub ? 'innovation' : 'procurement';
-    const helpState = { module: isInnovationHub ? 'IH' : 'PMS' };
     const procurementLocked = moduleLocks.procurement.locked;
     const innovationLocked = moduleLocks.innovation.locked;
 
     // Set dashboard path based on pinnedModule if available, otherwise role detection
     const [pinnedModule, setPinnedModule] = useState<string | null>(null);
+
+    // Determine current module based on route or navigation state
+    const stateModule = (location.state as { module?: string } | null)?.module;
+    const isInnovationHub = useMemo(() => {
+        if (location.pathname.startsWith('/innovation')) return true;
+        if (stateModule === 'IH') return true;
+        if (stateModule === 'PMS') return false;
+        return pinnedModule === 'innovation';
+    }, [location.pathname, stateModule, pinnedModule]);
+    const currentModule = isInnovationHub ? 'innovation' : 'procurement';
+    const helpState = { module: isInnovationHub ? 'IH' : 'PMS' };
 
     useEffect(() => {
         const fetchPinnedModule = async () => {
@@ -817,7 +824,11 @@ const Header = () => {
                                     {navigationMenus.length > 0 ? (
                                         navigationMenus.map((menu) => (
                                             <li key={menu.id}>
-                                                <Link to={menu.path} state={menu.menuId === 'help-support' ? helpState : undefined} className="dark:hover:text-white">
+                                                <Link
+                                                    to={menu.path}
+                                                    state={['help-support', 'my-profile', 'account-settings'].includes(menu.menuId) ? helpState : undefined}
+                                                    className="dark:hover:text-white"
+                                                >
                                                     {menu.menuId === 'my-profile' && <IconUser className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />}
                                                     {menu.menuId === 'account-settings' && (
                                                         <svg className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -837,13 +848,13 @@ const Header = () => {
                                     ) : (
                                         <>
                                             <li>
-                                                <Link to="/profile" className="dark:hover:text-white">
+                                                <Link to="/profile" state={helpState} className="dark:hover:text-white">
                                                     <IconUser className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />
                                                     My Profile
                                                 </Link>
                                             </li>
                                             <li>
-                                                <Link to="/settings" className="dark:hover:text-white">
+                                                <Link to="/settings" state={helpState} className="dark:hover:text-white">
                                                     <svg className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                         <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5"></circle>
                                                         <path

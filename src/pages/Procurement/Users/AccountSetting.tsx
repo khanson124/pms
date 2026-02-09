@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import { useDispatch, useSelector } from 'react-redux';
@@ -20,6 +20,7 @@ import IconLock from '../../../components/Icon/IconLock';
 
 const AccountSetting = () => {
     const dispatch = useDispatch();
+    const location = useLocation();
     const { user } = useSelector((state: IRootState) => state.auth);
     const [tabs, setTabs] = useState<string>('home');
     const [profileData, setProfileData] = useState<any>(null);
@@ -43,6 +44,13 @@ const AccountSetting = () => {
     const [isUploadingImage, setIsUploadingImage] = useState(false);
     const [isLdapUser, setIsLdapUser] = useState(false);
     const [useProfileImage, setUseProfileImage] = useState(false);
+
+    const moduleState: 'IH' | 'PMS' | 'OTHER' = (() => {
+        const stateModule = (location.state as { module?: string } | null)?.module;
+        if (stateModule && ['IH', 'PMS', 'OTHER'].includes(stateModule)) return stateModule as 'IH' | 'PMS' | 'OTHER';
+        if (typeof document !== 'undefined' && document.referrer.includes('/innovation')) return 'IH';
+        return 'PMS';
+    })();
 
     useEffect(() => {
         dispatch(setPageTitle('Account Settings'));
@@ -403,7 +411,7 @@ const AccountSetting = () => {
         <div>
             <ul className="flex space-x-2 rtl:space-x-reverse">
                 <li>
-                    <Link to="#" className="text-primary hover:underline">
+                    <Link to="/profile" state={{ module: moduleState }} className="text-primary hover:underline">
                         Users
                     </Link>
                 </li>
