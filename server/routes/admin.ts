@@ -2,15 +2,15 @@
  * Admin Routes - System management and configuration
  */
 import express, { Router, Request, Response } from 'express';
-import { Prisma } from '@prisma/client';
+import { AuditAction as AuditActionEnum, BugReportStatus } from '@prisma/client';
 import { prisma } from '../prismaClient.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { validate, updateBugReportStatusSchema } from '../middleware/validation.js';
 import { logger } from '../config/logger.js';
 import bcryptjs from 'bcryptjs';
 
-const AuditAction = Prisma.AuditLog_action;
-type AuditAction = Prisma.AuditLog_action;
+const AuditAction = AuditActionEnum;
+type AuditAction = AuditActionEnum;
 
 const router: Router = express.Router();
 
@@ -291,8 +291,8 @@ router.patch('/bug-reports/:id/status', adminOnly, validate(updateBugReportStatu
             return res.status(400).json({ success: false, message: 'Invalid bug report ID' });
         }
 
-        const status = req.body.status as string;
-        const resolvedAt = ['RESOLVED', 'CLOSED'].includes(status) ? new Date() : null;
+        const status = req.body.status as BugReportStatus;
+        const resolvedAt = status === BugReportStatus.RESOLVED || status === BugReportStatus.CLOSED ? new Date() : null;
 
         const updated = await prisma.bugReport.update({
             where: { id },
