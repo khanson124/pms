@@ -1,17 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { IRootState } from '../../../store';
+import { useDispatch } from 'react-redux';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import PerfectScrollbar from 'react-perfect-scrollbar';
 import IconPlus from '../../../components/Icon/IconPlus';
 import IconList from '../../../components/Icon/IconListCheck';
 import IconSearch from '../../../components/Icon/IconSearch';
-import IconCheckCircle from '../../../components/Icon/IconCircleCheck';
-import IconClipboardText from '../../../components/Icon/IconClipboardText';
-import IconInbox from '../../../components/Icon/IconInbox';
-import IconInfoCircle from '../../../components/Icon/IconInfoCircle';
-import IconTrendingUp from '../../../components/Icon/IconTrendingUp';
 import IconArrowForward from '../../../components/Icon/IconArrowForward';
 
 const DepartmentManagerDashboard = () => {
@@ -19,8 +13,6 @@ const DepartmentManagerDashboard = () => {
     useEffect(() => {
         dispatch(setPageTitle('Department Manager Dashboard'));
     }, [dispatch]);
-
-    const isDark = useSelector((state: IRootState) => state.themeConfig.theme === 'dark' || state.themeConfig.isDarkMode);
 
     const [stats, setStats] = useState({
         pendingApprovals: 0,

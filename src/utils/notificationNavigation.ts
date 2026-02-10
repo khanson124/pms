@@ -54,6 +54,9 @@ export function getNotificationUrl(notification: Notification): string | null {
             }
             return `/procurement/evaluation`;
 
+        case 'BUG_REPORT':
+            return `/procurement/admin/bug-reports`;
+
         default:
             return null;
     }

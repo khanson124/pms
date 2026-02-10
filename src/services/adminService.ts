@@ -116,6 +116,28 @@ async function apiPut<T = any>(path: string, body: any): Promise<T> {
     return res.json();
 }
 
+async function apiPatch<T = any>(path: string, body: any): Promise<T> {
+    const url = buildUrl(path);
+    const headers = getAuthHeadersSync();
+    const res = await fetch(url, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify(body ?? {}),
+    });
+    if (!res.ok) {
+        const text = await res.text();
+        let errorMessage = `PATCH ${url} failed: ${res.status}`;
+        try {
+            const errorData = JSON.parse(text);
+            errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch {
+            errorMessage = text || errorMessage;
+        }
+        throw new Error(errorMessage);
+    }
+    return res.json();
+}
+
 async function apiDelete<T = any>(path: string): Promise<T> {
     const url = buildUrl(path);
     const headers = getAuthHeadersSync();
@@ -153,6 +175,26 @@ export type HiddenRequest = {
     hiddenAt?: string | null;
     hiddenReason?: string | null;
     hiddenBy?: { id: number; name: string | null; email: string } | null;
+};
+
+export type BugReport = {
+    id: number;
+    title: string;
+    description: string;
+    stepsToReproduce?: string | null;
+    expectedBehavior?: string | null;
+    actualBehavior?: string | null;
+    severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+    status: 'NEW' | 'TRIAGED' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+    module: 'PMS' | 'IH' | 'OTHER';
+    pageUrl?: string | null;
+    userAgent?: string | null;
+    screenshotUrl?: string | null;
+    reportedById: number;
+    resolvedAt?: string | null;
+    createdAt: string;
+    updatedAt: string;
+    reportedBy?: { id: number; name: string | null; email: string; department?: { id: number; name: string; code: string | null } | null } | null;
 };
 
 const BACKEND = {
@@ -239,6 +281,18 @@ const BACKEND = {
     },
     hideRequest: (id: number, reason: string) => apiPost(`/api/admin/requests/${id}/hide`, { reason }),
     unhideRequest: (id: number, reason?: string) => apiPost(`/api/admin/requests/${id}/unhide`, reason ? { reason } : {}),
+
+    // Bug Reports
+    getBugReports: (input: { limit?: number; offset?: number; status?: string; severity?: string }) => {
+        const params = new URLSearchParams();
+        if (input.limit) params.set('limit', String(input.limit));
+        if (input.offset) params.set('offset', String(input.offset));
+        if (input.status) params.set('status', String(input.status));
+        if (input.severity) params.set('severity', String(input.severity));
+        const suffix = params.toString();
+        return apiGet<{ success: boolean; data: BugReport[]; pagination: { total: number; limit: number; offset: number; hasMore: boolean } }>(`/api/admin/bug-reports${suffix ? `?${suffix}` : ''}`);
+    },
+    updateBugReportStatus: (id: number, status: BugReport['status']) => apiPatch(`/api/admin/bug-reports/${id}/status`, { status }),
 
     // Load Balancing
     getLoadBalancingSettings: () => apiGet('/api/admin/load-balancing-settings'),

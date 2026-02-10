@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { IRootState } from '../../../store';
 import Dropdown from '../../../components/Dropdown';
@@ -30,6 +30,7 @@ import IconSearch from '../../../components/Icon/IconSearch';
 
 const Profile = () => {
     const dispatch = useDispatch();
+    const location = useLocation();
     const { user } = useSelector((state: IRootState) => state.auth);
     const [profileData, setProfileData] = useState<any>(null);
     const [recentActivities, setRecentActivities] = useState<any[]>([]);
@@ -50,6 +51,13 @@ const Profile = () => {
         ideasPromoted: 0,
         isCommittee: false,
     });
+
+    const moduleState = (() => {
+        const stateModule = (location.state as { module?: string } | null)?.module;
+        if (stateModule && ['IH', 'PMS', 'OTHER'].includes(stateModule)) return stateModule;
+        if (typeof document !== 'undefined' && document.referrer.includes('/innovation')) return 'IH';
+        return 'PMS';
+    })();
 
     const resolveProfileImageUrl = (raw?: string | null) => {
         if (!raw) return null;
@@ -229,7 +237,7 @@ const Profile = () => {
             window.dispatchEvent(
                 new CustomEvent('profilePhotoUpdated', {
                     detail: { profileImage: resolveProfileImageUrl(data.profileImage) },
-                })
+                }),
             );
 
             // Show success notification using Swal instead of alert
@@ -369,7 +377,7 @@ const Profile = () => {
                     <div className="panel">
                         <div className="flex items-center justify-between mb-5">
                             <h5 className="font-semibold text-lg dark:text-white-light">Profile</h5>
-                            <Link to="/users/user-account-settings" className="ltr:ml-auto rtl:mr-auto btn btn-primary p-2 rounded-full">
+                            <Link to="/users/user-account-settings" state={{ module: moduleState }} className="ltr:ml-auto rtl:mr-auto btn btn-primary p-2 rounded-full">
                                 <IconPencilPaper />
                             </Link>
                         </div>
@@ -449,8 +457,8 @@ const Profile = () => {
                                 {roleCodes.includes('INNOVATION_COMMITTEE')
                                     ? 'Recent Ideas Under Review'
                                     : roleCodes.some((role) => role.includes('PROCUREMENT') || role.includes('BUDGET') || role.includes('EVALUATION'))
-                                    ? 'Recent Procurement Activities'
-                                    : 'Recent Activities'}
+                                      ? 'Recent Procurement Activities'
+                                      : 'Recent Activities'}
                             </h5>
                         </div>
                         <div className="mb-5">
@@ -472,16 +480,16 @@ const Profile = () => {
                                                     activity.status === 'COMPLETED' || activity.status === 'APPROVED' || activity.status === 'FINANCE_APPROVED'
                                                         ? 100
                                                         : activity.status === 'IN_TRANSIT'
-                                                        ? 80
-                                                        : activity.status === 'IN_EVALUATION' || activity.status === 'SUBMITTED' || activity.status === 'PROCUREMENT_REVIEW'
-                                                        ? 75
-                                                        : activity.status === 'PENDING_DELIVERY'
-                                                        ? 60
-                                                        : activity.status === 'AWAITING_QUOTES'
-                                                        ? 30
-                                                        : activity.status === 'DEPARTMENT_REVIEW'
-                                                        ? 40
-                                                        : 50;
+                                                          ? 80
+                                                          : activity.status === 'IN_EVALUATION' || activity.status === 'SUBMITTED' || activity.status === 'PROCUREMENT_REVIEW'
+                                                            ? 75
+                                                            : activity.status === 'PENDING_DELIVERY'
+                                                              ? 60
+                                                              : activity.status === 'AWAITING_QUOTES'
+                                                                ? 30
+                                                                : activity.status === 'DEPARTMENT_REVIEW'
+                                                                  ? 40
+                                                                  : 50;
 
                                                 return (
                                                     <tr key={activity.id || index} className="hover:bg-gray-100 dark:hover:bg-gray-800/30 transition-colors">
@@ -651,7 +659,7 @@ const Profile = () => {
                                 <h5 className="font-semibold text-lg dark:text-white-light">Department Access & Permissions</h5>
                                 <p className="text-xs text-white-dark mt-1">Roles and access rights assigned to your account</p>
                             </div>
-                            <Link to="/users/user-account-settings" className="btn btn-primary btn-sm">
+                            <Link to="/users/user-account-settings" state={{ module: moduleState }} className="btn btn-primary btn-sm">
                                 <IconSettings className="w-3.5 h-3.5 ltr:mr-1 rtl:ml-1" />
                                 Manage Settings
                             </Link>

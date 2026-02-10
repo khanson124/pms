@@ -45,6 +45,7 @@ import { adminRoutes as adminRouter } from './routes/admin.js';
 import { ideasRoutes } from './routes/ideas.js';
 import { innovationRoutes } from './routes/innovation.js';
 import suppliersRouter from './routes/suppliers.js';
+import bugReportsRouter from './routes/bugReports.js';
 import testPhotoRouter from './routes/test-photo.js';
 
 const app = express();
@@ -8837,6 +8838,9 @@ app.use('/api/innovation', innovationRoutes);
 
 // Supplier management routes
 app.use('/api/suppliers', suppliersRouter);
+
+// Bug report routes
+app.use('/api/bug-reports', bugReportsRouter);
 
 // Admin API routes
 app.use('/api/admin', adminRouter);

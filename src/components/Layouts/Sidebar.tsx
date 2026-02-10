@@ -49,6 +49,7 @@ import IconKey from '../Icon/IconKey';
 import IconUpload from '../Icon/IconUpload';
 import IconGear from '../Icon/IconGear';
 import IconArchive from '../Icon/IconArchive';
+import IconAlertCircle from '../Icon/IconAlertCircle';
 import { getApiUrl } from '../../config/api';
 import { getToken } from '../../utils/auth';
 const Sidebar = () => {
@@ -110,16 +111,24 @@ const Sidebar = () => {
     const innovationLocked = moduleLocks.innovation.locked;
     const committeeLocked = moduleLocks.committee.locked;
 
+    const stateModule = (location.state as { module?: string } | null)?.module;
+
     // Determine if we're in Innovation Hub
     // Priority: If on /innovation route, ALWAYS show innovation sidebar
-    // Otherwise, check pinnedModule preference for shared routes
+    // For shared routes, prefer navigation state if provided, otherwise pinned module
     const isInnovationHub = useMemo(() => {
         if (location.pathname.startsWith('/innovation')) {
             return true; // Always show Innovation sidebar when on Innovation routes
         }
+        if (stateModule === 'IH') {
+            return true;
+        }
+        if (stateModule === 'PMS') {
+            return false;
+        }
         // For shared routes (profile, settings, etc), use pinned preference
         return pinnedModule === 'innovation';
-    }, [location.pathname, pinnedModule]);
+    }, [location.pathname, pinnedModule, stateModule]);
 
     const hasProcurementRole =
         isExecutiveDirector ||
@@ -148,13 +157,20 @@ const Sidebar = () => {
 
     // Compute dashboard path for logo/home based on pinnedModule
     const dashboardPath = useMemo(() => {
+        // If navigation state says Innovation, honor it for shared routes
+        if (stateModule === 'IH' && !innovationLocked) {
+            return '/innovation/dashboard';
+        }
+        if (stateModule === 'PMS' && !procurementLocked) {
+            return '/procurement/dashboard';
+        }
         // If user has explicitly pinned Innovation Hub, always go there
         if (pinnedModule === 'innovation' && !innovationLocked) {
             return '/innovation/dashboard';
         }
         // Otherwise use role-based detection
         return getDashboardPath(detectedRoles, location.pathname);
-    }, [pinnedModule, innovationLocked, detectedRoles, location.pathname]);
+    }, [stateModule, innovationLocked, procurementLocked, pinnedModule, detectedRoles, location.pathname]);
 
     // Debug logging for dashboard path
 
@@ -475,6 +491,15 @@ const Sidebar = () => {
                                                     <div className="flex items-center">
                                                         <IconGear className="group-hover:!text-primary shrink-0" />
                                                         <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">System Config</span>
+                                                    </div>
+                                                </NavLink>
+                                            </li>
+
+                                            <li className="nav-item">
+                                                <NavLink to="/procurement/admin/bug-reports" end className="group">
+                                                    <div className="flex items-center">
+                                                        <IconAlertCircle className="group-hover:!text-primary shrink-0" />
+                                                        <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">Bug Reports</span>
                                                     </div>
                                                 </NavLink>
                                             </li>

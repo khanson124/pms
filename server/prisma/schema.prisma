@@ -62,6 +62,7 @@ model User {
   sentMessages                 Message[]                   @relation("MessagesSent")
   receivedMessages             Message[]                   @relation("MessagesReceived")
   notifications                Notification[]
+  bugReports                   BugReport[]                @relation("BugReportReporter")
   performanceMetrics           OfficerPerformanceMetrics[]
   refreshTokens                RefreshToken[]
   assignedRequests             Request[]                   @relation("requestAssignee")
@@ -501,6 +502,31 @@ model Notification {
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([createdAt])
+}
+
+model BugReport {
+  id                Int                 @id @default(autoincrement())
+  title             String
+  description       String              @db.Text
+  stepsToReproduce  String?             @db.Text
+  expectedBehavior  String?             @db.Text
+  actualBehavior    String?             @db.Text
+  severity          BugReportSeverity   @default(MEDIUM)
+  status            BugReportStatus     @default(NEW)
+  module            BugReportModule     @default(PMS)
+  pageUrl           String?
+  userAgent         String?
+  screenshotUrl     String?
+  reportedById      Int
+  resolvedAt        DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  reportedBy        User                @relation("BugReportReporter", fields: [reportedById], references: [id], onDelete: Cascade)
+
+  @@index([reportedById])
+  @@index([status])
+  @@index([severity])
   @@index([createdAt])
 }
 
@@ -1029,6 +1055,28 @@ enum NotificationType {
   EVALUATION_VERIFIED
   EVALUATION_RETURNED
   ED_APPROVAL_REQUIRED
+  BUG_REPORT
+}
+
+enum BugReportSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum BugReportStatus {
+  NEW
+  TRIAGED
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum BugReportModule {
+  PMS
+  IH
+  OTHER
 }
 
 enum AuditAction {

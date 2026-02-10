@@ -116,8 +116,7 @@ const EDApprovalForm = () => {
             section.fields?.forEach((field) => {
                 if (!field.required) return;
                 const value = values[field.id];
-                const isEmpty =
-                    field.type === 'checkbox' ? value !== true : value === undefined || value === null || String(value).trim() === '';
+                const isEmpty = field.type === 'checkbox' ? value !== true : value === undefined || value === null || String(value).trim() === '';
                 if (isEmpty) {
                     missing.push(field.label);
                 }
@@ -159,7 +158,7 @@ const EDApprovalForm = () => {
         try {
             setSubmitting(true);
             const submittedAction = approved ? 'Approved' : 'Rejected';
-            const valuesWithAction = {
+            const valuesWithAction: Record<string, string | boolean> = {
                 ...formValues,
                 action_taken: submittedAction,
             };
@@ -177,11 +176,13 @@ const EDApprovalForm = () => {
             }
 
             const nextFormData = buildFormData(form.formData, valuesWithAction);
+            const hoeCommentsValue = valuesWithAction['hoe_comments'];
+            const resolvedComments = typeof hoeCommentsValue === 'string' ? hoeCommentsValue : comments;
             await evaluationService.updateEdForm(form.id, {
                 formData: nextFormData,
-                comments: valuesWithAction.hoe_comments ? String(valuesWithAction.hoe_comments) : comments,
+                comments: resolvedComments,
             });
-            const submitComments = valuesWithAction.hoe_comments ? String(valuesWithAction.hoe_comments) : comments;
+            const submitComments = resolvedComments;
             await evaluationService.submitEdForm(form.id, approved, submitComments);
             await loadForm();
         } catch (err) {
@@ -380,20 +381,11 @@ function getSectionMap(sections: FormSection[]) {
 function renderField(field: FormField, value: string | boolean | undefined, onChange: (value: string | boolean) => void, disabled: boolean) {
     const commonProps = {
         disabled,
-        className:
-            'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary',
+        className: 'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary',
     };
 
     if (field.type === 'textarea') {
-        return (
-            <textarea
-                rows={3}
-                placeholder={field.placeholder}
-                value={typeof value === 'string' ? value : ''}
-                onChange={(e) => onChange(e.target.value)}
-                {...commonProps}
-            />
-        );
+        return <textarea rows={3} placeholder={field.placeholder} value={typeof value === 'string' ? value : ''} onChange={(e) => onChange(e.target.value)} {...commonProps} />;
     }
 
     if (field.type === 'select') {
@@ -410,14 +402,7 @@ function renderField(field: FormField, value: string | boolean | undefined, onCh
     }
 
     if (field.type === 'date') {
-        return (
-            <input
-                type="date"
-                value={typeof value === 'string' ? normalizeDateValue(value) : ''}
-                onChange={(e) => onChange(e.target.value)}
-                {...commonProps}
-            />
-        );
+        return <input type="date" value={typeof value === 'string' ? normalizeDateValue(value) : ''} onChange={(e) => onChange(e.target.value)} {...commonProps} />;
     }
 
     if (field.type === 'checkbox') {

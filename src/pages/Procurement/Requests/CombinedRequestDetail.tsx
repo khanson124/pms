@@ -507,7 +507,7 @@ const CombinedRequestDetail = () => {
                                                 </td>
                                                 <td className="font-semibold text-primary">{r.reference}</td>
                                                 <td>{r.title}</td>
-                                                <td>{r.department?.name || r.department || 'Unknown'}</td>
+                                                <td>{typeof r.department === 'string' ? r.department : r.department?.name || 'Unknown'}</td>
                                                 <td>
                                                     {r.currency} {(r.totalEstimated || 0).toLocaleString()}
                                                 </td>

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { setPageTitle } from '../../../store/themeConfigSlice';
@@ -6,16 +6,23 @@ import IconPlus from '../../../components/Icon/IconPlus';
 import IconEye from '../../../components/Icon/IconEye';
 import IconPrinter from '../../../components/Icon/IconPrinter';
 import IconArchive from '../../../components/Icon/IconArchive';
+import IconClipboardText from '../../../components/Icon/IconClipboardText';
+import IconFile from '../../../components/Icon/IconFile';
+import IconChecks from '../../../components/Icon/IconChecks';
+import IconEdit from '../../../components/Icon/IconEdit';
+import IconUsersGroup from '../../../components/Icon/IconUsersGroup';
+import IconSearch from '../../../components/Icon/IconSearch';
+import IconX from '../../../components/Icon/IconX';
+import IconRefresh from '../../../components/Icon/IconRefresh';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { Request, ApiResponse } from '../../../types/request.types';
 import { getStatusBadge } from '../../../utils/statusBadges';
-import { searchRequests, filterRequests, onlyMine, paginate, formatDate, sortRequestsByDateDesc, adaptRequestsResponse, normalizeStatus } from '../../../utils/requestUtils';
-import RequestDetailsContent from '../../../components/RequestDetailsContent';
+import { searchRequests, filterRequests, paginate, formatDate, sortRequestsByDateDesc, adaptRequestsResponse, normalizeStatus } from '../../../utils/requestUtils';
 import { checkExecutiveThreshold, getThresholdBadge, shouldShowThresholdNotification } from '../../../utils/thresholdUtils';
 import { getApiUrl } from '../../../config/api';
 import { getAuthHeadersSync } from '../../../utils/api';
-import { SkeletonTableRow } from '../../../components/SkeletonLoading';
+import { SkeletonTableRow, SkeletonStats, SkeletonLine } from '../../../components/SkeletonLoading';
 
 const MySwal = withReactContent(Swal);
 
@@ -205,6 +212,19 @@ const Requests = () => {
             requests: highValueRequests,
         };
     }, [currentUserRoles, filteredRequests]);
+
+    const stats = useMemo(() => {
+        const base = { total: requests.length, pending: 0, inReview: 0, approved: 0, completed: 0, rejected: 0 };
+        for (const request of requests) {
+            const status = normalizeStatus(request.status || '').toUpperCase();
+            if (status.includes('REJECT')) base.rejected++;
+            else if (status.includes('COMPLETE') || status.includes('CLOSED')) base.completed++;
+            else if (status.includes('APPROVE')) base.approved++;
+            else if (status.includes('REVIEW') || status.includes('VERIFY')) base.inReview++;
+            else if (status.includes('PENDING') || status.includes('DRAFT') || status.includes('SUBMIT')) base.pending++;
+        }
+        return base;
+    }, [requests]);
 
     // View request details - navigate to form
     const viewDetails = (req: Request) => {
@@ -649,7 +669,9 @@ const Requests = () => {
                 });
                 const data: ApiResponse = await res.json().catch(() => ({}) as ApiResponse);
                 if (!res.ok) {
-                    throw new Error(data?.message || data?.error || 'Failed to hide request');
+                    const apiErrors = data?.errors ? Object.values(data.errors).flat() : [];
+                    const apiError = apiErrors.length > 0 ? apiErrors[0] : null;
+                    throw new Error(data?.message || apiError || 'Failed to hide request');
                 }
                 await fetchRequests();
                 await MySwal.fire({ icon: 'success', title: 'Request hidden', text: 'The request has been moved to Hidden Requests.' });
@@ -719,7 +741,7 @@ const Requests = () => {
     };
 
     return (
-        <div className="p-6">
+        <div className="space-y-6 p-6">
             {/* Comment Modal */}
             {showCommentModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" onClick={() => !isSavingComment && setShowCommentModal(false)}>
@@ -779,18 +801,109 @@ const Requests = () => {
                 </div>
             )}
 
-            <div className="flex items-center justify-between mb-6">
-                <div>
-                    <h1 className="text-2xl font-semibold">Requests</h1>
-                    <p className="text-sm text-muted-foreground">Manage acquisition and procurement requests</p>
-                </div>
-                <div>
-                    <button className="inline-flex items-center gap-2 px-4 py-2 rounded bg-primary text-white hover:opacity-95" type="button" onClick={() => navigate('/apps/requests/new')}>
-                        <IconPlus />
-                        New Request
-                    </button>
+            <div className="panel bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-600 text-white">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-lg">
+                            <IconClipboardText className="h-7 w-7" />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-bold">Procurement Requests</h1>
+                            <p className="text-sm text-white/90 mt-1">Track submissions, approvals, and procurement workflows with enterprise-grade visibility</p>
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        <button onClick={() => fetchRequests()} className="btn bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30 gap-2" type="button">
+                            <IconRefresh className="h-4 w-4" />
+                            Refresh
+                        </button>
+                        {combinedRequests.length > 0 && (
+                            <button onClick={() => navigate('/apps/requests/combine')} className="btn bg-white text-indigo-600 hover:bg-white/90 gap-2 shadow-lg" type="button">
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                                    />
+                                </svg>
+                                Combined Requests ({combinedRequests.length})
+                            </button>
+                        )}
+                        <button className="btn bg-white text-blue-600 hover:bg-white/90 gap-2 shadow-lg" type="button" onClick={() => navigate('/apps/requests/new')}>
+                            <IconPlus className="h-4 w-4" />
+                            New Request
+                        </button>
+                    </div>
                 </div>
             </div>
+
+            {isLoading ? (
+                <SkeletonStats count={6} />
+            ) : (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                    <div className="panel bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-l-4 border-slate-500">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase">Total</div>
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-500/20">
+                                <IconClipboardText className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                            </div>
+                        </div>
+                        <div className="text-3xl font-bold text-slate-700 dark:text-slate-300">{stats.total}</div>
+                        <p className="text-xs text-slate-500 mt-1">All requests</p>
+                    </div>
+                    <div className="panel bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-l-4 border-blue-500">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="text-sm font-semibold text-blue-600 dark:text-blue-400 uppercase">Pending</div>
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/20">
+                                <IconFile className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                            </div>
+                        </div>
+                        <div className="text-3xl font-bold text-blue-700 dark:text-blue-300">{stats.pending}</div>
+                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Awaiting action</p>
+                    </div>
+                    <div className="panel bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 border-l-4 border-amber-500">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="text-sm font-semibold text-amber-600 dark:text-amber-400 uppercase">In Review</div>
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/20">
+                                <IconUsersGroup className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                            </div>
+                        </div>
+                        <div className="text-3xl font-bold text-amber-700 dark:text-amber-300">{stats.inReview}</div>
+                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Under evaluation</p>
+                    </div>
+                    <div className="panel bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-l-4 border-green-500">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="text-sm font-semibold text-green-600 dark:text-green-400 uppercase">Approved</div>
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/20">
+                                <IconChecks className="h-5 w-5 text-green-600 dark:text-green-400" />
+                            </div>
+                        </div>
+                        <div className="text-3xl font-bold text-green-700 dark:text-green-300">{stats.approved}</div>
+                        <p className="text-xs text-green-600 dark:text-green-400 mt-1">Approved requests</p>
+                    </div>
+                    <div className="panel bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 border-l-4 border-indigo-500">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 uppercase">Completed</div>
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-500/20">
+                                <IconEdit className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                            </div>
+                        </div>
+                        <div className="text-3xl font-bold text-indigo-700 dark:text-indigo-300">{stats.completed}</div>
+                        <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">Finalized</p>
+                    </div>
+                    <div className="panel bg-gradient-to-br from-rose-50 to-rose-100 dark:from-rose-900/20 dark:to-rose-800/20 border-l-4 border-rose-500">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="text-sm font-semibold text-rose-600 dark:text-rose-400 uppercase">Rejected</div>
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-500/20">
+                                <IconArchive className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+                            </div>
+                        </div>
+                        <div className="text-3xl font-bold text-rose-700 dark:text-rose-300">{stats.rejected}</div>
+                        <p className="text-xs text-rose-600 dark:text-rose-400 mt-1">Returned or denied</p>
+                    </div>
+                </div>
+            )}
 
             {/* Threshold notification banner for procurement officers */}
             {thresholdNotifications && thresholdNotifications.count > 0 && (
@@ -808,303 +921,319 @@ const Requests = () => {
                 </div>
             )}
 
-            {/* Filter & Search controls */}
-            <div className="mb-4 flex flex-wrap items-center gap-2 justify-between">
-                <div className="flex flex-wrap items-center gap-2">
-                    <button
-                        className={`px-3 py-1.5 rounded border text-sm ${!showMineOnly ? 'bg-primary text-white border-primary' : 'border-gray-300 dark:border-gray-600'}`}
-                        onClick={() => {
-                            if (location.pathname.endsWith('/mine')) {
-                                navigate({ pathname: '/apps/requests', search: location.search });
-                            }
-                        }}
-                        type="button"
-                        aria-pressed={!showMineOnly}
-                        aria-label="Show all requests"
-                    >
-                        All Requests
-                    </button>
-                    <button
-                        className={`px-3 py-1.5 rounded border text-sm ${showMineOnly ? 'bg-primary text-white border-primary' : 'border-gray-300 dark:border-gray-600'}`}
-                        onClick={() => {
-                            if (!location.pathname.endsWith('/mine')) {
-                                navigate({ pathname: '/apps/requests/mine', search: location.search });
-                            }
-                        }}
-                        type="button"
-                        aria-pressed={showMineOnly}
-                        aria-label="Show my requests"
-                    >
-                        My Requests
-                    </button>
-
-                    <input
-                        type="text"
-                        value={query}
-                        onChange={(e) => {
-                            setQuery(e.target.value);
-                            setPage(1);
-                        }}
-                        placeholder="Search by ID, Title, Requester, Dept"
-                        className="form-input w-64"
-                        aria-label="Search requests"
-                    />
-
-                    <select
-                        value={statusFilter}
-                        onChange={(e) => {
-                            setStatusFilter(e.target.value);
-                            setPage(1);
-                        }}
-                        className="form-select"
-                        aria-label="Filter by status"
-                    >
-                        <option value="">All Statuses</option>
-                        {[
-                            ...new Set(
-                                requests
-                                    .map((r) => r.status)
-                                    .map((s) => s && s.trim())
-                                    .filter(Boolean),
-                            ),
-                        ]
-                            .map((s) => ({ raw: s as string, norm: normalizeStatus(s as string) }))
-                            .sort((a, b) => a.norm.localeCompare(b.norm))
-                            .map(({ raw, norm }) => (
-                                <option key={raw} value={norm}>
-                                    {norm}
-                                </option>
-                            ))}
-                    </select>
-
-                    <select
-                        value={departmentFilter}
-                        onChange={(e) => {
-                            setDepartmentFilter(e.target.value);
-                            setPage(1);
-                        }}
-                        className="form-select"
-                        aria-label="Filter by department"
-                    >
-                        <option value="">All Departments</option>
-                        {[...new Set(requests.map((f) => f.department).filter(Boolean) as string[])]
-                            .sort((a, b) => a.localeCompare(b))
-                            .map((dep) => (
-                                <option key={dep} value={dep}>
-                                    {dep}
-                                </option>
-                            ))}
-                    </select>
+            <div className="panel" aria-busy={isLoading}>
+                <div className="mb-5 space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                                <IconClipboardText className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                                <h5 className="text-xl font-bold">Requests Workspace</h5>
+                                <p className="text-xs text-white-dark">
+                                    {filteredRequests.length} of {requests.length} requests
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                className={`btn btn-sm ${!showMineOnly ? 'btn-primary' : 'btn-outline-primary'}`}
+                                onClick={() => {
+                                    if (location.pathname.endsWith('/mine')) {
+                                        navigate({ pathname: '/apps/requests', search: location.search });
+                                    }
+                                }}
+                                type="button"
+                                aria-pressed={!showMineOnly}
+                                aria-label="Show all requests"
+                            >
+                                All Requests
+                            </button>
+                            <button
+                                className={`btn btn-sm ${showMineOnly ? 'btn-primary' : 'btn-outline-primary'}`}
+                                onClick={() => {
+                                    if (!location.pathname.endsWith('/mine')) {
+                                        navigate({ pathname: '/apps/requests/mine', search: location.search });
+                                    }
+                                }}
+                                type="button"
+                                aria-pressed={showMineOnly}
+                                aria-label="Show my requests"
+                            >
+                                My Requests
+                            </button>
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap gap-3 items-center">
+                        <div className="relative flex-1 min-w-[220px]">
+                            <input
+                                type="text"
+                                value={query}
+                                onChange={(e) => {
+                                    setQuery(e.target.value);
+                                    setPage(1);
+                                }}
+                                placeholder="Search by ID, title, requester, department"
+                                className="form-input pl-10 pr-10"
+                                aria-label="Search requests"
+                            />
+                            <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            {query && (
+                                <button
+                                    onClick={() => {
+                                        setQuery('');
+                                        setPage(1);
+                                    }}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    type="button"
+                                    aria-label="Clear search"
+                                >
+                                    <IconX className="h-4 w-4" />
+                                </button>
+                            )}
+                        </div>
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => {
+                                setStatusFilter(e.target.value);
+                                setPage(1);
+                            }}
+                            className="form-select min-w-[160px]"
+                            aria-label="Filter by status"
+                        >
+                            <option value="">All Statuses</option>
+                            {[
+                                ...new Set(
+                                    requests
+                                        .map((r) => r.status)
+                                        .map((s) => s && s.trim())
+                                        .filter(Boolean),
+                                ),
+                            ]
+                                .map((s) => ({ raw: s as string, norm: normalizeStatus(s as string) }))
+                                .sort((a, b) => a.norm.localeCompare(b.norm))
+                                .map(({ raw, norm }) => (
+                                    <option key={raw} value={norm}>
+                                        {norm}
+                                    </option>
+                                ))}
+                        </select>
+                        <select
+                            value={departmentFilter}
+                            onChange={(e) => {
+                                setDepartmentFilter(e.target.value);
+                                setPage(1);
+                            }}
+                            className="form-select min-w-[180px]"
+                            aria-label="Filter by department"
+                        >
+                            <option value="">All Departments</option>
+                            {[...new Set(requests.map((f) => f.department).filter(Boolean) as string[])]
+                                .sort((a, b) => a.localeCompare(b))
+                                .map((dep) => (
+                                    <option key={dep} value={dep}>
+                                        {dep}
+                                    </option>
+                                ))}
+                        </select>
+                    </div>
                 </div>
-
-                {/* Combined Requests Button */}
-                {currentUserRoles.some((role: any) => {
-                    const roleName = typeof role === 'string' ? role : role?.name || '';
-                    return roleName.toUpperCase().includes('PROCUREMENT') || roleName.toUpperCase().includes('MANAGER');
-                }) &&
-                    combinedRequests.length > 0 && (
-                        <button onClick={() => navigate('/apps/requests/combine')} className="btn btn-outline-primary gap-2" type="button">
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                                />
-                            </svg>
-                            View Combined Requests ({combinedRequests.length})
-                        </button>
-                    )}
-            </div>
-
-            <div className="bg-white dark:bg-slate-800 shadow rounded overflow-x-auto" aria-busy={isLoading}>
                 {isLoading && (
-                    <table className="min-w-full table-auto">
-                        <thead className="bg-slate-50 dark:bg-slate-700 text-sm">
-                            <tr>
-                                <th className="px-4 py-3 text-left">ID</th>
-                                <th className="px-4 py-3 text-left">Title</th>
-                                <th className="px-4 py-3 text-left">Requester</th>
-                                <th className="px-4 py-3 text-left">Department</th>
-                                <th className="px-4 py-3 text-left">Assigned To</th>
-                                <th className="px-4 py-3 text-left">Status</th>
-                                <th className="px-4 py-3 text-left">Comments</th>
-                                <th className="px-4 py-3 text-left">Date</th>
-                                <th className="px-4 py-3 text-left">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="text-sm">
-                            <SkeletonTableRow columns={9} />
-                            <SkeletonTableRow columns={9} />
-                            <SkeletonTableRow columns={9} />
-                            <SkeletonTableRow columns={9} />
-                            <SkeletonTableRow columns={9} />
-                        </tbody>
-                    </table>
+                    <div className="overflow-visible">
+                        <div className="mb-5 flex items-center justify-between">
+                            <div className="space-y-2">
+                                <SkeletonLine className="w-48" />
+                                <SkeletonLine className="w-32" />
+                            </div>
+                            <SkeletonLine className="w-32" />
+                        </div>
+                        <table className="table-hover w-full">
+                            <thead>
+                                <tr>
+                                    <th className="px-4 py-3 text-left">ID</th>
+                                    <th className="px-4 py-3 text-left">Title</th>
+                                    <th className="px-4 py-3 text-left">Requester</th>
+                                    <th className="px-4 py-3 text-left">Department</th>
+                                    <th className="px-4 py-3 text-left">Assigned To</th>
+                                    <th className="px-4 py-3 text-left">Status</th>
+                                    <th className="px-4 py-3 text-left">Comments</th>
+                                    <th className="px-4 py-3 text-left">Date</th>
+                                    <th className="px-4 py-3 text-left">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="text-sm">
+                                <SkeletonTableRow columns={9} />
+                                <SkeletonTableRow columns={9} />
+                                <SkeletonTableRow columns={9} />
+                                <SkeletonTableRow columns={9} />
+                                <SkeletonTableRow columns={9} />
+                            </tbody>
+                        </table>
+                    </div>
                 )}
                 {error && !isLoading && <div className="p-6 text-center text-sm text-red-600">{error}</div>}
-                {!isLoading && !error && filteredRequests.length === 0 && <div className="p-6 text-center text-sm text-gray-500">No requests found.</div>}
-                {!isLoading && (
-                    <table className="min-w-full table-auto">
-                        <thead className="bg-slate-50 dark:bg-slate-700 text-sm">
-                            <tr>
-                                <th className="px-4 py-3 text-left">ID</th>
-                                <th className="px-4 py-3 text-left">Title</th>
-                                <th className="px-4 py-3 text-left">Requester</th>
-                                <th className="px-4 py-3 text-left">Department</th>
-                                <th className="px-4 py-3 text-left">Assigned To</th>
-                                <th className="px-4 py-3 text-left">Status</th>
-                                <th className="px-4 py-3 text-left">Comments</th>
-                                <th className="px-4 py-3 text-left">Date</th>
-                                <th className="px-4 py-3 text-left">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="text-sm">
-                            {paged.map((r) => {
-                                const badge = getStatusBadge(r.status);
-
-                                // Check if this request exceeds executive threshold
-                                const procurementTypes = Array.isArray(r.procurementType) ? r.procurementType : [];
-                                const thresholdAlert = checkExecutiveThreshold(r.totalEstimated || 0, procurementTypes);
-                                const thresholdBadge = getThresholdBadge(thresholdAlert);
-                                const showThresholdAlert = shouldShowThresholdNotification(currentUserRoles) && thresholdAlert.isRequired;
-
-                                return (
-                                    <tr key={r.id} className="border-t last:border-b hover:bg-slate-50 dark:hover:bg-slate-700">
-                                        <td className="px-4 py-3 font-medium">{r.id}</td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex flex-col gap-1">
-                                                <span>{r.title}</span>
-                                                {showThresholdAlert && (
-                                                    <div className="flex items-center gap-1">
-                                                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${thresholdBadge.className}`}>
-                                                            <span>{thresholdBadge.icon}</span>
-                                                            {thresholdBadge.text}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                                {r.isCombined && r.lotNumber && (
-                                                    <div className="flex items-center gap-1">
-                                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700">
-                                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    strokeWidth={2}
-                                                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                                                                />
-                                                            </svg>
-                                                            LOT-{r.lotNumber}
-                                                            {r.combinedRequestId && (
-                                                                <button
-                                                                    type="button"
-                                                                    className="ml-1 hover:underline"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        navigate(`/apps/requests/combined/${r.combinedRequestId}`);
-                                                                    }}
-                                                                    title="View combined request"
-                                                                >
-                                                                    →
-                                                                </button>
-                                                            )}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3">{r.requester}</td>
-                                        <td className="px-4 py-3">{r.department}</td>
-                                        <td className="px-4 py-3">
-                                            {r.currentAssigneeName ? (
-                                                <span className="text-blue-600 dark:text-blue-400 font-medium">{r.currentAssigneeName}</span>
-                                            ) : (
-                                                <span className="text-gray-400 dark:text-gray-500 italic">—</span>
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${badge.bg} ${badge.text}`} aria-label={`Status: ${badge.label}`}>
-                                                {badge.label}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3 max-w-xs">
-                                            <div className="truncate text-gray-600 dark:text-gray-400 text-xs" title={r.statusComment || r.rejectionNote || '—'}>
-                                                {r.statusComment || r.rejectionNote || '—'}
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3">{formatDate(r.date)}</td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    className="p-1.5 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600"
-                                                    onClick={() => viewDetails(r)}
-                                                    title="View Details"
-                                                    aria-label={`View details for ${r.id}`}
-                                                >
-                                                    <IconEye className="w-5 h-5" />
-                                                </button>
-                                                <button
-                                                    className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition-colors"
-                                                    onClick={() => printRequest(r)}
-                                                    title="Print Request"
-                                                    aria-label="Print request"
-                                                >
-                                                    <IconPrinter className="w-5 h-5" />
-                                                </button>
-                                                {isProcurementRole && (
-                                                    <button
-                                                        className="p-1.5 rounded-md hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400 transition-colors"
-                                                        onClick={() => openCommentModal(r)}
-                                                        title="Update status comment"
-                                                        aria-label={`Update comment for request ${r.id}`}
-                                                    >
-                                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                strokeWidth={2}
-                                                                d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-                                                            />
-                                                        </svg>
-                                                    </button>
-                                                )}
-                                                {isAdmin && (
-                                                    <button
-                                                        className="p-1.5 rounded-md hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-700 dark:text-amber-300 disabled:opacity-60 transition-colors"
-                                                        onClick={() => handleHideRequest(r)}
-                                                        disabled={hideActionId === r.id}
-                                                        title="Hide request"
-                                                        aria-label={`Hide request ${r.id}`}
-                                                    >
-                                                        {hideActionId === r.id ? (
-                                                            <span className="block w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-                                                        ) : (
-                                                            <IconArchive className="w-5 h-5" />
-                                                        )}
-                                                    </button>
-                                                )}
-                                                {currentUserId && r.currentAssigneeId != null && Number(r.currentAssigneeId) === Number(currentUserId) && (
-                                                    <button className="px-3 py-1 rounded bg-blue-600 text-white text-sm hover:bg-blue-700" onClick={() => navigate(`/apps/requests/edit/${r.id}`)}>
-                                                        Review
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
+                {!isLoading && !error && filteredRequests.length === 0 && (
+                    <div className="text-center py-16">
+                        <svg className="w-20 h-20 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1.5}
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                        </svg>
+                        <p className="font-semibold text-lg text-gray-700 dark:text-gray-300">{query || statusFilter || departmentFilter ? 'No requests match your filters' : 'No requests found'}</p>
+                        <p className="text-sm text-white-dark mt-1">{requests.length === 0 ? 'Create your first request to get started.' : 'Try adjusting your search or filters.'}</p>
+                        {(query || statusFilter || departmentFilter) && (
+                            <button
+                                onClick={() => {
+                                    setQuery('');
+                                    setStatusFilter('');
+                                    setDepartmentFilter('');
+                                    setPage(1);
+                                }}
+                                className="btn btn-primary btn-sm mt-4"
+                                type="button"
+                            >
+                                Clear All Filters
+                            </button>
+                        )}
+                    </div>
                 )}
-                {/* Pagination */}
+                {!isLoading && !error && filteredRequests.length > 0 && (
+                    <div className="overflow-visible">
+                        <table className="table-hover w-full">
+                            <thead>
+                                <tr>
+                                    <th className="px-4 py-3 text-left">ID</th>
+                                    <th className="px-4 py-3 text-left">Title</th>
+                                    <th className="px-4 py-3 text-left">Requester</th>
+                                    <th className="px-4 py-3 text-left">Department</th>
+                                    <th className="px-4 py-3 text-left">Assigned To</th>
+                                    <th className="px-4 py-3 text-left">Status</th>
+                                    <th className="px-4 py-3 text-left">Comments</th>
+                                    <th className="px-4 py-3 text-left">Date</th>
+                                    <th className="px-4 py-3 text-left">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="text-sm">
+                                {paged.map((r) => {
+                                    const badge = getStatusBadge(r.status);
+
+                                    // Check if this request exceeds executive threshold
+                                    const procurementTypes = Array.isArray(r.procurementType) ? r.procurementType : [];
+                                    const thresholdAlert = checkExecutiveThreshold(r.totalEstimated || 0, procurementTypes);
+                                    const thresholdBadge = getThresholdBadge(thresholdAlert);
+                                    const showThresholdAlert = shouldShowThresholdNotification(currentUserRoles) && thresholdAlert.isRequired;
+
+                                    return (
+                                        <tr key={r.id} className="border-t last:border-b hover:bg-slate-50 dark:hover:bg-slate-700">
+                                            <td className="px-4 py-3 font-medium">{r.id}</td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex flex-col gap-1">
+                                                    <span>{r.title}</span>
+                                                    {showThresholdAlert && (
+                                                        <div className="flex items-center gap-1">
+                                                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${thresholdBadge.className}`}>
+                                                                <span>{thresholdBadge.icon}</span>
+                                                                {thresholdBadge.text}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {r.isCombined && r.lotNumber && (
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700">
+                                                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path
+                                                                        strokeLinecap="round"
+                                                                        strokeLinejoin="round"
+                                                                        strokeWidth={2}
+                                                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                                                                    />
+                                                                </svg>
+                                                                LOT-{r.lotNumber}
+                                                                {r.combinedRequestId && (
+                                                                    <button
+                                                                        type="button"
+                                                                        className="ml-1 hover:underline"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            navigate(`/apps/requests/combined/${r.combinedRequestId}`);
+                                                                        }}
+                                                                        title="View combined request"
+                                                                    >
+                                                                        →
+                                                                    </button>
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3">{r.requester}</td>
+                                            <td className="px-4 py-3">{r.department}</td>
+                                            <td className="px-4 py-3">
+                                                {r.currentAssigneeName ? (
+                                                    <span className="text-blue-600 dark:text-blue-400 font-medium">{r.currentAssigneeName}</span>
+                                                ) : (
+                                                    <span className="text-gray-400 dark:text-gray-500 italic">—</span>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${badge.bg} ${badge.text}`} aria-label={`Status: ${badge.label}`}>
+                                                    {badge.label}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 max-w-xs">
+                                                <div className="truncate text-gray-600 dark:text-gray-400 text-xs" title={r.statusComment || r.rejectionNote || '—'}>
+                                                    {r.statusComment || r.rejectionNote || '—'}
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3">{formatDate(r.date)}</td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex items-center gap-2">
+                                                    <button className="p-1.5 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600" onClick={() => viewDetails(r)} title="View details">
+                                                        <IconEye className="h-4 w-4" />
+                                                    </button>
+                                                    <button className="p-1.5 rounded hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600" onClick={() => printRequest(r)} title="Print request">
+                                                        <IconPrinter className="h-4 w-4" />
+                                                    </button>
+                                                    {isProcurementRole && (
+                                                        <button
+                                                            className="p-1.5 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-indigo-600"
+                                                            onClick={() => openCommentModal(r)}
+                                                            title="Update status comment"
+                                                        >
+                                                            <IconEdit className="h-4 w-4" />
+                                                        </button>
+                                                    )}
+                                                    {isAdmin && (
+                                                        <button
+                                                            className="p-1.5 rounded hover:bg-orange-50 dark:hover:bg-orange-900/20 text-orange-600 disabled:opacity-50"
+                                                            onClick={() => handleHideRequest(r)}
+                                                            title="Hide request"
+                                                            disabled={hideActionId === r.id}
+                                                        >
+                                                            {hideActionId === r.id ? <span className="text-xs font-semibold">...</span> : <IconArchive className="h-4 w-4" />}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
                 {!isLoading && !error && filteredRequests.length > pageSize && (
-                    <div className="flex items-center justify-between p-3 text-sm">
-                        <div>
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-white-dark">
+                        <span>
                             Showing {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, filteredRequests.length)} of {filteredRequests.length}
-                        </div>
+                        </span>
                         <div className="flex items-center gap-2">
                             <button className="px-3 py-1 rounded border disabled:opacity-50" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
-                                Previous
+                                Prev
                             </button>
                             <span>
                                 Page {page} of {pageCount}
