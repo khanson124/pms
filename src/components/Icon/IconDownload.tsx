@@ -7,6 +7,9 @@ interface IconDownloadProps {
 }
 
 const IconDownload: FC<IconDownloadProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -53,3 +56,4 @@ const IconDownload: FC<IconDownloadProps> = ({ className, fill = false, duotone 
 };
 
 export default IconDownload;
+

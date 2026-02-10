@@ -7,6 +7,9 @@ interface IconCreditCardProps {
 }
 
 const IconCreditCard: FC<IconCreditCardProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -69,3 +72,4 @@ const IconCreditCard: FC<IconCreditCardProps> = ({ className, fill = false, duot
 };
 
 export default IconCreditCard;
+

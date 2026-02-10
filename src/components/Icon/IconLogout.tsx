@@ -7,6 +7,9 @@ interface IconLogoutProps {
 }
 
 const IconLogout: FC<IconLogoutProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -40,3 +43,4 @@ const IconLogout: FC<IconLogoutProps> = ({ className, fill = false, duotone = tr
 };
 
 export default IconLogout;
+

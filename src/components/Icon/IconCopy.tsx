@@ -7,6 +7,9 @@ interface IconCopyProps {
 }
 
 const IconCopy: FC<IconCopyProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -41,3 +44,4 @@ const IconCopy: FC<IconCopyProps> = ({ className, fill = false, duotone = true }
 };
 
 export default IconCopy;
+

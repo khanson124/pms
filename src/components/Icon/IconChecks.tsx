@@ -7,6 +7,9 @@ interface IconChecksProps {
 }
 
 const IconChecks: FC<IconChecksProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -36,3 +39,4 @@ const IconChecks: FC<IconChecksProps> = ({ className, fill = false, duotone = tr
 };
 
 export default IconChecks;
+

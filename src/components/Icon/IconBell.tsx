@@ -7,6 +7,9 @@ interface IconBellProps {
 }
 
 const IconBell: FC<IconBellProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -43,3 +46,4 @@ const IconBell: FC<IconBellProps> = ({ className, fill = false, duotone = true }
 };
 
 export default IconBell;
+

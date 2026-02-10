@@ -7,6 +7,9 @@ interface IconArchiveProps {
 }
 
 const IconArchive: FC<IconArchiveProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -51,3 +54,4 @@ const IconArchive: FC<IconArchiveProps> = ({ className, fill = false, duotone = 
 };
 
 export default IconArchive;
+

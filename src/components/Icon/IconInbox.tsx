@@ -7,6 +7,9 @@ interface IconInboxProps {
 }
 
 const IconInbox: FC<IconInboxProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -42,3 +45,4 @@ const IconInbox: FC<IconInboxProps> = ({ className, fill = false, duotone = true
 };
 
 export default IconInbox;
+

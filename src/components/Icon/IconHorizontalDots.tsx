@@ -7,6 +7,9 @@ interface IconHorizontalDotsProps {
 }
 
 const IconHorizontalDots: FC<IconHorizontalDotsProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -31,3 +34,4 @@ const IconHorizontalDots: FC<IconHorizontalDotsProps> = ({ className, fill = fal
 };
 
 export default IconHorizontalDots;
+

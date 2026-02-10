@@ -7,6 +7,9 @@ interface IconNetflixProps {
 }
 
 const IconNetflix: FC<IconNetflixProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" preserveAspectRatio="xMidYMid meet" viewBox="0 0 24 24" className={className}>
             <path
@@ -18,3 +21,4 @@ const IconNetflix: FC<IconNetflixProps> = ({ className, fill = false, duotone = 
 };
 
 export default IconNetflix;
+

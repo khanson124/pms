@@ -7,6 +7,9 @@ interface IconListCheckProps {
 }
 
 const IconListCheck: FC<IconListCheckProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
             <path d="M2 5.5L3.21429 7L7.5 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -20,3 +23,4 @@ const IconListCheck: FC<IconListCheckProps> = ({ className, fill = false, duoton
 };
 
 export default IconListCheck;
+

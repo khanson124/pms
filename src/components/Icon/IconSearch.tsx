@@ -7,6 +7,8 @@ interface IconSearchProps {
 }
 
 const IconSearch: FC<IconSearchProps> = ({ className, duotone = true }) => {
+    void duotone;
+
     return (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
             <circle cx="11.5" cy="11.5" r="9.5" stroke="currentColor" strokeWidth="1.5" opacity={duotone ? '0.5' : '1'} />
@@ -16,3 +18,4 @@ const IconSearch: FC<IconSearchProps> = ({ className, duotone = true }) => {
 };
 
 export default IconSearch;
+

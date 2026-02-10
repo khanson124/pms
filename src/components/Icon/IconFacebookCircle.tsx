@@ -7,6 +7,9 @@ interface IconFacebookCircleProps {
 }
 
 const IconFacebookCircle: FC<IconFacebookCircleProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className={className}>
             <path
@@ -18,3 +21,4 @@ const IconFacebookCircle: FC<IconFacebookCircleProps> = ({ className, fill = fal
 };
 
 export default IconFacebookCircle;
+

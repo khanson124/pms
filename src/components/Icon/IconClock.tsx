@@ -7,6 +7,9 @@ interface IconClockProps {
 }
 
 const IconClock: FC<IconClockProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -30,3 +33,4 @@ const IconClock: FC<IconClockProps> = ({ className, fill = false, duotone = true
 };
 
 export default IconClock;
+

@@ -7,6 +7,9 @@ interface IconLayoutGridProps {
 }
 
 const IconLayoutGrid: FC<IconLayoutGridProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -61,3 +64,4 @@ const IconLayoutGrid: FC<IconLayoutGridProps> = ({ className, fill = false, duot
 };
 
 export default IconLayoutGrid;
+

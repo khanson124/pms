@@ -7,6 +7,9 @@ interface IconBitcoinProps {
 }
 
 const IconBitcoin: FC<IconBitcoinProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -42,3 +45,4 @@ const IconBitcoin: FC<IconBitcoinProps> = ({ className, fill = false, duotone = 
 };
 
 export default IconBitcoin;
+

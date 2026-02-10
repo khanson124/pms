@@ -7,6 +7,9 @@ interface IconCircleCheckProps {
 }
 
 const IconCircleCheck: FC<IconCircleCheckProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -28,3 +31,4 @@ const IconCircleCheck: FC<IconCircleCheckProps> = ({ className, fill = false, du
 };
 
 export default IconCircleCheck;
+

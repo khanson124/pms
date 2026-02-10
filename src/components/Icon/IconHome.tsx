@@ -7,6 +7,9 @@ interface IconHomeProps {
 }
 
 const IconHome: FC<IconHomeProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -39,3 +42,4 @@ const IconHome: FC<IconHomeProps> = ({ className, fill = false, duotone = true }
 };
 
 export default IconHome;
+

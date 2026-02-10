@@ -7,6 +7,9 @@ interface IconSafariProps {
 }
 
 const IconSafari: FC<IconSafariProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
             <circle opacity={duotone ? '0.5' : '1'} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" />
@@ -20,3 +23,4 @@ const IconSafari: FC<IconSafariProps> = ({ className, fill = false, duotone = tr
 };
 
 export default IconSafari;
+

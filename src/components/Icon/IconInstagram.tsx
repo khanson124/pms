@@ -7,6 +7,9 @@ interface IconInstagramProps {
 }
 
 const IconInstagram: FC<IconInstagramProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -44,3 +47,4 @@ const IconInstagram: FC<IconInstagramProps> = ({ className, fill = false, duoton
 };
 
 export default IconInstagram;
+

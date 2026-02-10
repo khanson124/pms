@@ -8,6 +8,9 @@ interface IconBookmarkProps {
 }
 
 const IconBookmark: FC<IconBookmarkProps> = ({ className, fill = false, duotone = true, bookmark = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -39,3 +42,4 @@ const IconBookmark: FC<IconBookmarkProps> = ({ className, fill = false, duotone 
 };
 
 export default IconBookmark;
+

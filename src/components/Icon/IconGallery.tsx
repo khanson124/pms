@@ -7,6 +7,9 @@ interface IconGalleryProps {
 }
 
 const IconGallery: FC<IconGalleryProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -46,3 +49,4 @@ const IconGallery: FC<IconGalleryProps> = ({ className, fill = false, duotone = 
 };
 
 export default IconGallery;
+

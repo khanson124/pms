@@ -7,6 +7,9 @@ interface IconLinkedinProps {
 }
 
 const IconLinkedin: FC<IconLinkedinProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -28,3 +31,4 @@ const IconLinkedin: FC<IconLinkedinProps> = ({ className, fill = false, duotone 
 };
 
 export default IconLinkedin;
+

@@ -7,6 +7,9 @@ interface IconArrowLeftProps {
 }
 
 const IconArrowLeft: FC<IconArrowLeftProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -33,3 +36,4 @@ const IconArrowLeft: FC<IconArrowLeftProps> = ({ className, fill = false, duoton
 };
 
 export default IconArrowLeft;
+

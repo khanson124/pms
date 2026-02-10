@@ -7,6 +7,9 @@ interface IconAwardProps {
 }
 
 const IconAward: FC<IconAwardProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -46,3 +49,4 @@ const IconAward: FC<IconAwardProps> = ({ className, fill = false, duotone = true
 };
 
 export default IconAward;
+

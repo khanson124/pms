@@ -7,6 +7,9 @@ interface IconBellBingProps {
 }
 
 const IconBellBing: FC<IconBellBingProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -49,3 +52,4 @@ const IconBellBing: FC<IconBellBingProps> = ({ className, fill = false, duotone 
 };
 
 export default IconBellBing;
+

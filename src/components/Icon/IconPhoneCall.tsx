@@ -7,6 +7,9 @@ interface IconPhoneCallProps {
 }
 
 const IconPhoneCall: FC<IconPhoneCallProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -47,3 +50,4 @@ const IconPhoneCall: FC<IconPhoneCallProps> = ({ className, fill = false, duoton
     );
 };
 export default IconPhoneCall;
+

@@ -7,6 +7,9 @@ interface IconBoltProps {
 }
 
 const IconBolt: FC<IconBoltProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -43,3 +46,4 @@ const IconBolt: FC<IconBoltProps> = ({ className, fill = false, duotone = true }
 };
 
 export default IconBolt;
+

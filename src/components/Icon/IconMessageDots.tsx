@@ -7,6 +7,9 @@ interface IconMessageDotsProps {
 }
 
 const IconMessageDots: FC<IconMessageDotsProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -37,3 +40,4 @@ const IconMessageDots: FC<IconMessageDotsProps> = ({ className, fill = false, du
     );
 };
 export default IconMessageDots;
+

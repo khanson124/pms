@@ -7,6 +7,9 @@ interface IconPlayCircleProps {
 }
 
 const IconPlayCircle: FC<IconPlayCircleProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {fill ? (
@@ -32,3 +35,4 @@ const IconPlayCircle: FC<IconPlayCircleProps> = ({ className, fill = false, duot
     );
 };
 export default IconPlayCircle;
+

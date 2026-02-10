@@ -7,6 +7,9 @@ interface IconArrowWaveLeftUpProps {
 }
 
 const IconArrowWaveLeftUp: FC<IconArrowWaveLeftUpProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <svg width="111" height="22" viewBox="0 0 116 22" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
             <path
@@ -18,3 +21,4 @@ const IconArrowWaveLeftUp: FC<IconArrowWaveLeftUpProps> = ({ className, fill = f
 };
 
 export default IconArrowWaveLeftUp;
+

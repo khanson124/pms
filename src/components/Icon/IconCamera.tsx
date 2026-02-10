@@ -7,6 +7,9 @@ interface IconCameraProps {
 }
 
 const IconCamera: FC<IconCameraProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -44,3 +47,4 @@ const IconCamera: FC<IconCameraProps> = ({ className, fill = false, duotone = tr
 };
 
 export default IconCamera;
+

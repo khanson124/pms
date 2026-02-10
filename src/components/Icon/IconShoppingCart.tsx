@@ -7,6 +7,8 @@ interface IconShoppingCartProps {
 }
 
 const IconShoppingCart: FC<IconShoppingCartProps> = ({ className, duotone = true }) => {
+    void duotone;
+
     return (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
             <path
@@ -38,3 +40,4 @@ const IconShoppingCart: FC<IconShoppingCartProps> = ({ className, duotone = true
 };
 
 export default IconShoppingCart;
+

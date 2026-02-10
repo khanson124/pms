@@ -7,6 +7,9 @@ interface IconGithubProps {
 }
 
 const IconGithub: FC<IconGithubProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -26,3 +29,4 @@ const IconGithub: FC<IconGithubProps> = ({ className, fill = false, duotone = tr
 };
 
 export default IconGithub;
+

@@ -7,6 +7,9 @@ interface IconGlobeProps {
 }
 
 const IconGlobe: FC<IconGlobeProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -57,3 +60,4 @@ const IconGlobe: FC<IconGlobeProps> = ({ className, fill = false, duotone = true
 };
 
 export default IconGlobe;
+

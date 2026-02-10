@@ -7,6 +7,9 @@ interface IconEyeProps {
 }
 
 const IconEye: FC<IconEyeProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -39,3 +42,4 @@ const IconEye: FC<IconEyeProps> = ({ className, fill = false, duotone = true }) 
 };
 
 export default IconEye;
+

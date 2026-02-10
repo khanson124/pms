@@ -7,6 +7,9 @@ interface IconCloudDownloadProps {
 }
 
 const IconCloudDownload: FC<IconCloudDownloadProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -41,3 +44,4 @@ const IconCloudDownload: FC<IconCloudDownloadProps> = ({ className, fill = false
 };
 
 export default IconCloudDownload;
+

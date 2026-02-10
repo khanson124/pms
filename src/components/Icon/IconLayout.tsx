@@ -7,6 +7,9 @@ interface IconLayoutProps {
 }
 
 const IconLayout: FC<IconLayoutProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -44,3 +47,4 @@ const IconLayout: FC<IconLayoutProps> = ({ className, fill = false, duotone = tr
     );
 };
 export default IconLayout;
+

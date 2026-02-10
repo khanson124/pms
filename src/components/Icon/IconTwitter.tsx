@@ -7,6 +7,8 @@ interface IconTwitterProps {
 }
 
 const IconTwitter: FC<IconTwitterProps> = ({ className, fill = false }) => {
+    void fill;
+
     return (
         <>
             {fill ? (
@@ -36,3 +38,4 @@ const IconTwitter: FC<IconTwitterProps> = ({ className, fill = false }) => {
     );
 };
 export default IconTwitter;
+

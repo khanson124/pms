@@ -7,6 +7,9 @@ interface IconFolderMinusProps {
 }
 
 const IconFolderMinus: FC<IconFolderMinusProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -36,3 +39,4 @@ const IconFolderMinus: FC<IconFolderMinusProps> = ({ className, fill = false, du
 };
 
 export default IconFolderMinus;
+
