@@ -4,8 +4,11 @@
  * Express middleware to automatically capture request context for audit logging
  */
 import { Request, Response, NextFunction } from 'express';
-import { AuditAction } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { auditService } from '../services/auditService.js';
+
+const AuditAction = Prisma.AuditLog_action;
+type AuditAction = Prisma.AuditLog_action;
 
 export interface AuditContext {
     userId?: number;

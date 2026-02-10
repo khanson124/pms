@@ -38,6 +38,7 @@ const EvaluatorAssignmentDetail = () => {
     const [saving, setSaving] = useState(false);
     const [completing, setCompleting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [assignmentStatus, setAssignmentStatus] = useState<string | null>(null);
 
     const [formData, setFormData] = useState({
         criticalIssues: '',
@@ -84,6 +85,9 @@ const EvaluatorAssignmentDetail = () => {
 
             const u = getUser();
             const currentUserId = u?.id;
+            const assignments = await evaluationService.getMyAssignments();
+            const myAssignment = assignments.find((a: any) => String(a.evaluationId) === String(evaluationId));
+            setAssignmentStatus(myAssignment?.status ? String(myAssignment.status).toUpperCase() : null);
 
             console.log('=== EvaluatorAssignmentDetail Debug ===');
             console.log('Current User:', u);
@@ -163,6 +167,7 @@ const EvaluatorAssignmentDetail = () => {
 
     const handleSave = async () => {
         try {
+            if (assignmentStatus === 'SUBMITTED') return;
             setSaving(true);
 
             if (!evaluation) {
@@ -201,6 +206,7 @@ const EvaluatorAssignmentDetail = () => {
 
     const handleCompleteAssignment = async () => {
         if (!evaluation) return;
+        if (assignmentStatus === 'SUBMITTED') return;
 
         const confirmResult = await Swal.fire({
             title: 'Mark assignment complete?',
@@ -292,6 +298,12 @@ const EvaluatorAssignmentDetail = () => {
                 </div>
             </div>
 
+            {assignmentStatus === 'SUBMITTED' && (
+                <div className="panel border border-success/30 bg-success/5">
+                    <div className="p-5 text-sm text-success">This assignment has been submitted. Editing is locked.</div>
+                </div>
+            )}
+
             {/* Form */}
             <div className="panel space-y-6">
                 {/* Comments/Critical Issues Examined */}
@@ -307,6 +319,7 @@ const EvaluatorAssignmentDetail = () => {
                         placeholder="Enter detailed comments and critical issues examined..."
                         value={formData.criticalIssues}
                         onChange={handleInputChange}
+                        disabled={assignmentStatus === 'SUBMITTED'}
                         required
                     />
                 </div>
@@ -323,7 +336,13 @@ const EvaluatorAssignmentDetail = () => {
                             { label: 'Deferred', value: 'DEFERRED' },
                         ].map((action, idx) => (
                             <label key={action.value} className="flex items-center gap-2">
-                                <input type="radio" className="form-radio" checked={formData.actionTaken === action.value} onChange={() => handleActionToggle(action.value as any)} />
+                                <input
+                                    type="radio"
+                                    className="form-radio"
+                                    checked={formData.actionTaken === action.value}
+                                    onChange={() => handleActionToggle(action.value as any)}
+                                    disabled={assignmentStatus === 'SUBMITTED'}
+                                />
                                 <span>
                                     ({String.fromCharCode(97 + idx)}) {action.label}
                                 </span>
@@ -346,6 +365,7 @@ const EvaluatorAssignmentDetail = () => {
                             placeholder="Provide details if rejected or deferred..."
                             value={formData.rejectionReason}
                             onChange={handleInputChange}
+                            disabled={assignmentStatus === 'SUBMITTED'}
                             required
                         />
                     </div>
@@ -364,6 +384,7 @@ const EvaluatorAssignmentDetail = () => {
                         placeholder="Enter recommended contractor/supplier name"
                         value={formData.recommendedSupplier}
                         onChange={handleInputChange}
+                        disabled={assignmentStatus === 'SUBMITTED'}
                     />
                 </div>
 
@@ -386,6 +407,7 @@ const EvaluatorAssignmentDetail = () => {
                                 handleInputChange({ target: { name: 'recommendedAmountInclusiveGCT', value: rawValue } } as any);
                             }
                         }}
+                        disabled={assignmentStatus === 'SUBMITTED'}
                     />
                 </div>
 
@@ -403,6 +425,7 @@ const EvaluatorAssignmentDetail = () => {
                             placeholder="Enter evaluator's name"
                             value={formData.evaluatorName}
                             onChange={handleInputChange}
+                            disabled={assignmentStatus === 'SUBMITTED'}
                         />
                     </div>
                     <div>
@@ -417,6 +440,7 @@ const EvaluatorAssignmentDetail = () => {
                             placeholder="Enter job title"
                             value={formData.evaluatorTitle}
                             onChange={handleInputChange}
+                            disabled={assignmentStatus === 'SUBMITTED'}
                         />
                     </div>
                 </div>
@@ -434,13 +458,22 @@ const EvaluatorAssignmentDetail = () => {
                             placeholder="Enter your signature or initials"
                             value={formData.evaluatorSignature}
                             onChange={handleInputChange}
+                            disabled={assignmentStatus === 'SUBMITTED'}
                         />
                     </div>
                     <div>
                         <label htmlFor="evaluationDate" className="mb-2 block font-semibold">
                             Date:
                         </label>
-                        <input id="evaluationDate" name="evaluationDate" type="date" className="form-input w-full" value={formData.evaluationDate} onChange={handleInputChange} />
+                        <input
+                            id="evaluationDate"
+                            name="evaluationDate"
+                            type="date"
+                            className="form-input w-full"
+                            value={formData.evaluationDate}
+                            onChange={handleInputChange}
+                            disabled={assignmentStatus === 'SUBMITTED'}
+                        />
                     </div>
                 </div>
 
@@ -451,12 +484,21 @@ const EvaluatorAssignmentDetail = () => {
                             <IconArrowLeft className="h-4 w-4 mr-2" />
                             Cancel
                         </button>
-                        <button onClick={handleSave} disabled={saving || completing} className={`btn btn-primary ${saving ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                        <button
+                            onClick={handleSave}
+                            disabled={saving || completing || assignmentStatus === 'SUBMITTED'}
+                            className={`btn btn-primary ${saving ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        >
                             <IconSave className="h-4 w-4 mr-2" />
                             {saving ? 'Saving...' : 'Save Section C'}
                         </button>
                     </div>
-                    <button type="button" className={`btn btn-success gap-2 ${completing ? 'opacity-60 cursor-not-allowed' : ''}`} onClick={handleCompleteAssignment} disabled={completing || saving}>
+                    <button
+                        type="button"
+                        className={`btn btn-success gap-2 ${completing ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        onClick={handleCompleteAssignment}
+                        disabled={completing || saving || assignmentStatus === 'SUBMITTED'}
+                    >
                         {completing ? (
                             <>
                                 <span className="animate-spin border-2 border-white border-l-transparent rounded-full w-4 h-4 inline-block"></span>

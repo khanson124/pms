@@ -184,7 +184,19 @@ export const EvaluationForm: React.FC<Props> = ({
     const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-    const canEdit = (sec: 'A' | 'B' | 'C' | 'D' | 'E') => canEditSections.includes(sec);
+    // Get section status
+    const getSectionStatus = (sec: 'A' | 'B' | 'C' | 'D' | 'E'): string => {
+        const statusKey = `section${sec}Status` as keyof typeof evaluation;
+        const rawStatus = evaluation?.[statusKey];
+        return typeof rawStatus === 'string' ? rawStatus : 'NOT_STARTED';
+    };
+
+    const canEdit = (sec: 'A' | 'B' | 'C' | 'D' | 'E') => {
+        if (!canEditSections.includes(sec)) return false;
+        if (sec === 'A' && !isProcurement) return false;
+        if (sec === 'B' || sec === 'C') return getSectionStatus(sec) !== 'VERIFIED';
+        return true;
+    };
 
     React.useEffect(() => {
         setExistingAttachments(getEvaluationAttachments(evaluation));
@@ -213,16 +225,10 @@ export const EvaluationForm: React.FC<Props> = ({
             }
         }
     }, [evaluation?.id, canEdit('E')]);
+
     const canEditStructure = (sec: 'A' | 'B' | 'C' | 'D' | 'E') => structureEditableSections.includes(sec);
     // Evaluators can only edit technical evaluation table, not eligibility or compliance
-    const canEditTechnical = () => canEditSections.includes('B');
-
-    // Get section status
-    const getSectionStatus = (sec: 'A' | 'B' | 'C' | 'D' | 'E'): string => {
-        const statusKey = `section${sec}Status` as keyof typeof evaluation;
-        const rawStatus = evaluation?.[statusKey];
-        return typeof rawStatus === 'string' ? rawStatus : 'NOT_STARTED';
-    };
+    const canEditTechnical = () => canEdit('B');
 
     // Check if user can verify a section (procurement officer and section is submitted)
     const canVerifySection = (sec: 'A' | 'B' | 'C' | 'D' | 'E'): boolean => {

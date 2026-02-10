@@ -4,9 +4,12 @@
  * Provides comprehensive audit logging for all critical system operations.
  * Tracks who did what, when, and on which entity for compliance and security.
  */
-import { Prisma, AuditAction } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../prismaClient.js';
 import { logger } from '../config/logger.js';
+
+const AuditAction = Prisma.AuditLog_action;
+type AuditAction = Prisma.AuditLog_action;
 
 /**
  * Map HTTP routes to AuditAction enum values

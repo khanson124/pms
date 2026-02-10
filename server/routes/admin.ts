@@ -2,12 +2,15 @@
  * Admin Routes - System management and configuration
  */
 import express, { Router, Request, Response } from 'express';
-import { AuditAction } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../prismaClient.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { validate, updateBugReportStatusSchema } from '../middleware/validation.js';
 import { logger } from '../config/logger.js';
 import bcryptjs from 'bcryptjs';
+
+const AuditAction = Prisma.AuditLog_action;
+type AuditAction = Prisma.AuditLog_action;
 
 const router: Router = express.Router();
 
