@@ -87,10 +87,8 @@ const SystemDashboard = lazy(() => import('../pages/Procurement/Admin/SystemDash
 const DepartmentManagement = lazy(() => import('../pages/Procurement/Admin/DepartmentManagement'));
 const UserSecurityAccess = lazy(() => import('../pages/Procurement/Admin/UserSecurityAccess'));
 const AuditCompliance = lazy(() => import('../pages/Procurement/Admin/AuditCompliance'));
-const RequestWorkflowConfiguration = lazy(() => import('../pages/Procurement/Admin/RequestWorkflowConfiguration'));
 const FinancialManagement = lazy(() => import('../pages/Procurement/Admin/FinancialManagement'));
 const VendorManagement = lazy(() => import('../pages/Procurement/Admin/VendorManagement'));
-const RolePermissionManagement = lazy(() => import('../pages/Procurement/Admin/RolePermissionManagement'));
 const BulkUserManagement = lazy(() => import('../pages/Procurement/Admin/BulkUserManagement'));
 const SystemConfiguration = lazy(() => import('../pages/Procurement/Admin/SystemConfiguration'));
 const HiddenRequests = lazy(() => import('../pages/Procurement/Admin/HiddenRequests'));
@@ -905,14 +903,6 @@ const routes = [
         ),
     },
     {
-        path: '/procurement/admin/workflow-config',
-        element: (
-            <AdminRoute>
-                <RequestWorkflowConfiguration />
-            </AdminRoute>
-        ),
-    },
-    {
         path: '/procurement/admin/financial',
         element: (
             <AdminRoute>
@@ -925,14 +915,6 @@ const routes = [
         element: (
             <AdminRoute>
                 <VendorManagement />
-            </AdminRoute>
-        ),
-    },
-    {
-        path: '/procurement/admin/roles-permissions',
-        element: (
-            <AdminRoute>
-                <RolePermissionManagement />
             </AdminRoute>
         ),
     },

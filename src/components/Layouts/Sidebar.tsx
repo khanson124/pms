@@ -447,24 +447,6 @@ const Sidebar = () => {
                                             </li>
 
                                             <li className="nav-item">
-                                                <NavLink to="/procurement/admin/workflow-config" end className="group">
-                                                    <div className="flex items-center">
-                                                        <IconSettings className="group-hover:!text-primary shrink-0" />
-                                                        <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">Workflow Config</span>
-                                                    </div>
-                                                </NavLink>
-                                            </li>
-
-                                            <li className="nav-item">
-                                                <NavLink to="/procurement/admin/roles-permissions" end className="group">
-                                                    <div className="flex items-center">
-                                                        <IconKey className="group-hover:!text-primary shrink-0" />
-                                                        <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">Roles & Permissions</span>
-                                                    </div>
-                                                </NavLink>
-                                            </li>
-
-                                            <li className="nav-item">
                                                 <NavLink to="/procurement/admin/bulk-users" end className="group">
                                                     <div className="flex items-center">
                                                         <IconUpload className="group-hover:!text-primary shrink-0" />
