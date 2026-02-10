@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import Select, { type StylesConfig } from 'react-select';
 import { useDispatch } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -184,7 +184,6 @@ const RequestForm = () => {
     const [headerMonth, setHeaderMonth] = useState('');
     const [headerYear, setHeaderYear] = useState<number | null>(new Date().getFullYear());
     const [headerSequence, setHeaderSequence] = useState<string>('000');
-    const headerPreview = `[${headerDeptCode || '---'}]/[${headerMonth || '---'}]/[${headerYear || '----'}]/[${headerSequence}]`;
 
     const isFormCodeComplete = Boolean(headerDeptCode && headerMonth && headerYear !== null && headerSequence && headerSequence !== '000');
     // prevent duplicate submissions when network is slow
@@ -193,7 +192,6 @@ const RequestForm = () => {
     const [managerApprovedDate, setManagerApprovedDate] = useState('');
     const [headApproved, setHeadApproved] = useState(false);
     const [headApprovedDate, setHeadApprovedDate] = useState('');
-    const [procurementApproved, setProcurementApproved] = useState(false);
     const [budgetOfficerApproved, setBudgetOfficerApproved] = useState(false);
     const [budgetOfficerApprovedDate, setBudgetOfficerApprovedDate] = useState('');
     const [budgetManagerApproved, setBudgetManagerApproved] = useState(false);
@@ -202,7 +200,6 @@ const RequestForm = () => {
     // Current user profile (for edit permissions)
     const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
     const currentUserId = userProfile?.id || userProfile?.userId || null;
-    const currentUserName = userProfile?.fullName || userProfile?.name || '';
 
     // Get user roles to determine if they're Budget Officer or Budget Manager
     const userRoles = (userProfile?.roles || []).map((r: any) => {
@@ -227,59 +224,29 @@ const RequestForm = () => {
     // Track the original requester id so returned drafts can be resubmitted by the requester
     const [requestRequesterId, setRequestRequesterId] = useState<number | null>(null);
 
+    const isDeptManager = userRoles.some((r: string) => r === 'DEPT_MANAGER' || r === 'MANAGER');
+    const isHOD = userRoles.some((r: string) => r === 'HEAD_OF_DIVISION' || r === 'HOD');
+
+    const isAssignee = !!(isEditMode && requestMeta?.currentAssigneeId && currentUserId && Number(requestMeta.currentAssigneeId) === Number(currentUserId));
+    const canEditManagerFields = !!(isAssignee && requestMeta?.status === 'DEPARTMENT_REVIEW' && isDeptManager);
+    const canEditHodFields = !!(isAssignee && requestMeta?.status === 'HOD_REVIEW' && isHOD);
+    const canEditProcurementSection = !!(isAssignee && isProcurementRole && requestMeta?.status && !['CANCELLED', 'REJECTED'].includes(requestMeta.status));
+    const canEditBudgetSection = !!(isAssignee && (requestMeta?.status === 'FINANCE_REVIEW' || requestMeta?.status === 'BUDGET_MANAGER_REVIEW'));
+    const canApproveBudgetOfficer = !!(isAssignee && requestMeta?.status === 'FINANCE_REVIEW' && isBudgetOfficer);
+    const canApproveBudgetManager = !!(isAssignee && isBudgetManager && (requestMeta?.status === 'FINANCE_REVIEW' || requestMeta?.status === 'BUDGET_MANAGER_REVIEW'));
+    const isRequester = !!(requestRequesterId && currentUserId && Number(requestRequesterId) === Number(currentUserId));
+    const canEditForm = !isEditMode || (requestMeta?.status === 'DRAFT' && isRequester) || canEditManagerFields || canEditHodFields || canEditProcurementSection || canEditBudgetSection;
+    const canDispatchToVendors = !!(isAssignee && requestMeta?.status === 'FINANCE_APPROVED');
+
     // Rejection modal state
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [rejectionNote, setRejectionNote] = useState('');
     const [isRejecting, setIsRejecting] = useState(false);
-    const [isRejectDisabled, setIsRejectDisabled] = useState(false); // Disable reject button state
+    const [isRejectDisabled, setIsRejectDisabled] = useState(false);
 
     // Request actions/messages
     const [requestActions, setRequestActions] = useState<Array<{ id: number; action: string; comment: string | null; performedBy: { name: string } | null; createdAt: string }>>([]);
     const [showMessagesPanel, setShowMessagesPanel] = useState(false);
-    const [messages, setMessages] = useState<string[]>([]);
-
-    // Determine field permissions strictly by workflow stage + assignee
-    const isAssignee = !!(isEditMode && requestMeta?.currentAssigneeId && currentUserId && Number(requestMeta.currentAssigneeId) === Number(currentUserId));
-    const canEditManagerFields = !!(isAssignee && requestMeta?.status === 'DEPARTMENT_REVIEW');
-    const canEditHodFields = !!(isAssignee && requestMeta?.status === 'HOD_REVIEW');
-    // Allow procurement section editing in PROCUREMENT_REVIEW, FINANCE_APPROVED, or SENT_TO_VENDOR (after evaluation)
-    const canEditProcurementSection = !!(isAssignee && isProcurementRole && requestMeta?.status && !['CANCELLED', 'REJECTED'].includes(requestMeta.status));
-    // Budget section editing: assignee can edit at their stage
-    const canEditBudgetSection = !!(isAssignee && (requestMeta?.status === 'FINANCE_REVIEW' || requestMeta?.status === 'BUDGET_MANAGER_REVIEW'));
-
-    // Approval gating:
-    // - Finance Officer can approve as Chief Accountant at FINANCE_REVIEW (if assigned)
-    // - Budget Manager can approve as Finance Director at BUDGET_MANAGER_REVIEW (if assigned) OR at FINANCE_REVIEW (if assigned there)
-    const canApproveBudgetOfficer = !!(isAssignee && requestMeta?.status === 'FINANCE_REVIEW' && isBudgetOfficer);
-    const canApproveBudgetManager = !!(isAssignee && isBudgetManager && (requestMeta?.status === 'FINANCE_REVIEW' || requestMeta?.status === 'BUDGET_MANAGER_REVIEW'));
-    const canDispatchToVendors = !!(isAssignee && requestMeta?.status === 'FINANCE_APPROVED');
-
-    // Determine if user can edit the form
-    // New requests are always editable
-    // For existing requests:
-    // - Requester can edit DRAFT requests
-    // - Current assignee can edit at their stage
-    // - EXEC/PROCUREMENT/ADMIN can always edit
-    const canEditForm = useMemo(() => {
-        if (!isEditMode) return true; // New requests are always editable
-
-        const currentStatus = requestMeta?.status;
-        const isRequester = requestRequesterId && Number(requestRequesterId) === Number(currentUserId);
-        const isDraft = currentStatus === 'DRAFT';
-
-        // Requester can edit DRAFT requests
-        if (isRequester && isDraft) return true;
-
-        // Current assignee can edit at their stage
-        if (isAssignee) return true;
-
-        // Full access roles can always edit
-        const hasFullAccess = userRoles.some(
-            (r: string) => r === 'EXECUTIVE_DIRECTOR' || r === 'EXECUTIVE' || r === 'PROCUREMENT_OFFICER' || r === 'PROCUREMENT_MANAGER' || r === 'FINANCE' || r === 'BUDGET_MANAGER' || r === 'ADMIN',
-        );
-
-        return hasFullAccess || false;
-    }, [isEditMode, requestMeta, requestRequesterId, currentUserId, isAssignee, userRoles]);
 
     // Load available finance officers if user is Budget Manager and request is in FINANCE_REVIEW
     useEffect(() => {
@@ -452,7 +419,6 @@ const RequestForm = () => {
                 setActionDate(request.actionDate || '');
                 setProcurementComments(request.procurementComments || '');
                 setStatusComment(request.statusComment || '');
-                setProcurementApproved(!!request.procurementApproved);
 
                 // Load existing attachments (if any)
                 if (request.attachments && Array.isArray(request.attachments)) {
@@ -542,43 +508,6 @@ const RequestForm = () => {
         setAttachments(attachments.filter((_, i) => i !== index));
     };
 
-    // Remove an existing attachment (stored in DB)
-    const removeExistingAttachment = async (attachmentId: number) => {
-        if (!id) return;
-        const raw = localStorage.getItem('userProfile');
-        const profile = raw ? JSON.parse(raw) : null;
-        const userId = profile?.id || profile?.userId || null;
-        if (!userId) {
-            Swal.fire({ icon: 'error', title: 'Not logged in' });
-            return;
-        }
-
-        const confirm = await Swal.fire({
-            icon: 'warning',
-            title: 'Delete attachment?',
-            text: 'This will permanently remove the attachment from the request.',
-            showCancelButton: true,
-            confirmButtonText: 'Delete',
-        });
-        if (!confirm.isConfirmed) return;
-
-        try {
-            const resp = await fetch(getApiUrl(`/api/requests/${id}/attachments/${attachmentId}`), {
-                method: 'DELETE',
-                headers: { 'x-user-id': String(userId) },
-            });
-            if (!resp.ok) {
-                const err = await resp.json().catch(() => ({}));
-                throw new Error(err.message || resp.statusText || 'Failed to delete attachment');
-            }
-            setExistingAttachments(existingAttachments.filter((a) => a.id !== attachmentId));
-            Swal.fire({ icon: 'success', title: 'Deleted', text: 'Attachment removed' });
-        } catch (err: any) {
-            console.error('Failed to delete attachment', err);
-            Swal.fire({ icon: 'error', title: 'Delete failed', text: err?.message || String(err) });
-        }
-    };
-
     // Fetch request actions/messages
     const fetchRequestActions = async () => {
         if (!isEditMode || !id) return;
@@ -618,8 +547,6 @@ const RequestForm = () => {
                 const error = await response.json();
                 throw new Error(error.message || 'Failed to reject request');
             }
-
-            const respData = await response.json();
 
             // Close the rejection modal
             setShowRejectModal(false);
@@ -662,74 +589,6 @@ const RequestForm = () => {
     };
 
     // Handle approval action
-    const handleApprove = async () => {
-        try {
-            const confirmResult = await Swal.fire({
-                title: 'Approve Request?',
-                text: 'This will advance the request to the next stage in the approval workflow.',
-                icon: 'question',
-                input: 'textarea',
-                inputPlaceholder: 'Optional comment...',
-                inputAttributes: {
-                    style: 'width: 100%; height: 80px;',
-                },
-                showCancelButton: true,
-                confirmButtonText: 'Approve',
-                confirmButtonColor: '#10b981',
-                cancelButtonText: 'Cancel',
-            });
-
-            if (!confirmResult.isConfirmed) return;
-
-            setIsSubmitting(true);
-            const response = await fetch(getApiUrl(`/api/requests/${id}/action`), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-user-id': String(currentUserId),
-                },
-                body: JSON.stringify({
-                    action: 'APPROVE',
-                    comment: confirmResult.value || '',
-                }),
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || 'Failed to approve request');
-            }
-
-            await Swal.fire({
-                icon: 'success',
-                title: 'Approved!',
-                text: 'The request has been approved and moved to the next stage.',
-            });
-
-            // Refresh the page to show updated status
-            window.location.reload();
-        } catch (err: any) {
-            console.error('Approval failed:', err);
-            Swal.fire({ icon: 'error', title: 'Approval Failed', text: err.message || 'An error occurred' });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    // Determine if user can approve/reject at various workflow stages
-    const isDeptManager = userRoles.some((r: string) => r === 'DEPT_MANAGER' || r === 'MANAGER');
-    const isHOD = userRoles.some((r: string) => r === 'HEAD_OF_DIVISION' || r === 'HOD');
-
-    const canApproveDeptManager = !!(isAssignee && requestMeta?.status === 'DEPARTMENT_REVIEW' && isDeptManager);
-    const canApproveHOD = !!(isAssignee && requestMeta?.status === 'HOD_REVIEW' && isHOD);
-    // Mirror Budget Manager override for form-level gating
-    // Budget Manager can approve as Finance Director at either FINANCE_REVIEW or BUDGET_MANAGER_REVIEW if assigned
-    const canApproveBudgetOfficerForm = !!(isAssignee && requestMeta?.status === 'FINANCE_REVIEW' && isBudgetOfficer);
-    const canApproveBudgetManagerForm = !!(isAssignee && isBudgetManager && (requestMeta?.status === 'FINANCE_REVIEW' || requestMeta?.status === 'BUDGET_MANAGER_REVIEW'));
-    const canApproveProcurementForm = !!(isAssignee && requestMeta?.status === 'PROCUREMENT_REVIEW' && isProcurementRole);
-
-    // Consolidated: Can this user approve/reject the current request on the form?
-    const canApproveOrRejectForm = canApproveDeptManager || canApproveHOD || canApproveBudgetOfficerForm || canApproveBudgetManagerForm || canApproveProcurementForm;
-
     const handleProcurementTypeChange = (type: string) => {
         if (procurementType.includes(type)) {
             setProcurementType(procurementType.filter((t) => t !== type));

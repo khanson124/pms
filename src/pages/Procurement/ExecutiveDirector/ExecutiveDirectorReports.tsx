@@ -20,7 +20,6 @@ const ExecutiveDirectorReports = () => {
     const [executiveComments, setExecutiveComments] = useState('');
     const [reportViewModal, setReportViewModal] = useState(false);
     const [executiveReports, setExecutiveReports] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchReports();
@@ -46,7 +45,6 @@ const ExecutiveDirectorReports = () => {
             console.error('Error fetching reports:', error);
             Swal.fire('Error', 'Failed to load reports', 'error');
         } finally {
-            setLoading(false);
         }
     };
 
@@ -124,18 +122,6 @@ const ExecutiveDirectorReports = () => {
                 return 'badge-outline-primary';
         }
     };
-
-    const getPriorityBadge = (priority: string) => {
-        switch (priority) {
-            case 'Critical':
-                return 'badge-outline-danger';
-            case 'High':
-                return 'badge-outline-warning';
-            case 'Medium':
-                <div className="text-center py-10">Loading reports...</div>
-            </div>
-        );
-    }
 
     return (
         <div className="space-y-6">

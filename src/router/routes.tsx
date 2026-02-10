@@ -77,7 +77,6 @@ const ReportsList = lazy(() => import('../pages/Procurement/Reports/ReportsList'
 const NewReport = lazy(() => import('../pages/Procurement/Reports/NewReport'));
 const PaymentsList = lazy(() => import('../pages/Procurement/Payments/PaymentsList'));
 const PaymentDetail = lazy(() => import('../pages/Procurement/Payments/PaymentDetail'));
-const FinanceDashboard = lazy(() => import('../pages/Procurement/Payments/FinanceDashboard'));
 const AwaitingDelivery = lazy(() => import('../pages/Procurement/Payments/AwaitingDelivery'));
 const PaymentsToProcess = lazy(() => import('../pages/Procurement/Payments/PaymentsToProcess'));
 const AdminDashboard = lazy(() => import('../pages/Procurement/Admin/AdminDashboard'));
@@ -116,13 +115,11 @@ const FinanceManagerDashboard = lazy(() => import('../pages/Procurement/Finance/
 const AuditorDashboard = lazy(() => import('../pages/Procurement/Audit/AuditorDashboard'));
 const DepartmentHeadDashboard = lazy(() => import('../pages/Procurement/DepartmentHead/DepartmentHeadDashboardNew'));
 const DepartmentManagerDashboard = lazy(() => import('../pages/Procurement/DepartmentManager/DepartmentManagerDashboard'));
-const ExecutiveDashboard = lazy(() => import('../pages/Procurement/Executive/ExecutiveDashboard'));
 const SeniorDirectorDashboard = lazy(() => import('../pages/Procurement/Director/SeniorDirectorDashboard'));
 const PaymentStageDashboard = lazy(() => import('../pages/Procurement/Payments/PaymentStageDashboard'));
 
 // Department Head Pages
 const DepartmentHeadEvaluationReview = lazy(() => import('../pages/Procurement/DepartmentHead/DepartmentHeadEvaluationReview'));
-const DepartmentHeadReportReview = lazy(() => import('../pages/Procurement/DepartmentHead/DepartmentHeadReportReview'));
 
 // Executive Director Pages
 const ExecutiveDirectorDashboard = lazy(() => import('../pages/Procurement/ExecutiveDirector/ExecutiveDirectorDashboard'));

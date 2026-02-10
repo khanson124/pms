@@ -9,7 +9,6 @@ import IconDollarSignCircle from '../../components/Icon/IconDollarSignCircle';
 import IconInbox from '../../components/Icon/IconInbox';
 import IconClipboardText from '../../components/Icon/IconClipboardText';
 import IconUser from '../../components/Icon/IconUser';
-import IconChecks from '../../components/Icon/IconChecks';
 import IconBell from '../../components/Icon/IconBell';
 import IconClock from '../../components/Icon/IconClock';
 import { getUser } from '../../utils/auth';
@@ -59,7 +58,6 @@ const ProcurementOfficerDashboard = () => {
     const [spendChartData, setSpendChartData] = useState<any>(null);
     const [chartLoading, setChartLoading] = useState<boolean>(false);
     const [evaluationCount, setEvaluationCount] = useState<number>(0);
-    const [evaluationsLoading, setEvaluationsLoading] = useState<boolean>(false);
 
     // Base statistics with defaults
     const baseStats = useMemo(

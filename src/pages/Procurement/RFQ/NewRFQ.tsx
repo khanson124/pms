@@ -31,9 +31,7 @@ const NewRFQ = () => {
         notes: '',
     });
 
-    const [items, setItems] = useState([
-        { id: 1, description: '', quantity: '', unit: '', specifications: '' },
-    ]);
+    const [items, setItems] = useState([{ id: 1, description: '', quantity: '', unit: '', specifications: '' }]);
 
     const [selectedVendors, setSelectedVendors] = useState<number[]>([]);
     const [showSuccessAlert, setShowSuccessAlert] = useState(false);
@@ -41,31 +39,6 @@ const NewRFQ = () => {
     const [alertMessage, setAlertMessage] = useState('');
     const [errorFields, setErrorFields] = useState<string[]>([]);
     const [alertType, setAlertType] = useState<'success' | 'warning'>('success');
-
-    // Mock verified requests (to import/create RFQ from a verified request)
-    const verifiedRequests = [
-        {
-            id: 'REQ-2025-100',
-            title: 'New Workstations for Dev Team',
-            requester: 'IT Department',
-            items: [
-                { id: 1, description: 'Desktop Computer - i7', quantity: '10', unit: 'Each', specifications: 'i7, 16GB RAM, 512GB SSD' },
-                { id: 2, description: '24" Monitor', quantity: '10', unit: 'Each', specifications: 'IPS, 1080p' },
-            ],
-            category: 'IT Equipment',
-            estimatedValue: 15000,
-        },
-        {
-            id: 'REQ-2025-101',
-            title: 'Office Chairs Replacement',
-            requester: 'Facilities',
-            items: [
-                { id: 1, description: 'Ergonomic Chair', quantity: '30', unit: 'Each', specifications: 'Adjustable, lumbar support' },
-            ],
-            category: 'Furniture',
-            estimatedValue: 9000,
-        },
-    ];
 
     // Mock vendor data
     const vendors = [
@@ -80,23 +53,6 @@ const NewRFQ = () => {
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
-    };
-
-    const [importRequestId, setImportRequestId] = useState('');
-
-    const handleImportRequest = () => {
-        const req = verifiedRequests.find((r) => r.id === importRequestId);
-        if (!req) return;
-        setFormData((prev) => ({
-            ...prev,
-            title: req.title,
-            requestNumber: req.id,
-            category: req.category,
-            estimatedValue: String(req.estimatedValue),
-        }));
-        // map items, ensure ids are numeric and unique
-        const mapped = req.items.map((it: any, idx: number) => ({ id: idx + 1, description: it.description, quantity: it.quantity, unit: it.unit || 'Each', specifications: it.specifications || '' }));
-        setItems(mapped);
     };
 
     const handleItemChange = (id: number, field: string, value: string) => {
@@ -124,12 +80,12 @@ const NewRFQ = () => {
 
     const handleSaveDraft = () => {
         // RFQ draft save logic would be implemented here
-        
+
         // Show warning alert for draft
         setAlertType('warning');
         setAlertMessage('RFQ has been saved as draft. You can continue editing or send it later.');
         setShowSuccessAlert(true);
-        
+
         // Hide alert and navigate after 3 seconds
         setTimeout(() => {
             setShowSuccessAlert(false);
@@ -139,29 +95,29 @@ const NewRFQ = () => {
 
     const handleSendRFQ = () => {
         const missingFields: string[] = [];
-        
+
         if (!formData.title) missingFields.push('RFQ Title');
         if (!formData.closingDate) missingFields.push('Closing Date');
         if (selectedVendors.length === 0) missingFields.push('At least one vendor must be selected');
-        
+
         if (missingFields.length > 0) {
             setErrorFields(missingFields);
             setShowErrorAlert(true);
-            
+
             // Auto-hide error alert after 5 seconds
             setTimeout(() => {
                 setShowErrorAlert(false);
             }, 5000);
             return;
         }
-        
+
         // RFQ send logic would be implemented here
-        
+
         // Show success alert for sending
         setAlertType('success');
         setAlertMessage(`RFQ "${formData.title}" has been sent successfully to ${selectedVendors.length} vendor(s). Vendors will receive the RFQ via email.`);
         setShowSuccessAlert(true);
-        
+
         // Navigate after 3 seconds
         setTimeout(() => {
             setShowSuccessAlert(false);
@@ -261,15 +217,7 @@ const NewRFQ = () => {
                             <label htmlFor="closingDate" className="mb-2 block font-semibold">
                                 Closing Date <span className="text-danger">*</span>
                             </label>
-                            <input
-                                id="closingDate"
-                                name="closingDate"
-                                type="date"
-                                className="form-input"
-                                value={formData.closingDate}
-                                onChange={handleInputChange}
-                                required
-                            />
+                            <input id="closingDate" name="closingDate" type="date" className="form-input" value={formData.closingDate} onChange={handleInputChange} required />
                         </div>
                         <div>
                             <label htmlFor="deliveryDate" className="mb-2 block font-semibold">
@@ -341,13 +289,7 @@ const NewRFQ = () => {
                                     </div>
                                     <div>
                                         <label className="mb-2 block text-sm font-semibold">Quantity</label>
-                                        <input
-                                            type="number"
-                                            className="form-input"
-                                            placeholder="0"
-                                            value={item.quantity}
-                                            onChange={(e) => handleItemChange(item.id, 'quantity', e.target.value)}
-                                        />
+                                        <input type="number" className="form-input" placeholder="0" value={item.quantity} onChange={(e) => handleItemChange(item.id, 'quantity', e.target.value)} />
                                     </div>
                                     <div>
                                         <label className="mb-2 block text-sm font-semibold">Unit</label>
@@ -390,9 +332,7 @@ const NewRFQ = () => {
                             <label
                                 key={vendor.id}
                                 className={`flex cursor-pointer items-start gap-3 rounded border p-4 transition ${
-                                    selectedVendors.includes(vendor.id)
-                                        ? 'border-primary bg-primary-light dark:bg-primary/20'
-                                        : 'border-white-light hover:border-primary dark:border-dark'
+                                    selectedVendors.includes(vendor.id) ? 'border-primary bg-primary-light dark:bg-primary/20' : 'border-white-light hover:border-primary dark:border-dark'
                                 }`}
                             >
                                 <input type="checkbox" className="form-checkbox mt-1" checked={selectedVendors.includes(vendor.id)} onChange={() => toggleVendor(vendor.id)} />
@@ -464,15 +404,13 @@ const NewRFQ = () => {
             {showSuccessAlert && (
                 <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60">
                     <div className="panel w-full max-w-lg overflow-hidden rounded-lg p-0">
-                        <div className={`flex items-center p-3.5 rounded-t ${
-                            alertType === 'success' 
-                                ? 'text-success bg-success-light dark:bg-success-dark-light'
-                                : 'text-warning bg-warning-light dark:bg-warning-dark-light'
-                        }`}>
+                        <div
+                            className={`flex items-center p-3.5 rounded-t ${
+                                alertType === 'success' ? 'text-success bg-success-light dark:bg-success-dark-light' : 'text-warning bg-warning-light dark:bg-warning-dark-light'
+                            }`}
+                        >
                             <span className="ltr:pr-2 rtl:pl-2 flex-1">
-                                <strong className="ltr:mr-1 rtl:ml-1 text-lg">
-                                    {alertType === 'success' ? 'Success!' : 'Saved!'}
-                                </strong>
+                                <strong className="ltr:mr-1 rtl:ml-1 text-lg">{alertType === 'success' ? 'Success!' : 'Saved!'}</strong>
                                 {alertMessage}
                             </span>
                             <button type="button" className="ltr:ml-auto rtl:mr-auto hover:opacity-80" onClick={() => setShowSuccessAlert(false)}>

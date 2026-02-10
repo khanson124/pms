@@ -173,7 +173,6 @@ const DepartmentHeadEvaluationReview = () => {
     const handleReviewEvaluation = (evaluation: any) => {
         setSelectedEvaluation(evaluation);
         setReviewModal(true);
-        setReviewDecision('');
         setReviewComments('');
     };
 

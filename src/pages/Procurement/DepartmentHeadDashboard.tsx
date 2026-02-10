@@ -489,11 +489,11 @@ const DepartmentHeadDashboard = () => {
                             </div>
 
                             <div className="flex items-center gap-2">
-                                <button onClick={() => handleApproval('approve')} className="btn btn-success">
+                                <button onClick={handleApproval} className="btn btn-success">
                                     <IconChecks className="mr-2" />
                                     Approve Recommendation
                                 </button>
-                                <button onClick={() => handleApproval('reject')} className="btn btn-danger">
+                                <button onClick={handleApproval} className="btn btn-danger">
                                     <IconX className="mr-2" />
                                     Reject & Request Revision
                                 </button>
