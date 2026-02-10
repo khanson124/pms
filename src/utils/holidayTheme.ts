@@ -51,6 +51,69 @@ const JAMAICAN_HOLIDAYS: Holiday[] = [
         },
     },
     {
+        name: "Valentine's Day",
+        startDate: (year) => new Date(year, 1, 9), // February 9
+        endDate: (year) => new Date(year, 1, 16),
+        theme: {
+            id: 'valentines',
+            name: "Valentine's Day",
+            colors: {
+                primary: '#be185d',
+                secondary: '#fb7185',
+                accent: '#fecdd3',
+                gradient: 'from-rose-700 via-pink-500 to-rose-300',
+            },
+            icon: '💖',
+            message: "Happy Valentine's Day",
+            decorations: {
+                emoji: ['💖', '🌹', '✨'],
+                pattern: 'hearts',
+            },
+        },
+    },
+    {
+        name: 'Ash Wednesday',
+        startDate: (year) => new Date(year, 1, 16), // February 16
+        endDate: (year) => new Date(year, 1, 20),
+        theme: {
+            id: 'ash-wednesday',
+            name: 'Ash Wednesday',
+            colors: {
+                primary: '#4b5563',
+                secondary: '#9ca3af',
+                accent: '#e5e7eb',
+                gradient: 'from-gray-700 via-gray-500 to-gray-300',
+            },
+            icon: '🕯️',
+            message: 'Ash Wednesday',
+            decorations: {
+                emoji: ['🕯️', '🕊️', '✨'],
+                pattern: 'ashes',
+            },
+        },
+    },
+    {
+        name: 'Easter',
+        startDate: (year) => new Date(year, 2, 30), // March 30
+        endDate: (year) => new Date(year, 3, 5),
+        theme: {
+            id: 'easter',
+            name: 'Easter',
+            colors: {
+                primary: '#7c3aed',
+                secondary: '#f472b6',
+                accent: '#fde68a',
+                gradient: 'from-violet-600 via-pink-400 to-amber-200',
+            },
+            icon: '🐣',
+            message: 'Happy Easter',
+            decorations: {
+                emoji: ['🐣', '🌸', '🐰'],
+                pattern: 'eggs',
+            },
+        },
+    },
+    {
         name: 'Emancipation Day',
         startDate: (year) => new Date(year, 7, 1), // August 1
         endDate: (year) => new Date(year, 7, 2),
