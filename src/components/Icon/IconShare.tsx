@@ -6,7 +6,7 @@ interface IconShareProps {
     duotone?: boolean;
 }
 
-const IconShare: FC<IconShareProps> = ({ className, fill = false, duotone = true }) => {
+const IconShare: FC<IconShareProps> = ({ className, duotone = true }) => {
     return (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
             <path d="M9 11.5C9 12.8807 7.88071 14 6.5 14C5.11929 14 4 12.8807 4 11.5C4 10.1193 5.11929 9 6.5 9C7.88071 9 9 10.1193 9 11.5Z" stroke="currentColor" strokeWidth="1.5" />

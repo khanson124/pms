@@ -6,7 +6,7 @@ interface IconTagProps {
     duotone?: boolean;
 }
 
-const IconTag: FC<IconTagProps> = ({ className, fill = false, duotone = true }) => {
+const IconTag: FC<IconTagProps> = ({ className, duotone = true }) => {
     return (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
             <path

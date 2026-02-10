@@ -2,16 +2,11 @@ import { useEffect, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { IRootState } from '../../store';
-import { toggleRTL, toggleTheme, toggleSidebar } from '../../store/themeConfigSlice';
+import { toggleTheme, toggleSidebar } from '../../store/themeConfigSlice';
 import { clearModule } from '../../store/moduleSlice';
 import { useTranslation } from 'react-i18next';
-import i18next from 'i18next';
 import Dropdown from '../Dropdown';
 import IconMenu from '../Icon/IconMenu';
-import IconCalendar from '../Icon/IconCalendar';
-import IconEdit from '../Icon/IconEdit';
-import IconChatNotification from '../Icon/IconChatNotification';
-import IconSearch from '../Icon/IconSearch';
 import IconXCircle from '../Icon/IconXCircle';
 import IconSun from '../Icon/IconSun';
 import IconMoon from '../Icon/IconMoon';
@@ -22,26 +17,18 @@ import IconInfoCircle from '../Icon/IconInfoCircle';
 import IconX from '../Icon/IconX';
 import IconBellBing from '../Icon/IconBellBing';
 import IconUser from '../Icon/IconUser';
-import IconMail from '../Icon/IconMail';
-import IconLockDots from '../Icon/IconLockDots';
 import IconLogout from '../Icon/IconLogout';
 import IconMenuDashboard from '../Icon/Menu/IconMenuDashboard';
 import IconCaretDown from '../Icon/IconCaretDown';
-import IconMenuApps from '../Icon/Menu/IconMenuApps';
 import IconMenuComponents from '../Icon/Menu/IconMenuComponents';
-import IconMenuElements from '../Icon/Menu/IconMenuElements';
 import IconMenuDatatables from '../Icon/Menu/IconMenuDatatables';
-import IconMenuForms from '../Icon/Menu/IconMenuForms';
-import IconMenuPages from '../Icon/Menu/IconMenuPages';
 import IconMenuMore from '../Icon/Menu/IconMenuMore';
-import IconRefresh from '../Icon/IconRefresh';
 import { getUser, getToken, clearAuth } from '../../utils/auth';
 import { detectUserRoles, getDashboardPath } from '../../utils/roleDetection';
 import { heartbeatService } from '../../services/heartbeatService';
 import { fetchNotifications, deleteNotification, markNotificationAsRead, Notification } from '../../services/notificationApi';
 import { fetchMessages, deleteMessage, markMessageAsRead, Message } from '../../services/messageApi';
 import { getApiUrl } from '../../config/api';
-import IconLock from '../Icon/IconLock';
 import { fetchModuleLocks, getModuleLocks, defaultModuleLockState, type ModuleLockState } from '../../utils/moduleLocks';
 import BACKEND from '../../services/adminService';
 
@@ -61,19 +48,7 @@ const Header = () => {
     const detectedRoles = detectUserRoles(userRoles);
 
     // Convenience aliases for clarity in this component
-    const {
-        isInnovationCommittee: isCommitteeMember,
-        isFinanceManager,
-        isProcurementManager,
-        isProcurementOfficer,
-        isSupplier,
-        isExecutiveDirector,
-        isSeniorDirector,
-        isDepartmentHead,
-        isFinancePaymentStage: isFinancePayment,
-        isAuditor,
-        isRequester,
-    } = detectedRoles;
+    const { isInnovationCommittee: isCommitteeMember, isProcurementManager, isSupplier, isRequester } = detectedRoles;
 
     const procurementLocked = moduleLocks.procurement.locked;
     const innovationLocked = moduleLocks.innovation.locked;
@@ -89,7 +64,6 @@ const Header = () => {
         if (stateModule === 'PMS') return false;
         return pinnedModule === 'innovation';
     }, [location.pathname, stateModule, pinnedModule]);
-    const currentModule = isInnovationHub ? 'innovation' : 'procurement';
     const helpState = { module: isInnovationHub ? 'IH' : 'PMS' };
 
     useEffect(() => {
@@ -158,10 +132,6 @@ const Header = () => {
     const isRtl = useSelector((state: IRootState) => state.themeConfig.rtlClass) === 'rtl';
 
     const themeConfig = useSelector((state: IRootState) => state.themeConfig);
-
-    function createMarkup(messages: any) {
-        return { __html: messages };
-    }
 
     // Real-time messages from database
     const [messages, setMessages] = useState<Message[]>([]);
@@ -354,15 +324,11 @@ const Header = () => {
         return `${diffDays} days ago`;
     };
 
-    const [search, setSearch] = useState(false);
-
     // Navigation Menu Items
     const [navigationMenus, setNavigationMenus] = useState<any[]>([]);
-    const [menusLoading, setMenusLoading] = useState(false);
 
     // Fetch navigation menus from database
     const loadNavigationMenus = async () => {
-        setMenusLoading(true);
         try {
             const menus = await BACKEND.getNavigationMenus();
             setNavigationMenus(menus);
@@ -375,19 +341,8 @@ const Header = () => {
                 { id: 3, menuId: 'help-support', label: 'Help & Support', icon: 'IconInfoCircle', path: '/help' },
             ]);
         } finally {
-            setMenusLoading(false);
         }
     };
-
-    const setLocale = (flag: string) => {
-        setFlag(flag);
-        if (flag.toLowerCase() === 'ae') {
-            dispatch(toggleRTL('rtl'));
-        } else {
-            dispatch(toggleRTL('ltr'));
-        }
-    };
-    const [flag, setFlag] = useState(themeConfig.locale);
 
     const { t } = useTranslation();
 

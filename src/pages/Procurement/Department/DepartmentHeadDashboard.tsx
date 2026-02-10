@@ -3,7 +3,6 @@ import { useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import { getApiUrl } from '../../../config/api';
-import { getUser } from '../../../utils/auth';
 import IconEye from '../../../components/Icon/IconEye';
 import IconChecks from '../../../components/Icon/IconChecks';
 import IconX from '../../../components/Icon/IconX';
@@ -30,7 +29,6 @@ interface DashboardStats {
 
 const DepartmentHeadDashboard = () => {
     const dispatch = useDispatch();
-    const currentUser = getUser();
     const [requests, setRequests] = useState<Request[]>([]);
     const [stats, setStats] = useState<DashboardStats>({
         pendingTeamRequests: 0,

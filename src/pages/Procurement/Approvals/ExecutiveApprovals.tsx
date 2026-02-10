@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { IRootState } from '../../../store';
+import { useDispatch } from 'react-redux';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import IconChecks from '../../../components/Icon/IconChecks';
 import IconX from '../../../components/Icon/IconX';

@@ -15,14 +15,6 @@ import IconInfoCircle from '../../../components/Icon/IconInfoCircle';
 import adminService, { type AdminUser } from '../../../services/adminService';
 import { z } from 'zod';
 
-// Utility function to synchronize user data across all storage locations
-const updateUserStorage = (userData: any) => {
-    const userStr = JSON.stringify(userData);
-    localStorage.setItem('auth_user', userStr);
-    sessionStorage.setItem('auth_user', userStr);
-    localStorage.setItem('userProfile', userStr);
-};
-
 const AdminDashboard = () => {
     const dispatch = useDispatch();
 

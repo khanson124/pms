@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
@@ -50,7 +50,6 @@ const MyIdeas = () => {
     const navigate = useNavigate();
     const currentUser = getUser();
     const [ideas, setIdeas] = useState<MyIdea[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [filterStatus, setFilterStatus] = useState<string>('all');
     const [expanded, setExpanded] = useState<Record<string, boolean>>({});
     const [newComment, setNewComment] = useState<Record<string, string>>({});
@@ -101,10 +100,9 @@ const MyIdeas = () => {
     }, [dispatch, t]);
 
     const loadMyIdeas = async (silent = false) => {
-        if (!silent) setIsLoading(true);
         try {
             const response = await fetchIdeas({ includeAttachments: true, mine: true, limit: 100 });
-            const myIdeas = Array.isArray(response) ? (response as Idea[]) : (response as { ideas?: Idea[] })?.ideas ?? [];
+            const myIdeas = Array.isArray(response) ? (response as Idea[]) : ((response as { ideas?: Idea[] })?.ideas ?? []);
 
             const formattedIdeas = myIdeas.map((idea) => {
                 const normalizedStatus = normalizeStatus(String(idea.status || 'UNDER_REVIEW'));
@@ -135,7 +133,7 @@ const MyIdeas = () => {
                         ...i,
                         comments: existing?.comments && existing.comments.length > 0 ? existing.comments : i.comments,
                     };
-                })
+                }),
             );
         } catch (error: any) {
             console.error('[MyIdeas] Error loading ideas:', error);
@@ -156,7 +154,6 @@ const MyIdeas = () => {
                 });
             }
         } finally {
-            if (!silent) setIsLoading(false);
         }
     };
 
@@ -293,7 +290,7 @@ const MyIdeas = () => {
                                 isCommittee: false,
                             })),
                         };
-                    })
+                    }),
                 );
             }
         } catch (error) {
@@ -350,7 +347,7 @@ const MyIdeas = () => {
                         };
                         const comments = [...(i.comments || []), comment];
                         return { ...i, comments, commentCount: (i.commentCount || 0) + 1 };
-                    })
+                    }),
                 );
                 setNewComment((prev) => ({ ...prev, [ideaId]: '' }));
                 void Swal.fire({

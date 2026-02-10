@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
@@ -9,9 +9,8 @@ import IconEye from '../../../components/Icon/IconEye';
 import IconX from '../../../components/Icon/IconX';
 import IconCircleCheck from '../../../components/Icon/IconCircleCheck';
 import { getApiUrl } from '../../../config/api';
-import { Request } from '../../../types/request.types';
 import { getStatusBadge } from '../../../utils/statusBadges';
-import { SkeletonCard, SkeletonTableRow } from '../../../components/SkeletonLoading';
+import { SkeletonTableRow } from '../../../components/SkeletonLoading';
 import {
     CombinableRequest,
     CombineRequestsConfig,
@@ -20,7 +19,6 @@ import {
     consolidateItems,
     checkCombinePermissions,
     formatCombineSummary,
-    DEFAULT_COMBINE_CONFIG,
 } from '../../../utils/requestCombining';
 
 const CombineRequests = () => {
@@ -579,10 +577,10 @@ const CombineRequests = () => {
                                                         request.priority === 'URGENT'
                                                             ? 'bg-danger text-white'
                                                             : request.priority === 'HIGH'
-                                                            ? 'bg-warning text-gray-900'
-                                                            : request.priority === 'MEDIUM'
-                                                            ? 'bg-info text-white'
-                                                            : 'bg-secondary text-white';
+                                                              ? 'bg-warning text-gray-900'
+                                                              : request.priority === 'MEDIUM'
+                                                                ? 'bg-info text-white'
+                                                                : 'bg-secondary text-white';
                                                     return (
                                                         <span
                                                             className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold uppercase tracking-wide ${cls}`}

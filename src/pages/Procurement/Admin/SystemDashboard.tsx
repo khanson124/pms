@@ -34,7 +34,6 @@ const SystemDashboard = () => {
         totalVendors: 0,
         systemHealth: 0,
     });
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         dispatch(setPageTitle('System Dashboard'));
@@ -45,7 +44,6 @@ const SystemDashboard = () => {
     }, []);
 
     const loadMetrics = async () => {
-        setLoading(true);
         try {
             // Get auth token
             const token = localStorage.getItem('token') || sessionStorage.getItem('token');
@@ -122,7 +120,7 @@ const SystemDashboard = () => {
         } catch (error) {
             // Error handled by setLoading
         } finally {
-            setLoading(false);
+            // no-op
         }
     };
 

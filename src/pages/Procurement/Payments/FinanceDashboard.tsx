@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { setPageTitle } from '../../../store/themeConfigSlice';
-import IconInbox from '../../../components/Icon/IconInbox';
-import IconCreditCard from '../../../components/Icon/IconCreditCard';
 import IconClock from '../../../components/Icon/IconClock';
 import { Link } from 'react-router-dom';
 import ReactApexChart from 'react-apexcharts';
@@ -28,10 +26,22 @@ const FinanceDashboard = () => {
         dispatch(setPageTitle('Finance Dashboard'));
     }, [dispatch]);
 
-    const [items, setItems] = useState<PaymentItem[]>([
+    const [items] = useState<PaymentItem[]>([
         { id: 1, poNumber: 'PO-2025-014', supplier: 'ABC Corp', amount: 15240, delivered: false, paid: false },
         { id: 2, poNumber: 'PO-2025-015', supplier: 'XYZ Supplies', amount: 9800, delivered: true, deliveredAt: '2025-10-30', confirmedBy: 'Stores', paid: false },
-        { id: 3, poNumber: 'PO-2025-016', supplier: 'Office Pro', amount: 4320, delivered: true, deliveredAt: '2025-10-29', confirmedBy: 'Stores', paid: true, paidAt: '2025-10-30', paymentMethod: 'EFT', paymentRef: 'TRX-883012' },
+        {
+            id: 3,
+            poNumber: 'PO-2025-016',
+            supplier: 'Office Pro',
+            amount: 4320,
+            delivered: true,
+            deliveredAt: '2025-10-29',
+            confirmedBy: 'Stores',
+            paid: true,
+            paidAt: '2025-10-30',
+            paymentMethod: 'EFT',
+            paymentRef: 'TRX-883012',
+        },
     ]);
 
     // Note: Delivery confirmation and payment recording moved to dedicated pages.
@@ -125,14 +135,18 @@ const FinanceDashboard = () => {
                         <div className="text-sm text-white-dark">Awaiting Delivery Confirmation</div>
                         <div className="text-3xl font-bold text-primary">{awaitingConfirmation.length}</div>
                     </div>
-                    <Link to="/finance/awaiting-delivery" className="btn btn-info btn-sm">Open Page</Link>
+                    <Link to="/finance/awaiting-delivery" className="btn btn-info btn-sm">
+                        Open Page
+                    </Link>
                 </div>
                 <div className="panel lg:col-span-1 flex items-center justify-between">
                     <div>
                         <div className="text-sm text-white-dark">Payments to Process</div>
                         <div className="text-3xl font-bold text-primary">{toProcessPayments.length}</div>
                     </div>
-                    <Link to="/finance/payments-to-process" className="btn btn-success btn-sm">Open Page</Link>
+                    <Link to="/finance/payments-to-process" className="btn btn-success btn-sm">
+                        Open Page
+                    </Link>
                 </div>
                 <div className="panel lg:col-span-1">
                     <div className="text-sm text-white-dark mb-1">Total Paid</div>
@@ -160,7 +174,9 @@ const FinanceDashboard = () => {
             <div className="panel mt-6">
                 <div className="mb-5 flex items-center justify-between">
                     <h5 className="text-lg font-semibold">
-                        <span className="inline-flex h-8 w-8 items-center justify-center rounded bg-secondary/10 text-secondary mr-2"><IconClock className="h-4 w-4"/></span>
+                        <span className="inline-flex h-8 w-8 items-center justify-center rounded bg-secondary/10 text-secondary mr-2">
+                            <IconClock className="h-4 w-4" />
+                        </span>
                         Payment History
                     </h5>
                 </div>

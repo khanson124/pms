@@ -3,7 +3,7 @@
  * Allows users to request a specific role for a module
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, type FormEvent } from 'react';
 import IconX from './Icon/IconX';
 import IconCircleCheck from './Icon/IconCircleCheck';
 import IconInfoTriangle from './Icon/IconInfoTriangle';
@@ -44,7 +44,7 @@ const ROLE_OPTIONS = [
     },
 ];
 
-export const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({ isOpen, moduleName, moduleDisplay, onClose, onSubmit, departments = [] }) => {
+export const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({ isOpen, moduleName: _moduleName, moduleDisplay, onClose, onSubmit, departments = [] }) => {
     const [selectedRole, setSelectedRole] = useState('');
     const [selectedDepartment, setSelectedDepartment] = useState('');
     const [reason, setReason] = useState('');
@@ -52,7 +52,7 @@ export const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({ isOpen, 
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setError(null);
 

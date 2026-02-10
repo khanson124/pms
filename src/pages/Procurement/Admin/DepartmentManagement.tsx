@@ -7,7 +7,6 @@ import IconPlus from '../../../components/Icon/IconPlus';
 import IconEdit from '../../../components/Icon/IconEdit';
 import IconTrash from '../../../components/Icon/IconTrash';
 import IconSearch from '../../../components/Icon/IconSearch';
-import IconX from '../../../components/Icon/IconX';
 import IconSave from '../../../components/Icon/IconSave';
 import IconLoader from '../../../components/Icon/IconLoader';
 import IconSquareCheck from '../../../components/Icon/IconSquareCheck';
@@ -69,7 +68,7 @@ const DepartmentManagement = () => {
 
     const filteredDepartments = useMemo(
         () => departments.filter((dept) => dept.name.toLowerCase().includes(searchTerm.toLowerCase()) || dept.code.toLowerCase().includes(searchTerm.toLowerCase())),
-        [departments, searchTerm]
+        [departments, searchTerm],
     );
 
     const handleAddClick = () => {

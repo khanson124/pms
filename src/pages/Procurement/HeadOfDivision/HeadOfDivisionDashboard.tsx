@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import { Link } from 'react-router-dom';
 import IconChecks from '../../../components/Icon/IconChecks';
 import IconEye from '../../../components/Icon/IconEye';
 import IconLoader from '../../../components/Icon/IconLoader';
-import { selectAuthLoading, selectUser } from '../../../store/authSlice';
 import ReactApexChart from 'react-apexcharts';
 import type { ApexOptions } from 'apexcharts';
 import { getAuthHeaders } from '../../../utils/api';
@@ -40,9 +39,6 @@ type HODDashboardStats = {
 
 const HeadOfDivisionDashboard = () => {
     const dispatch = useDispatch();
-    const authLoading = useSelector(selectAuthLoading);
-    const authUser = useSelector(selectUser);
-
     useEffect(() => {
         dispatch(setPageTitle('Head of Division Dashboard'));
     }, [dispatch]);

@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { setPageTitle } from '../../../store/themeConfigSlice';
+import { useSelector } from 'react-redux';
 import IconArrowLeft from '../../../components/Icon/IconArrowLeft';
 import IconChecks from '../../../components/Icon/IconChecks';
-import IconEdit from '../../../components/Icon/IconEdit';
 import IconTxtFile from '../../../components/Icon/IconTxtFile';
 import { getUser } from '../../../utils/auth';
 import Swal from 'sweetalert2';
-import { evaluationService, type Evaluation, type SectionVerificationStatus } from '../../../services/evaluationService';
+import { evaluationService, type Evaluation } from '../../../services/evaluationService';
 import EvaluationForm from '../../../components/EvaluationForm';
 
 /**
@@ -27,7 +25,6 @@ const formatDateSafe = (dateString: string): string => {
 };
 
 const EvaluationDetail = () => {
-    const dispatch = useDispatch();
     const authLoading = useSelector((state: any) => state.auth.isLoading);
     const authUser = useSelector((state: any) => state.auth.user);
     const navigate = useNavigate();
@@ -38,9 +35,6 @@ const EvaluationDetail = () => {
     const [error, setError] = useState<string | null>(null);
     const [isProcurement, setIsProcurement] = useState(false);
     const [isCommittee, setIsCommittee] = useState(false);
-    const [editingSection, setEditingSection] = useState<string | null>(null);
-    const [sectionData, setSectionData] = useState<any>(null);
-    const [saving, setSaving] = useState(false);
     const [canEditSections, setCanEditSections] = useState<string[]>([]);
     const [structureEditEnabled, setStructureEditEnabled] = useState<boolean>(false);
     const [returnNotes, setReturnNotes] = useState<string>('');
@@ -336,36 +330,6 @@ const EvaluationDetail = () => {
             toast(err.message || 'Failed to load evaluation', 'error');
         } finally {
             setLoading(false);
-        }
-    };
-
-    const getStatusBadge = (status: SectionVerificationStatus) => {
-        switch (status) {
-            case 'VERIFIED':
-                return 'badge bg-success';
-            case 'SUBMITTED':
-                return 'badge bg-info';
-            case 'IN_PROGRESS':
-                return 'badge bg-warning';
-            case 'RETURNED':
-                return 'badge bg-danger';
-            default:
-                return 'badge bg-secondary';
-        }
-    };
-
-    const getStatusText = (status: SectionVerificationStatus) => {
-        switch (status) {
-            case 'VERIFIED':
-                return 'Verified';
-            case 'SUBMITTED':
-                return 'Awaiting Review';
-            case 'IN_PROGRESS':
-                return 'In Progress';
-            case 'RETURNED':
-                return 'Returned';
-            default:
-                return 'Not Started';
         }
     };
 

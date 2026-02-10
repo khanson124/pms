@@ -19,7 +19,6 @@ const AssignRequestsToUsers = () => {
     const [loading, setLoading] = useState(true);
     const [assigning, setAssigning] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState<number | null>(null);
-    const [selectedUser, setSelectedUser] = useState<number | null>(null);
     const [selectedStatus, setSelectedStatus] = useState<string>('');
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);

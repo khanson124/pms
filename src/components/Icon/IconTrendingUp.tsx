@@ -6,7 +6,7 @@ interface IconTrendingUpProps {
     duotone?: boolean;
 }
 
-const IconTrendingUp: FC<IconTrendingUpProps> = ({ className, fill = false, duotone = true }) => {
+const IconTrendingUp: FC<IconTrendingUpProps> = ({ className, duotone = true }) => {
     return (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
             <path

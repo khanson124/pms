@@ -128,7 +128,6 @@ const BrowseIdeas = () => {
                 setIdeas((prev) => prev.map((i) => (i.id === ideaId && fresh ? { ...i, voteCount: fresh.voteCount, hasVoted: true } : i)));
             } else {
                 // Generic error
-                const errorMessage = error instanceof Error ? error.message : 'Failed to vote';
                 Swal.fire({
                     icon: 'error',
                     title: 'Vote Failed',

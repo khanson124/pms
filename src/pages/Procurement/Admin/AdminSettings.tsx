@@ -55,11 +55,8 @@ const AdminSettings = () => {
     const [usersError, setUsersError] = useState<string | null>(null);
 
     const [allRoles, setAllRoles] = useState<Array<{ id: number; name: string; description?: string }>>([]);
-    const [rolesLoading, setRolesLoading] = useState(false);
-    const [rolesError, setRolesError] = useState<string | null>(null);
 
     const [allDepartments, setAllDepartments] = useState<Array<{ id: number; name: string; code: string }>>([]);
-    const [departmentsLoading, setDepartmentsLoading] = useState(false);
 
     const [deptName, setDeptName] = useState('');
     const [deptCode, setDeptCode] = useState('');
@@ -94,8 +91,6 @@ const AdminSettings = () => {
 
     // Fetch all available roles
     async function loadRoles() {
-        setRolesLoading(true);
-        setRolesError(null);
         try {
             const roles = await adminService.getAllRoles();
             setAllRoles(roles);
@@ -106,11 +101,9 @@ const AdminSettings = () => {
                 ADMIN_ROLE_NAMES.map((name) => ({
                     id: Math.random(), // Temporary ID for fallback
                     name,
-                }))
+                })),
             );
-            setRolesError(null); // Don't show error if we have fallback
         } finally {
-            setRolesLoading(false);
         }
     }
 
@@ -780,8 +773,8 @@ const AdminSettings = () => {
                                 showModal.tone === 'success'
                                     ? 'bg-green-100 dark:bg-green-900/30'
                                     : showModal.tone === 'danger'
-                                    ? 'bg-red-100 dark:bg-red-900/30'
-                                    : 'bg-yellow-100 dark:bg-yellow-900/30'
+                                      ? 'bg-red-100 dark:bg-red-900/30'
+                                      : 'bg-yellow-100 dark:bg-yellow-900/30'
                             }`}
                         >
                             <p
@@ -789,8 +782,8 @@ const AdminSettings = () => {
                                     showModal.tone === 'success'
                                         ? 'text-green-800 dark:text-green-200'
                                         : showModal.tone === 'danger'
-                                        ? 'text-red-800 dark:text-red-200'
-                                        : 'text-yellow-800 dark:text-yellow-200'
+                                          ? 'text-red-800 dark:text-red-200'
+                                          : 'text-yellow-800 dark:text-yellow-200'
                                 }`}
                             >
                                 {showModal.message}
@@ -816,7 +809,6 @@ function AssignRequestsToUsersPanel({ users }: { users: FlatUser[] }) {
     const [loading, setLoading] = useState(false);
     const [assigning, setAssigning] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState<number | null>(null);
-    const [selectedUser, setSelectedUser] = useState<number | null>(null);
     const [selectedStatus, setSelectedStatus] = useState<string>('');
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);

@@ -8,7 +8,6 @@ import { fetchIdeas, fetchIdeaCounts } from '../../utils/ideasApi';
 import { getHolidayGradient, getCurrentHolidayTheme } from '../../utils/holidayTheme';
 import HolidayBanner from '../../components/HolidayBanner';
 import HolidayCountdown from '../../components/HolidayCountdown';
-import Swal from 'sweetalert2';
 
 interface DashboardStats {
     myIdeas: number;

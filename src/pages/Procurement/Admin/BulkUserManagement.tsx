@@ -221,7 +221,7 @@ bob.johnson@example.com,Bob Johnson,Finance,User`;
                 throw new Error(errData.message || 'Failed to create user');
             }
 
-            const data = await response.json();
+            await response.json().catch(() => null);
             setSuccess(`User ${newUserForm.email} created successfully! Default password: Passw0rd!`);
             setNewUserForm({ email: '', name: '', department: '', role: '' });
             setShowCreateUser(false);

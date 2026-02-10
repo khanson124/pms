@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
@@ -225,7 +225,7 @@ const FinanceRequests = () => {
                 const err = await res.json().catch(() => ({}) as any);
                 throw new Error(err.message || 'Failed to assign to self');
             }
-            const updated = await res.json();
+            await res.json().catch(() => null);
             // Update currentAssignee client-side by refreshing list
             setRequests((prev) => prev.map((r) => (r.id === req.id ? { ...r /* shallow update */ } : r)));
             await MySwal.fire({ icon: 'success', title: 'Assigned to You', text: 'You are now the assignee for this request.' });

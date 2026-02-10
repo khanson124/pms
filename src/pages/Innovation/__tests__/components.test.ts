@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 /**
  * Innovation Hub Component Unit Tests
@@ -265,14 +265,12 @@ describe('Innovation Hub Components', () => {
         });
 
         it('should allow upvote', () => {
-            const userVote = null;
             const newVote = 'UP';
 
             expect(newVote).toBe('UP');
         });
 
         it('should allow downvote', () => {
-            const userVote = null;
             const newVote = 'DOWN';
 
             expect(newVote).toBe('DOWN');

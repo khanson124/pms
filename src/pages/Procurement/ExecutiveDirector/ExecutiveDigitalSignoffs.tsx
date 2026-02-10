@@ -13,7 +13,6 @@ import IconDownload from '../../../components/Icon/IconDownload';
 import IconUser from '../../../components/Icon/IconUser';
 import IconClock from '../../../components/Icon/IconClock';
 import IconDollarSignCircle from '../../../components/Icon/IconDollarSignCircle';
-import IconArchive from '../../../components/Icon/IconArchive';
 import IconCircleCheck from '../../../components/Icon/IconCircleCheck';
 
 const ExecutiveDigitalSignoffs = () => {

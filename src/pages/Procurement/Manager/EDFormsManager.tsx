@@ -104,17 +104,6 @@ const EDFormsManager = () => {
         }
     };
 
-    const handleViewDetails = async (form: EDForm) => {
-        try {
-            const fullForm = await evaluationService.getEdFormById(form.id);
-            setSelectedForm(fullForm);
-            setShowDetailModal(true);
-        } catch (err) {
-            console.error('Failed to load form details:', err);
-            alert('Failed to load form details');
-        }
-    };
-
     const handleAssignClick = (form: EDForm) => {
         if (form.status !== 'PENDING') {
             alert(`Can only assign forms with PENDING status. This form is ${form.status}.`);

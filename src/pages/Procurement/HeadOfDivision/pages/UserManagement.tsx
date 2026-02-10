@@ -25,7 +25,6 @@ const HODUserManagement: React.FC = () => {
     const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
     const [searchValue, setSearchValue] = useState('');
     const [loading, setLoading] = useState(false);
-    const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         dispatch(setPageTitle('HOD - User Management'));
@@ -35,8 +34,6 @@ const HODUserManagement: React.FC = () => {
         const interval = setInterval(() => {
             fetchUsers();
         }, 15000);
-        setRefreshInterval(interval);
-
         return () => {
             if (interval) clearInterval(interval);
         };
@@ -120,7 +117,7 @@ const HODUserManagement: React.FC = () => {
             setFilteredUsers(users);
         } else {
             const filtered = users.filter(
-                (user) => user.name.toLowerCase().includes(value.toLowerCase()) || user.email.toLowerCase().includes(value.toLowerCase()) || user.role.toLowerCase().includes(value.toLowerCase())
+                (user) => user.name.toLowerCase().includes(value.toLowerCase()) || user.email.toLowerCase().includes(value.toLowerCase()) || user.role.toLowerCase().includes(value.toLowerCase()),
             );
             setFilteredUsers(filtered);
         }
@@ -131,9 +128,9 @@ const HODUserManagement: React.FC = () => {
     };
 
     const handleDeactivateUser = (id: string) => {
-        showConfirm('Deactivate User?', 'This action cannot be easily reversed.').then((res) => {
+        showConfirm('Deactivate User?', `Deactivate user ${id}? This action cannot be easily reversed.`).then((res) => {
             if (res.isConfirmed) {
-                showSuccess('User deactivated');
+                showSuccess(`User ${id} deactivated`);
             }
         });
     };

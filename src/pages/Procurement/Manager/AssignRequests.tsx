@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { setPageTitle } from '../../../store/themeConfigSlice';
@@ -9,7 +9,6 @@ import IconUser from '../../../components/Icon/IconUser';
 import IconSearch from '../../../components/Icon/IconSearch';
 import IconRefresh from '../../../components/Icon/IconRefresh';
 import IconX from '../../../components/Icon/IconX';
-import { getStatusBadge } from '../../../utils/statusBadges';
 import { getApiUrl } from '../../../config/api';
 import { getAuthHeadersSync } from '../../../utils/api';
 
@@ -40,7 +39,6 @@ interface Req {
 
 const AssignRequests = () => {
     const dispatch = useDispatch();
-    const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const preselectedRequestId = searchParams.get('requestId');
 

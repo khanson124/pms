@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import { type SplinteringRule } from '../../../utils/splinteringDetection';
@@ -13,7 +13,6 @@ import Swal from 'sweetalert2';
 const SplinteringManagement = () => {
     const dispatch = useDispatch();
     const [rules, setRules] = useState<SplinteringRule[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
     const [editingRule, setEditingRule] = useState<SplinteringRule | null>(null);
     const [showAddModal, setShowAddModal] = useState(false);
 
@@ -129,7 +128,7 @@ const SplinteringManagement = () => {
                 thresholdAmount: 25000,
                 timeWindowDays: 90,
                 enabled: true,
-            }
+            },
         );
 
         return (

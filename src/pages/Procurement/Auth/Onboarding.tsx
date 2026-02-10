@@ -69,7 +69,7 @@ const Onboarding = () => {
     const [showProcurementSteps, setShowProcurementSteps] = useState<boolean>(false);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(true);
-    const [showStats, setShowStats] = useState(true);
+    const showStats = true;
     const [systemStats, setSystemStats] = useState<SystemStats>({
         activeUsers: 0,
         requestsThisMonth: 0,
@@ -358,10 +358,13 @@ const Onboarding = () => {
 
     // Map for quick lookups after render
     const modulesMap = useRef<{ [k in ModuleKey]?: { path: string; title: string; comingSoon?: boolean; cta?: string } }>({});
-    modulesMap.current = modules.reduce((acc, m) => {
-        acc[m.id] = { path: m.path, title: m.title, comingSoon: m.comingSoon, cta: m.cta };
-        return acc;
-    }, {} as { [k in ModuleKey]?: { path: string; title: string; comingSoon?: boolean; cta?: string } });
+    modulesMap.current = modules.reduce(
+        (acc, m) => {
+            acc[m.id] = { path: m.path, title: m.title, comingSoon: m.comingSoon, cta: m.cta };
+            return acc;
+        },
+        {} as { [k in ModuleKey]?: { path: string; title: string; comingSoon?: boolean; cta?: string } },
+    );
 
     const modulePath = (key: ModuleKey) => {
         const m = modules.find((mm) => mm.id === key);
@@ -471,7 +474,7 @@ const Onboarding = () => {
                 handleContinue();
             }
         },
-        [modules, selected]
+        [modules, selected],
     );
 
     return (
@@ -734,8 +737,8 @@ const Onboarding = () => {
                                             isActive
                                                 ? 'border-primary shadow-primary/20 shadow-2xl scale-110 z-20 opacity-100 translate-y-0'
                                                 : selected
-                                                ? 'border-gray-200 dark:border-gray-700 hover:border-primary/60 opacity-50 hover:opacity-70 scale-95 translate-y-2'
-                                                : 'border-gray-200 dark:border-gray-700 hover:border-primary/60 opacity-100 hover:scale-105 hover:-translate-y-1'
+                                                  ? 'border-gray-200 dark:border-gray-700 hover:border-primary/60 opacity-50 hover:opacity-70 scale-95 translate-y-2'
+                                                  : 'border-gray-200 dark:border-gray-700 hover:border-primary/60 opacity-100 hover:scale-105 hover:-translate-y-1'
                                         } ${m.comingSoon ? 'opacity-80' : ''} ${isLocked ? 'cursor-not-allowed opacity-60' : ''}`}
                                     >
                                         {/* Gradient Header */}
@@ -908,10 +911,10 @@ const Onboarding = () => {
                                                                     (selected === 'pms'
                                                                         ? t('onboarding.goTo.pms')
                                                                         : selected === 'ih'
-                                                                        ? t('onboarding.goTo.ih')
-                                                                        : selected === 'committee'
-                                                                        ? t('onboarding.goTo.committee')
-                                                                        : t('onboarding.continue'))}
+                                                                          ? t('onboarding.goTo.ih')
+                                                                          : selected === 'committee'
+                                                                            ? t('onboarding.goTo.committee')
+                                                                            : t('onboarding.continue'))}
                                                                 <svg className="w-4 h-4 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                                                                 </svg>
@@ -948,12 +951,12 @@ const Onboarding = () => {
                                             {selected && modulesMap.current[selected]?.cta
                                                 ? modulesMap.current[selected]?.cta
                                                 : selected === 'pms'
-                                                ? t('onboarding.goTo.pms')
-                                                : selected === 'ih'
-                                                ? t('onboarding.goTo.ih')
-                                                : selected === 'committee'
-                                                ? t('onboarding.goTo.committee')
-                                                : t('onboarding.continue')}
+                                                  ? t('onboarding.goTo.pms')
+                                                  : selected === 'ih'
+                                                    ? t('onboarding.goTo.ih')
+                                                    : selected === 'committee'
+                                                      ? t('onboarding.goTo.committee')
+                                                      : t('onboarding.continue')}
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                                             </svg>

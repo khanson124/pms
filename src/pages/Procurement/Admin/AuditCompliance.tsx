@@ -187,22 +187,6 @@ const AuditCompliance = () => {
         }
     };
 
-    const getActionBadgeColor = (action: AuditLog['action']) => {
-        const colors: Record<AuditLog['action'], string> = {
-            create: 'badge-primary',
-            update: 'badge-info',
-            delete: 'badge-danger',
-            approve: 'badge-success',
-            reject: 'badge-warning',
-            login: 'badge-primary',
-            logout: 'badge-secondary',
-            permission_change: 'badge-warning',
-            export: 'badge-info',
-            other: 'badge-secondary',
-        };
-        return colors[action] || 'badge-secondary';
-    };
-
     const getActionLabel = (action: AuditLog['action']) => {
         const labels: Record<AuditLog['action'], string> = {
             create: 'Create',

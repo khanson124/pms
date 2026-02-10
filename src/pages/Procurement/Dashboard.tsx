@@ -7,12 +7,8 @@ import ReactApexChart from 'react-apexcharts';
 import PerfectScrollbar from 'react-perfect-scrollbar';
 import IconDollarSignCircle from '../../components/Icon/IconDollarSignCircle';
 import IconInbox from '../../components/Icon/IconInbox';
-import IconCreditCard from '../../components/Icon/IconCreditCard';
 import IconClipboardText from '../../components/Icon/IconClipboardText';
-import IconFolder from '../../components/Icon/IconFolder';
 import IconUser from '../../components/Icon/IconUser';
-import IconSettings from '../../components/Icon/IconSettings';
-import IconChartSquare from '../../components/Icon/IconChartSquare';
 import IconChecks from '../../components/Icon/IconChecks';
 import IconBell from '../../components/Icon/IconBell';
 import IconClock from '../../components/Icon/IconClock';
@@ -73,7 +69,7 @@ const ProcurementOfficerDashboard = () => {
             workflowTemplates: 12,
             requestsThisMonth: 0,
         }),
-        []
+        [],
     );
 
     const metrics = useMemo(
@@ -85,7 +81,7 @@ const ProcurementOfficerDashboard = () => {
             monthlyReports: liveStats?.monthlyReports ?? baseStats.monthlyReports,
             requestsThisMonth: liveStats?.requestsThisMonth ?? baseStats.requestsThisMonth,
         }),
-        [baseStats, liveStats, evaluationCount]
+        [baseStats, liveStats, evaluationCount],
     );
 
     useEffect(() => {

@@ -1,27 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { IRootState } from '../../../store';
+import { useDispatch } from 'react-redux';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import { getApiUrl } from '../../../config/api';
 import PerfectScrollbar from 'react-perfect-scrollbar';
-import IconPlus from '../../../components/Icon/IconPlus';
 import IconCheckCircle from '../../../components/Icon/IconCircleCheck';
-import IconFileText from '../../../components/Icon/IconFile';
-import IconUsers from '../../../components/Icon/IconUsers';
-import IconBarChart from '../../../components/Icon/IconBarChart';
 import IconInfoCircle from '../../../components/Icon/IconInfoCircle';
 import IconClock from '../../../components/Icon/IconClock';
 import IconTrendingUp from '../../../components/Icon/IconTrendingUp';
-import IconArrowForward from '../../../components/Icon/IconArrowForward';
 
 const FinanceOfficerDashboard = () => {
     const dispatch = useDispatch();
     useEffect(() => {
         dispatch(setPageTitle('Finance Officer Dashboard'));
     }, [dispatch]);
-
-    const isDark = useSelector((state: IRootState) => state.themeConfig.theme === 'dark' || state.themeConfig.isDarkMode);
 
     const [stats, setStats] = useState({
         paymentsToProcess: 0,

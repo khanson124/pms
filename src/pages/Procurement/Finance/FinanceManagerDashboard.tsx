@@ -1,24 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { IRootState } from '../../../store';
+import { useDispatch } from 'react-redux';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import { getApiUrl } from '../../../config/api';
-import IconPlus from '../../../components/Icon/IconPlus';
 import IconCheckCircle from '../../../components/Icon/IconCircleCheck';
 import IconFileText from '../../../components/Icon/IconFile';
 import IconDollarSign from '../../../components/Icon/IconDollarSign';
 import IconTrendingUp from '../../../components/Icon/IconTrendingUp';
-import IconUsers from '../../../components/Icon/IconUsers';
-import IconBarChart from '../../../components/Icon/IconBarChart';
 
 const FinanceManagerDashboard = () => {
     const dispatch = useDispatch();
     useEffect(() => {
         dispatch(setPageTitle('Finance Director Dashboard'));
     }, [dispatch]);
-
-    const isDark = useSelector((state: IRootState) => state.themeConfig.theme === 'dark' || state.themeConfig.isDarkMode);
 
     const [stats, setStats] = useState({
         totalBudget: 0,
@@ -28,8 +22,6 @@ const FinanceManagerDashboard = () => {
         monthlyBurn: 0,
         processingTime: 2.3,
     });
-
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -42,7 +34,7 @@ const FinanceManagerDashboard = () => {
             } catch (error) {
                 console.error('Failed to fetch finance director stats:', error);
             } finally {
-                setLoading(false);
+                // no-op
             }
         };
         fetchStats();

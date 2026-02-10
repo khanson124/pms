@@ -26,7 +26,6 @@ const HODDepartments: React.FC = () => {
     const [filteredDepartments, setFilteredDepartments] = useState<Department[]>([]);
     const [searchValue, setSearchValue] = useState('');
     const [loading, setLoading] = useState(false);
-    const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         dispatch(setPageTitle('HOD - Departments'));
@@ -36,8 +35,6 @@ const HODDepartments: React.FC = () => {
         const interval = setInterval(() => {
             fetchDepartments();
         }, 10000);
-        setRefreshInterval(interval);
-
         return () => {
             if (interval) clearInterval(interval);
         };
@@ -110,7 +107,7 @@ const HODDepartments: React.FC = () => {
             setFilteredDepartments(departments);
         } else {
             const filtered = departments.filter(
-                (dept) => dept.name.toLowerCase().includes(value.toLowerCase()) || dept.code.toLowerCase().includes(value.toLowerCase()) || dept.head.toLowerCase().includes(value.toLowerCase())
+                (dept) => dept.name.toLowerCase().includes(value.toLowerCase()) || dept.code.toLowerCase().includes(value.toLowerCase()) || dept.head.toLowerCase().includes(value.toLowerCase()),
             );
             setFilteredDepartments(filtered);
         }
