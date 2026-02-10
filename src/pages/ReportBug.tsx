@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import { type FieldErrors, type Resolver, useForm } from 'react-hook-form';
+import { ZodError, z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import Swal from 'sweetalert2';
 import { setPageTitle } from '../store/themeConfigSlice';
 import { createBugReport } from '../services/bugReportService';
 import IconAlertCircle from '../components/Icon/IconAlertCircle';
@@ -11,13 +12,24 @@ import IconSquareCheck from '../components/Icon/IconSquareCheck';
 import IconInfoCircle from '../components/Icon/IconInfoCircle';
 
 const bugReportSchema = z.object({
-    title: z.string().min(3, 'Title is too short').max(120, 'Title is too long'),
-    description: z.string().min(10, 'Description is too short').max(4000, 'Description is too long'),
-    stepsToReproduce: z.string().max(4000, 'Steps are too long').optional(),
-    expectedBehavior: z.string().max(2000, 'Expected behavior is too long').optional(),
-    actualBehavior: z.string().max(2000, 'Actual behavior is too long').optional(),
+    title: z.string().min(3, 'Title must be at least 3 characters').max(120, 'Title is too long'),
+    description: z.string().max(4000, 'Description is too long'),
+    stepsToReproduce: z.string().max(4000, 'Steps are too long').optional().or(z.literal('')),
+    expectedBehavior: z.string().max(2000, 'Expected behavior is too long').optional().or(z.literal('')),
+    actualBehavior: z.string().max(2000, 'Actual behavior is too long').optional().or(z.literal('')),
     severity: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']),
-    screenshot: z.any().optional(),
+    screenshot: z
+        .union([z.instanceof(FileList), z.undefined(), z.null()])
+        .optional()
+        .refine(
+            (files) => {
+                if (!files || !(files instanceof FileList) || files.length === 0) return true;
+                return files[0].size <= 5 * 1024 * 1024; // 5MB
+            },
+            {
+                message: 'Screenshot must be less than 5MB',
+            },
+        ),
 });
 
 type BugReportFormValues = z.infer<typeof bugReportSchema>;
@@ -44,13 +56,43 @@ const ReportBug = () => {
         return 'PMS';
     }, [location.pathname, location.state]);
 
+    const resolver: Resolver<BugReportFormValues> = async (values, context, options) => {
+        try {
+            return await zodResolver(bugReportSchema, undefined, { mode: 'sync' })(values, context, options);
+        } catch (err) {
+            if (err instanceof ZodError) {
+                const fieldErrors = err.flatten().fieldErrors as Record<string, string[] | undefined>;
+                const errors: FieldErrors<BugReportFormValues> = {};
+
+                const setFieldError = <K extends keyof BugReportFormValues>(key: K, message?: string) => {
+                    if (!message) return;
+                    errors[key] = { type: 'manual', message } as FieldErrors<BugReportFormValues>[K];
+                };
+
+                setFieldError('title', fieldErrors['title']?.[0]);
+                setFieldError('description', fieldErrors['description']?.[0]);
+                setFieldError('stepsToReproduce', fieldErrors['stepsToReproduce']?.[0]);
+                setFieldError('expectedBehavior', fieldErrors['expectedBehavior']?.[0]);
+                setFieldError('actualBehavior', fieldErrors['actualBehavior']?.[0]);
+                setFieldError('severity', fieldErrors['severity']?.[0]);
+                setFieldError('screenshot', fieldErrors['screenshot']?.[0]);
+
+                return { values: {}, errors };
+            }
+
+            return { values: {}, errors: {} };
+        }
+    };
+
     const {
         register,
         handleSubmit,
         formState: { errors, isSubmitting },
         reset,
     } = useForm<BugReportFormValues>({
-        resolver: zodResolver(bugReportSchema),
+        resolver,
+        mode: 'onSubmit',
+        reValidateMode: 'onChange',
         defaultValues: {
             title: '',
             description: '',
@@ -86,10 +128,45 @@ const ReportBug = () => {
             await createBugReport(formData);
 
             setSuccessMessage('Thanks! Your bug report has been sent to the admin team.');
+            void Swal.fire({
+                icon: 'success',
+                title: 'Bug Submitted',
+                text: 'Thanks! Your bug report has been sent to the admin team.',
+                confirmButtonText: 'OK',
+            });
             reset();
         } catch (err: any) {
             setErrorMessage(err?.message || 'Failed to submit bug report. Please try again.');
         }
+    };
+
+    const onInvalid = (formErrors: typeof errors) => {
+        const errorMessages: string[] = [];
+        if (formErrors.title) errorMessages.push(formErrors.title.message || 'Invalid title');
+        if (formErrors.description) errorMessages.push(formErrors.description.message || 'Invalid description');
+        if (formErrors.stepsToReproduce) errorMessages.push(formErrors.stepsToReproduce.message || 'Invalid steps');
+        if (formErrors.expectedBehavior) errorMessages.push(formErrors.expectedBehavior.message || 'Invalid expected behavior');
+        if (formErrors.actualBehavior) errorMessages.push(formErrors.actualBehavior.message || 'Invalid actual behavior');
+        if (formErrors.severity) errorMessages.push(formErrors.severity.message || 'Invalid severity');
+        if (formErrors.screenshot) errorMessages.push(formErrors.screenshot.message || 'Invalid screenshot');
+
+        const items = errorMessages.length ? errorMessages.map((msg) => `<li>${msg}</li>`).join('') : '<li>Please review the form fields.</li>';
+
+        void Swal.fire({
+            icon: 'error',
+            title: 'Validation Error',
+            html: `<div style="text-align: left;">
+                <p>Please fix the following errors:</p>
+                <ul style="margin-top: 10px;">
+                    ${items}
+                </ul>
+            </div>`,
+            confirmButtonText: 'OK',
+            didOpen: () => {
+                const active = document.activeElement as HTMLElement | null;
+                active?.blur();
+            },
+        });
     };
 
     return (
@@ -128,8 +205,28 @@ const ReportBug = () => {
                     </div>
                 )}
 
+                {Object.keys(errors).length > 0 && !errorMessage && (
+                    <div className="mb-6 p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 text-amber-800 dark:text-amber-200">
+                        <div className="flex items-start gap-2">
+                            <IconAlertCircle className="w-5 h-5 mt-0.5" />
+                            <div>
+                                <p className="font-semibold mb-2">Please fix the following errors:</p>
+                                <ul className="text-sm space-y-1">
+                                    {errors.title && <li>• {errors.title.message}</li>}
+                                    {errors.description && <li>• {errors.description.message}</li>}
+                                    {errors.stepsToReproduce && <li>• {errors.stepsToReproduce.message}</li>}
+                                    {errors.expectedBehavior && <li>• {errors.expectedBehavior.message}</li>}
+                                    {errors.actualBehavior && <li>• {errors.actualBehavior.message}</li>}
+                                    {errors.severity && <li>• {errors.severity.message}</li>}
+                                    {errors.screenshot && <li>• {errors.screenshot.message}</li>}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
-                    <form onSubmit={handleSubmit(onSubmit)} className="panel p-6 lg:p-8 space-y-8 shadow-sm border border-white/60 dark:border-gray-800/60">
+                    <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="panel p-6 lg:p-8 space-y-8 shadow-sm border border-white/60 dark:border-gray-800/60">
                         <div className="space-y-1">
                             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Issue Details</h2>
                             <p className="text-sm text-gray-500">Provide a clear summary and full description of the issue.</p>
@@ -195,6 +292,7 @@ const ReportBug = () => {
                             <div>
                                 <label className="block text-sm font-semibold mb-2">Screenshot (optional)</label>
                                 <input type="file" accept="image/*" className="form-input w-full" {...register('screenshot')} />
+                                {errors.screenshot && <p className="text-xs text-danger mt-1">{errors.screenshot.message}</p>}
                                 <p className="text-xs text-gray-500 mt-2">PNG, JPG, or GIF up to 5MB.</p>
                             </div>
                         </div>

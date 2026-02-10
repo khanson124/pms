@@ -97,7 +97,7 @@ export const requestActionSchema = z.object({
 export const createBugReportSchema = z.object({
     body: z.object({
         title: z.string().min(3).max(120),
-        description: z.string().min(10).max(4000),
+        description: z.string().max(4000),
         stepsToReproduce: z.string().max(4000).optional(),
         expectedBehavior: z.string().max(2000).optional(),
         actualBehavior: z.string().max(2000).optional(),

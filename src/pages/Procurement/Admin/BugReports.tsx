@@ -19,6 +19,7 @@ const BugReports = () => {
     const [severityFilter, setSeverityFilter] = useState<string>('');
     const [page, setPage] = useState(0);
     const [total, setTotal] = useState(0);
+    const [selectedReport, setSelectedReport] = useState<BugReport | null>(null);
 
     useEffect(() => {
         dispatch(setPageTitle('Bug Reports'));
@@ -67,6 +68,8 @@ const BugReports = () => {
             setSavingId(null);
         }
     };
+
+    const closeDetails = () => setSelectedReport(null);
 
     if (loading) {
         return (
@@ -148,6 +151,9 @@ const BugReports = () => {
                                     <td className="px-4 py-3">
                                         <div className="font-semibold text-gray-900 dark:text-white">{report.title}</div>
                                         <div className="text-xs text-gray-500 mt-1 line-clamp-2">{report.description}</div>
+                                        <button type="button" className="mt-2 text-xs text-primary hover:underline" onClick={() => setSelectedReport(report)}>
+                                            View details
+                                        </button>
                                     </td>
                                     <td className="px-4 py-3">
                                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-800">{report.severity}</span>
@@ -186,6 +192,74 @@ const BugReports = () => {
                     </tbody>
                 </table>
             </div>
+
+            {selectedReport && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div className="w-full max-w-3xl rounded-lg bg-white p-6 shadow-lg dark:bg-gray-900">
+                        <div className="flex items-start justify-between gap-4">
+                            <div>
+                                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{selectedReport.title}</h2>
+                                <p className="mt-1 text-sm text-gray-500">Reported on {new Date(selectedReport.createdAt).toLocaleString()}</p>
+                            </div>
+                            <button type="button" className="text-white-dark hover:text-danger" onClick={closeDetails}>
+                                Close
+                            </button>
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div className="rounded-lg border border-gray-100 p-4 dark:border-gray-800">
+                                <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Summary</div>
+                                <p className="mt-2 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">{selectedReport.description}</p>
+                            </div>
+                            <div className="rounded-lg border border-gray-100 p-4 dark:border-gray-800">
+                                <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Reporter</div>
+                                <div className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+                                    <div>{selectedReport.reportedBy?.name || selectedReport.reportedBy?.email || 'Unknown'}</div>
+                                    <div className="text-xs text-gray-500">{selectedReport.reportedBy?.email}</div>
+                                </div>
+                                <div className="mt-4 text-xs font-semibold uppercase tracking-wide text-gray-500">Severity / Status</div>
+                                <div className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+                                    {selectedReport.severity} • {selectedReport.status}
+                                </div>
+                                <div className="mt-4 text-xs font-semibold uppercase tracking-wide text-gray-500">Screenshot</div>
+                                <div className="mt-2 text-sm">
+                                    {selectedReport.screenshotUrl ? (
+                                        <a href={selectedReport.screenshotUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                                            View screenshot
+                                        </a>
+                                    ) : (
+                                        <span className="text-gray-400">None</span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-4 rounded-lg border border-gray-100 p-4 dark:border-gray-800">
+                            <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">What gets captured automatically</div>
+                            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+                                <div>
+                                    <div className="text-xs text-gray-500">Current page URL or referrer</div>
+                                    {selectedReport.pageUrl ? (
+                                        <a href={selectedReport.pageUrl} target="_blank" rel="noreferrer" className="mt-1 block text-xs text-primary break-all hover:underline">
+                                            {selectedReport.pageUrl}
+                                        </a>
+                                    ) : (
+                                        <div className="mt-1 text-xs text-gray-400">Not captured</div>
+                                    )}
+                                </div>
+                                <div>
+                                    <div className="text-xs text-gray-500">Browser and device details</div>
+                                    <div className="mt-1 text-xs text-gray-700 dark:text-gray-300 break-words">{selectedReport.userAgent || 'Not captured'}</div>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-gray-500">Module context (PMS or IH)</div>
+                                    <div className="mt-1 text-xs text-gray-700 dark:text-gray-300">{selectedReport.module || 'Not captured'}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {pageCount > 1 && (
                 <div className="flex items-center justify-between">
