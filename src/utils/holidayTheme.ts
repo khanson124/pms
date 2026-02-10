@@ -27,6 +27,32 @@ interface Holiday {
     theme: HolidayTheme;
 }
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+function computeEasterSunday(year: number): Date {
+    // Anonymous Gregorian algorithm
+    const a = year % 19;
+    const b = Math.floor(year / 100);
+    const c = year % 100;
+    const d = Math.floor(b / 4);
+    const e = b % 4;
+    const f = Math.floor((b + 8) / 25);
+    const g = Math.floor((b - f + 1) / 3);
+    const h = (19 * a + b - d - g + 15) % 30;
+    const i = Math.floor(c / 4);
+    const k = c % 4;
+    const l = (32 + 2 * e + 2 * i - h - k) % 7;
+    const m = Math.floor((a + 11 * h + 22 * l) / 451);
+    const month = Math.floor((h + l - 7 * m + 114) / 31); // 3=March, 4=April
+    const day = ((h + l - 7 * m + 114) % 31) + 1;
+    return new Date(year, month - 1, day);
+}
+
+function getAshWednesday(year: number): Date {
+    const easterSunday = computeEasterSunday(year);
+    return new Date(easterSunday.getTime() - 46 * MS_PER_DAY);
+}
+
 // Jamaican Holidays with themes
 const JAMAICAN_HOLIDAYS: Holiday[] = [
     {
@@ -43,7 +69,7 @@ const JAMAICAN_HOLIDAYS: Holiday[] = [
                 gradient: 'from-blue-900 via-blue-600 to-blue-400',
             },
             icon: '🎊',
-            message: 'Welcome to 2026',
+            message: 'Welcome to the New Year',
             decorations: {
                 emoji: ['✨', '🎯', '📈'],
                 pattern: 'confetti',
@@ -73,8 +99,8 @@ const JAMAICAN_HOLIDAYS: Holiday[] = [
     },
     {
         name: 'Ash Wednesday',
-        startDate: (year) => new Date(year, 1, 16), // February 16
-        endDate: (year) => new Date(year, 1, 20),
+        startDate: (year) => getAshWednesday(year),
+        endDate: (year) => new Date(getAshWednesday(year).getTime() + 4 * MS_PER_DAY),
         theme: {
             id: 'ash-wednesday',
             name: 'Ash Wednesday',
@@ -94,8 +120,8 @@ const JAMAICAN_HOLIDAYS: Holiday[] = [
     },
     {
         name: 'Easter',
-        startDate: (year) => new Date(year, 2, 30), // March 30
-        endDate: (year) => new Date(year, 3, 5),
+        startDate: (year) => new Date(computeEasterSunday(year).getTime() - 2 * MS_PER_DAY),
+        endDate: (year) => new Date(computeEasterSunday(year).getTime() + 2 * MS_PER_DAY),
         theme: {
             id: 'easter',
             name: 'Easter',
@@ -148,7 +174,7 @@ const JAMAICAN_HOLIDAYS: Holiday[] = [
                 gradient: 'from-emerald-600 via-amber-400 to-gray-800',
             },
             icon: '🇯🇲',
-            message: 'Independence Day 2025',
+            message: 'Independence Day',
             decorations: {
                 emoji: ['🇯🇲', '⭐', '🏆'],
                 pattern: 'jamaica-stars',
@@ -214,13 +240,17 @@ const JAMAICAN_HOLIDAYS: Holiday[] = [
 export function getCurrentHolidayTheme(): HolidayTheme | null {
     const now = new Date();
     const year = now.getFullYear();
+    const withYear = (theme: HolidayTheme): HolidayTheme => ({
+        ...theme,
+        message: `${theme.message} ${year}`,
+    });
 
     for (const holiday of JAMAICAN_HOLIDAYS) {
         const start = holiday.startDate(year);
         const end = holiday.endDate(year);
 
         if (now >= start && now < end) {
-            return holiday.theme;
+            return withYear(holiday.theme);
         }
     }
 
