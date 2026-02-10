@@ -62,7 +62,7 @@ const Onboarding = () => {
     const [selected, setSelected] = useState<ModuleKey | null>(null);
     const [error, setError] = useState<string>('');
     const [isBusy, setIsBusy] = useState<boolean>(false);
-    const [rememberChoice, setRememberChoice] = useState<boolean>(false);
+    const [rememberChoice] = useState<boolean>(false);
     const [lastModule, setLastModule] = useState<ModuleKey | null>(null);
     const radiosRef = useRef<HTMLDivElement | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);

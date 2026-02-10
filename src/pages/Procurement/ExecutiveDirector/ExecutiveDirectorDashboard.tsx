@@ -291,7 +291,8 @@ const ExecutiveDirectorDashboard = () => {
         setDocumentModal(true);
     };
 
-    const submitDigitalSignature = () => {
+    const submitDigitalSignature = (action: 'approve' | 'reject') => {
+        void action;
         if (!digitalSignature.trim()) {
             alert('Please provide your digital signature/comments');
             return;

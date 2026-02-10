@@ -212,7 +212,6 @@ const ProcurementOfficerDashboard = () => {
 
         const loadEvaluations = async () => {
             try {
-                setEvaluationsLoading(true);
                 const headers = await getAuthHeaders();
                 // Backend expects a single status filter; fetch all and filter client-side
                 const res = await fetch(getApiUrl('/api/evaluations'), { headers });
@@ -228,7 +227,6 @@ const ProcurementOfficerDashboard = () => {
                 console.error('Failed to fetch evaluations:', error);
                 setEvaluationCount(0);
             } finally {
-                setEvaluationsLoading(false);
             }
         };
 

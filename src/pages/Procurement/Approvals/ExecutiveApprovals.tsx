@@ -30,12 +30,10 @@ const ExecutiveApprovals = () => {
     const [documentModal, setDocumentModal] = useState(false);
     const [selectedDocument, setSelectedDocument] = useState<any>(null);
     const [executiveApprovals, setExecutiveApprovals] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
 
     // Fetch executive-level approvals from API
     const fetchApprovals = useCallback(async () => {
         try {
-            setLoading(true);
             const token = getToken();
             const apiUrl = getApiUrl();
 
@@ -57,7 +55,6 @@ const ExecutiveApprovals = () => {
         } catch (error) {
             console.error('Error fetching executive approvals:', error);
         } finally {
-            setLoading(false);
         }
     }, []);
 

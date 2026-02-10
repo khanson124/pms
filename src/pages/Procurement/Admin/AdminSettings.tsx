@@ -109,14 +109,14 @@ const AdminSettings = () => {
 
     // Fetch all available departments
     async function loadDepartments() {
-        setDepartmentsLoading(true);
+        setDeptLoading(true);
         try {
             const depts = await fetch(getApiUrl('/api/departments')).then((r) => r.json());
             setAllDepartments(depts);
         } catch (e: any) {
             // Error handled in component state
         } finally {
-            setDepartmentsLoading(false);
+            setDeptLoading(false);
         }
     }
 
@@ -871,7 +871,6 @@ function AssignRequestsToUsersPanel({ users }: { users: FlatUser[] }) {
 
             // Reset and reload
             setSelectedRequest(null);
-            setSelectedUser(null);
             setSelectedStatus('');
             setTimeout(() => loadRequests(), 1000);
         } catch (e: any) {

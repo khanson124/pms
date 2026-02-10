@@ -28,7 +28,6 @@ const ExecutiveDigitalSignoffs = () => {
     const [signoffComments, setSignoffComments] = useState('');
     const [documentModal, setDocumentModal] = useState(false);
     const [digitalSignoffItems, setDigitalSignoffItems] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchSignoffs();
@@ -83,7 +82,6 @@ const ExecutiveDigitalSignoffs = () => {
             console.error('Error fetching sign-offs:', error);
             Swal.fire('Error', 'Failed to load digital sign-offs', 'error');
         } finally {
-            setLoading(false);
         }
     };
 

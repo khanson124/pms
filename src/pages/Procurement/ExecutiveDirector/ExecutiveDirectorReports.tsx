@@ -132,20 +132,6 @@ const ExecutiveDirectorReports = () => {
             case 'High':
                 return 'badge-outline-warning';
             case 'Medium':
-                return 'badge-outline-info';
-            case 'Low':
-                return 'badge-outline-success';
-            default:
-                return 'badge-outline-primary';
-        }
-    };
-
-    if (loading) {
-        return (
-            <div className="panel">
-                <div className="mb-5 flex items-center justify-between">
-                    <h5 className="text-lg font-semibold">Executive Strategic Reports</h5>
-                </div>
                 <div className="text-center py-10">Loading reports...</div>
             </div>
         );

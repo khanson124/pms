@@ -31,8 +31,6 @@ const EvaluationDetail = () => {
     const { id } = useParams();
 
     const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [isProcurement, setIsProcurement] = useState(false);
     const [isCommittee, setIsCommittee] = useState(false);
     const [canEditSections, setCanEditSections] = useState<string[]>([]);
@@ -152,8 +150,6 @@ const EvaluationDetail = () => {
 
     useEffect(() => {
         if (!id || isNaN(parseInt(id))) {
-            setError('Invalid evaluation ID');
-            setLoading(false);
             return;
         }
         loadEvaluation();
@@ -302,8 +298,6 @@ const EvaluationDetail = () => {
     const loadEvaluation = async () => {
         if (!id) return;
         try {
-            setLoading(true);
-            setError(null);
             const data = await evaluationService.getEvaluationById(parseInt(id));
             setEvaluation(data);
 
@@ -326,10 +320,8 @@ const EvaluationDetail = () => {
             }
         } catch (err: any) {
             console.error('Failed to load evaluation:', err);
-            setError(err.message || 'Failed to load evaluation');
             toast(err.message || 'Failed to load evaluation', 'error');
         } finally {
-            setLoading(false);
         }
     };
 

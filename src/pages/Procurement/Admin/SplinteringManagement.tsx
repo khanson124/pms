@@ -22,7 +22,6 @@ const SplinteringManagement = () => {
     }, [dispatch]);
 
     const loadRules = async () => {
-        setIsLoading(true);
         try {
             const response = await fetch(getApiUrl('/api/admin/splintering-rules'), {
                 headers: getAuthHeadersSync(),
@@ -37,7 +36,6 @@ const SplinteringManagement = () => {
         } catch (error) {
             showError('Failed to load rules', 'Please try again');
         } finally {
-            setIsLoading(false);
         }
     };
 

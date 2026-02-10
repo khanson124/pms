@@ -79,7 +79,6 @@ const AssignRequestsToUsers = () => {
 
             // Reset and reload
             setSelectedRequest(null);
-            setSelectedUser(null);
             setSelectedStatus('');
             setTimeout(() => loadInitialData(), 1000);
         } catch (e: any) {

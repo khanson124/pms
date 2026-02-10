@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import type { Evaluation, SectionA, SectionB, SectionC, SectionD, SectionE } from '../services/evaluationService';
+import type { Evaluation, SectionA, SectionB, SectionD, SectionE } from '../services/evaluationService';
 import { getUser } from '../utils/auth';
 
 // Utility functions for currency formatting
@@ -34,9 +34,7 @@ type Props = {
     prefilledCells?: Record<string, boolean>; // Track cells that were pre-filled by officer
 };
 
-const PROCUREMENT_METHOD_OPTIONS = ['International Competitive Bidding', 'National Competitive Bidding', 'Restricted Bidding', 'Single Source', 'Emergency Single Source'] as const;
 const ADVERTISEMENT_METHOD_OPTIONS = ['International Advertisement', 'National Advertisement', 'GOJEP', 'Email'] as const;
-const CONTRACT_TYPE_OPTIONS = ['Goods', 'Consulting Services', 'Non-Consulting Services', 'Works'] as const;
 const RETENDER_REASON_OPTIONS = [
     { code: 'a', label: 'All bids non-responsive' },
     { code: 'b', label: 'Awarded supplier refused to enter into contract' },
@@ -88,7 +86,6 @@ const normalizeYesNo = (value: any): 'Yes' | 'No' | '' => {
 
 // Full evaluation form matching NewEvaluation structure with conditional editability
 export const EvaluationForm: React.FC<Props> = ({
-    mode,
     evaluation,
     canEditSections = [],
     canManageAttachments = false,
@@ -97,7 +94,6 @@ export const EvaluationForm: React.FC<Props> = ({
     onSaveSection,
     onSubmitSection,
     onVerifySection,
-    onReturnSection,
     structureEditableSections = [],
     onSectionChange,
     sectionCActions,

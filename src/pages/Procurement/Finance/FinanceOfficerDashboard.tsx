@@ -8,6 +8,8 @@ import IconCheckCircle from '../../../components/Icon/IconCircleCheck';
 import IconInfoCircle from '../../../components/Icon/IconInfoCircle';
 import IconClock from '../../../components/Icon/IconClock';
 import IconTrendingUp from '../../../components/Icon/IconTrendingUp';
+import IconBarChart from '../../../components/Icon/IconBarChart';
+import IconArrowForward from '../../../components/Icon/IconArrowForward';
 
 const FinanceOfficerDashboard = () => {
     const dispatch = useDispatch();

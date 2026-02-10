@@ -7,7 +7,7 @@
  * - Logs errors for debugging
  * - Provides reload option
  */
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, ErrorInfo, ReactNode } from 'react';
 
 interface Props {
     children: ReactNode;

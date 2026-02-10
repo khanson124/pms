@@ -20,8 +20,6 @@ function buildTree(comments: IdeaComment[]) {
 
 export default function Comments({ ideaId }: { ideaId: number | string }) {
     const [comments, setComments] = useState<IdeaComment[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [text, setText] = useState('');
     const [replyTo, setReplyTo] = useState<number | null>(null);
     const [posting, setPosting] = useState(false);
@@ -30,14 +28,11 @@ export default function Comments({ ideaId }: { ideaId: number | string }) {
 
     async function load() {
         try {
-            setLoading(true);
-            setError(null);
             const list = await fetchComments(ideaId);
             setComments(list);
         } catch (e) {
-            setError(e instanceof Error ? e.message : 'Failed to load comments');
+            showError('Failed to load comments', e instanceof Error ? e.message : 'Unknown error occurred');
         } finally {
-            setLoading(false);
         }
     }
 

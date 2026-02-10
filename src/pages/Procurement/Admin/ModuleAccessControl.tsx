@@ -6,7 +6,6 @@ import IconLockOpen from '../../../components/Icon/IconLockOpen';
 import IconInfoCircle from '../../../components/Icon/IconInfoCircle';
 import IconLoader from '../../../components/Icon/IconLoader';
 import { LOCKABLE_MODULES, type LockableModuleKey, type ModuleLockState } from '../../../utils/moduleLocks';
-import { getUser } from '../../../utils/auth';
 import { getApiUrl } from '../../../config/api';
 import { getAuthHeadersSync } from '../../../utils/api';
 
