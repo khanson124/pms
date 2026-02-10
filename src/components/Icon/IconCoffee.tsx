@@ -7,6 +7,9 @@ interface IconCoffeeProps {
 }
 
 const IconCoffee: FC<IconCoffeeProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -75,3 +78,4 @@ const IconCoffee: FC<IconCoffeeProps> = ({ className, fill = false, duotone = tr
 };
 
 export default IconCoffee;
+

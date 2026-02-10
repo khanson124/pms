@@ -7,6 +7,9 @@ interface IconClipboardTextProps {
 }
 
 const IconClipboardText: FC<IconClipboardTextProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -47,3 +50,4 @@ const IconClipboardText: FC<IconClipboardTextProps> = ({ className, fill = false
 };
 
 export default IconClipboardText;
+

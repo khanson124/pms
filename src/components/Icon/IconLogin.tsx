@@ -7,6 +7,9 @@ interface IconLoginProps {
 }
 
 const IconLogin: FC<IconLoginProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -51,3 +54,4 @@ const IconLogin: FC<IconLoginProps> = ({ className, fill = false, duotone = true
 };
 
 export default IconLogin;
+

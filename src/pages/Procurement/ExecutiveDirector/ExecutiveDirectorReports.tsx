@@ -1,19 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import { getApiUrl } from '../../../config/api';
 import { getToken } from '../../../utils/auth';
 import Swal from 'sweetalert2';
-import IconBarChart from '../../../components/Icon/IconBarChart';
 import IconEye from '../../../components/Icon/IconEye';
 import IconChecks from '../../../components/Icon/IconChecks';
 import IconX from '../../../components/Icon/IconX';
-import IconDownload from '../../../components/Icon/IconDownload';
-import IconClock from '../../../components/Icon/IconClock';
-import IconDollarSignCircle from '../../../components/Icon/IconDollarSignCircle';
-import IconCircleCheck from '../../../components/Icon/IconCircleCheck';
-import IconThumbUp from '../../../components/Icon/IconThumbUp';
 
 const ExecutiveDirectorReports = () => {
     const dispatch = useDispatch();
@@ -22,13 +15,11 @@ const ExecutiveDirectorReports = () => {
     });
 
     const [filter, setFilter] = useState('all');
-    const [searchTerm, setSearchTerm] = useState('');
     const [reviewModal, setReviewModal] = useState(false);
     const [selectedReport, setSelectedReport] = useState<any>(null);
     const [executiveComments, setExecutiveComments] = useState('');
     const [reportViewModal, setReportViewModal] = useState(false);
     const [executiveReports, setExecutiveReports] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchReports();
@@ -54,7 +45,6 @@ const ExecutiveDirectorReports = () => {
             console.error('Error fetching reports:', error);
             Swal.fire('Error', 'Failed to load reports', 'error');
         } finally {
-            setLoading(false);
         }
     };
 
@@ -68,13 +58,6 @@ const ExecutiveDirectorReports = () => {
     });
 
     // Statistics - calculated from actual database data
-    const stats = {
-        total: executiveReports.length,
-        pending: executiveReports.filter((r: any) => r.status === 'EXECUTIVE_REVIEW').length,
-        approved: executiveReports.filter((r: any) => r.status === 'FINANCE_APPROVED').length,
-        rejected: executiveReports.filter((r: any) => r.status === 'REJECTED').length,
-        totalValue: executiveReports.reduce((sum: number, r: any) => sum + (r.totalEstimated || 0), 0),
-    };
 
     const handleReviewReport = (report: any) => {
         setSelectedReport(report);
@@ -139,32 +122,6 @@ const ExecutiveDirectorReports = () => {
                 return 'badge-outline-primary';
         }
     };
-
-    const getPriorityBadge = (priority: string) => {
-        switch (priority) {
-            case 'Critical':
-                return 'badge-outline-danger';
-            case 'High':
-                return 'badge-outline-warning';
-            case 'Medium':
-                return 'badge-outline-info';
-            case 'Low':
-                return 'badge-outline-success';
-            default:
-                return 'badge-outline-primary';
-        }
-    };
-
-    if (loading) {
-        return (
-            <div className="panel">
-                <div className="mb-5 flex items-center justify-between">
-                    <h5 className="text-lg font-semibold">Executive Strategic Reports</h5>
-                </div>
-                <div className="text-center py-10">Loading reports...</div>
-            </div>
-        );
-    }
 
     return (
         <div className="space-y-6">

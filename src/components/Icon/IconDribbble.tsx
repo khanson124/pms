@@ -7,6 +7,9 @@ interface IconDribbbleProps {
 }
 
 const IconDribbble: FC<IconDribbbleProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -61,3 +64,4 @@ const IconDribbble: FC<IconDribbbleProps> = ({ className, fill = false, duotone 
 };
 
 export default IconDribbble;
+

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
@@ -563,7 +563,7 @@ const ProcurementManagerRequests = () => {
                         <td style="text-align: right;">$${formatCurrency(item.unitPrice)}</td>
                         <td style="text-align: right;">$${formatCurrency((parseFloat(String(item.quantity || 0)) * parseFloat(String(item.unitPrice || 0))).toFixed(2))}</td>
                     </tr>
-                    `
+                    `,
                         )
                         .join('')}
                 </tbody>
@@ -591,7 +591,7 @@ const ProcurementManagerRequests = () => {
                     </div>
                     <div class="date">${approval.date}</div>
                 </div>
-                `
+                `,
                     )
                     .join('')}
             </div>

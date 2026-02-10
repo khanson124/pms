@@ -7,6 +7,9 @@ interface IconChatDotProps {
 }
 
 const IconChatDot: FC<IconChatDotProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -48,3 +51,4 @@ const IconChatDot: FC<IconChatDotProps> = ({ className, fill = false, duotone = 
 };
 
 export default IconChatDot;
+

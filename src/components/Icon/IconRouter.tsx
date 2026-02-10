@@ -7,6 +7,9 @@ interface IconRouterProps {
 }
 
 const IconRouter: FC<IconRouterProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {fill ? (
@@ -90,3 +93,4 @@ const IconRouter: FC<IconRouterProps> = ({ className, fill = false, duotone = tr
     );
 };
 export default IconRouter;
+

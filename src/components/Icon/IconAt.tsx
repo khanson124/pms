@@ -7,6 +7,9 @@ interface IconAtProps {
 }
 
 const IconAt: FC<IconAtProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -40,3 +43,4 @@ const IconAt: FC<IconAtProps> = ({ className, fill = false, duotone = true }) =>
 };
 
 export default IconAt;
+

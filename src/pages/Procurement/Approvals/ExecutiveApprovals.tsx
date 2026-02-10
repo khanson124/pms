@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { IRootState } from '../../../store';
+import { useDispatch } from 'react-redux';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import IconChecks from '../../../components/Icon/IconChecks';
 import IconX from '../../../components/Icon/IconX';
@@ -31,12 +30,10 @@ const ExecutiveApprovals = () => {
     const [documentModal, setDocumentModal] = useState(false);
     const [selectedDocument, setSelectedDocument] = useState<any>(null);
     const [executiveApprovals, setExecutiveApprovals] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
 
     // Fetch executive-level approvals from API
     const fetchApprovals = useCallback(async () => {
         try {
-            setLoading(true);
             const token = getToken();
             const apiUrl = getApiUrl();
 
@@ -58,7 +55,6 @@ const ExecutiveApprovals = () => {
         } catch (error) {
             console.error('Error fetching executive approvals:', error);
         } finally {
-            setLoading(false);
         }
     }, []);
 

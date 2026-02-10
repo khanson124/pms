@@ -27,6 +27,32 @@ interface Holiday {
     theme: HolidayTheme;
 }
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+function computeEasterSunday(year: number): Date {
+    // Anonymous Gregorian algorithm
+    const a = year % 19;
+    const b = Math.floor(year / 100);
+    const c = year % 100;
+    const d = Math.floor(b / 4);
+    const e = b % 4;
+    const f = Math.floor((b + 8) / 25);
+    const g = Math.floor((b - f + 1) / 3);
+    const h = (19 * a + b - d - g + 15) % 30;
+    const i = Math.floor(c / 4);
+    const k = c % 4;
+    const l = (32 + 2 * e + 2 * i - h - k) % 7;
+    const m = Math.floor((a + 11 * h + 22 * l) / 451);
+    const month = Math.floor((h + l - 7 * m + 114) / 31); // 3=March, 4=April
+    const day = ((h + l - 7 * m + 114) % 31) + 1;
+    return new Date(year, month - 1, day);
+}
+
+function getAshWednesday(year: number): Date {
+    const easterSunday = computeEasterSunday(year);
+    return new Date(easterSunday.getTime() - 46 * MS_PER_DAY);
+}
+
 // Jamaican Holidays with themes
 const JAMAICAN_HOLIDAYS: Holiday[] = [
     {
@@ -43,10 +69,73 @@ const JAMAICAN_HOLIDAYS: Holiday[] = [
                 gradient: 'from-blue-900 via-blue-600 to-blue-400',
             },
             icon: '🎊',
-            message: 'Welcome to 2026',
+            message: 'Welcome to the New Year',
             decorations: {
                 emoji: ['✨', '🎯', '📈'],
                 pattern: 'confetti',
+            },
+        },
+    },
+    {
+        name: "Valentine's Day",
+        startDate: (year) => new Date(year, 1, 9), // February 9
+        endDate: (year) => new Date(year, 1, 16),
+        theme: {
+            id: 'valentines',
+            name: "Valentine's Day",
+            colors: {
+                primary: '#be185d',
+                secondary: '#fb7185',
+                accent: '#fecdd3',
+                gradient: 'from-rose-700 via-pink-500 to-rose-300',
+            },
+            icon: '💖',
+            message: "Happy Valentine's Day",
+            decorations: {
+                emoji: ['💖', '🌹', '✨'],
+                pattern: 'hearts',
+            },
+        },
+    },
+    {
+        name: 'Ash Wednesday',
+        startDate: (year) => getAshWednesday(year),
+        endDate: (year) => new Date(getAshWednesday(year).getTime() + 4 * MS_PER_DAY),
+        theme: {
+            id: 'ash-wednesday',
+            name: 'Ash Wednesday',
+            colors: {
+                primary: '#4b5563',
+                secondary: '#9ca3af',
+                accent: '#e5e7eb',
+                gradient: 'from-gray-700 via-gray-500 to-gray-300',
+            },
+            icon: '🕯️',
+            message: 'Ash Wednesday',
+            decorations: {
+                emoji: ['🕯️', '🕊️', '✨'],
+                pattern: 'ashes',
+            },
+        },
+    },
+    {
+        name: 'Easter',
+        startDate: (year) => new Date(computeEasterSunday(year).getTime() - 2 * MS_PER_DAY),
+        endDate: (year) => new Date(computeEasterSunday(year).getTime() + 2 * MS_PER_DAY),
+        theme: {
+            id: 'easter',
+            name: 'Easter',
+            colors: {
+                primary: '#7c3aed',
+                secondary: '#f472b6',
+                accent: '#fde68a',
+                gradient: 'from-violet-600 via-pink-400 to-amber-200',
+            },
+            icon: '🐣',
+            message: 'Happy Easter',
+            decorations: {
+                emoji: ['🐣', '🌸', '🐰'],
+                pattern: 'eggs',
             },
         },
     },
@@ -85,7 +174,7 @@ const JAMAICAN_HOLIDAYS: Holiday[] = [
                 gradient: 'from-emerald-600 via-amber-400 to-gray-800',
             },
             icon: '🇯🇲',
-            message: 'Independence Day 2025',
+            message: 'Independence Day',
             decorations: {
                 emoji: ['🇯🇲', '⭐', '🏆'],
                 pattern: 'jamaica-stars',
@@ -151,13 +240,17 @@ const JAMAICAN_HOLIDAYS: Holiday[] = [
 export function getCurrentHolidayTheme(): HolidayTheme | null {
     const now = new Date();
     const year = now.getFullYear();
+    const withYear = (theme: HolidayTheme): HolidayTheme => ({
+        ...theme,
+        message: `${theme.message} ${year}`,
+    });
 
     for (const holiday of JAMAICAN_HOLIDAYS) {
         const start = holiday.startDate(year);
         const end = holiday.endDate(year);
 
         if (now >= start && now < end) {
-            return holiday.theme;
+            return withYear(holiday.theme);
         }
     }
 

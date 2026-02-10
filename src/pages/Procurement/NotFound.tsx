@@ -1,16 +1,13 @@
 import { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { setPageTitle } from '../../store/themeConfigSlice';
-import { IRootState } from '../../store';
 import { detectUserRoles, getDashboardPath } from '../../utils/roleDetection';
 import { getUser } from '../../utils/auth';
 
 const NotFound = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const isDark = useSelector((state: IRootState) => state.themeConfig.theme === 'dark' || state.themeConfig.isDarkMode);
-
     useEffect(() => {
         dispatch(setPageTitle('Page Not Found - 404'));
     }, [dispatch]);

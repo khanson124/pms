@@ -12,6 +12,7 @@ import { setAuth } from '../../../utils/auth';
 import { loginWithMicrosoft, initializeMsal, isMsalConfigured } from '../../../auth/msal';
 import { detectUserRoles, getDashboardPath } from '../../../utils/roleDetection';
 import { getApiUrl } from '../../../config/api';
+import { getCurrentHolidayTheme, getHolidayGradient } from '../../../utils/holidayTheme';
 
 const Login = () => {
     const dispatch = useDispatch();
@@ -26,6 +27,9 @@ const Login = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [systemStats, setSystemStats] = useState({ activeUsers: 0, systemUptime: 99.9 });
+    const holidayTheme = getCurrentHolidayTheme();
+    const leftGradient = getHolidayGradient('bg-gradient-to-br from-primary to-primary-light');
+    const overlayGradient = holidayTheme ? `bg-gradient-to-br ${holidayTheme.colors.gradient}` : 'bg-gradient-to-br from-primary via-primary-light to-primary';
 
     useEffect(() => {
         dispatch(setPageTitle('Login'));
@@ -248,9 +252,9 @@ const Login = () => {
     return (
         <div className="flex min-h-screen">
             {/* Left Side - Branding */}
-            <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary to-primary-light relative overflow-hidden">
+            <div className={`hidden lg:flex lg:w-1/2 ${leftGradient} relative overflow-hidden`}>
                 {/* Animated Gradient Background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary-light to-primary opacity-50 animate-gradient-shift"></div>
+                <div className={`absolute inset-0 ${overlayGradient} opacity-50 animate-gradient-shift`}></div>
                 <div className="absolute inset-0 bg-[url('/assets/images/auth/pattern.png')] opacity-10"></div>
 
                 {/* Floating Stats Cards */}
@@ -307,6 +311,14 @@ const Login = () => {
                                 </svg>
                                 Powered by SPINX Enterprise Platform
                             </div>
+                            {holidayTheme && (
+                                <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-white/15 backdrop-blur-md rounded-full text-sm font-semibold border border-white/20">
+                                    <span className="text-lg">{holidayTheme.icon}</span>
+                                    <span>{holidayTheme.name}</span>
+                                    <span className="text-white/80">·</span>
+                                    <span className="text-white/80">{holidayTheme.message}</span>
+                                </div>
+                            )}
                         </div>
                         <p className="text-lg text-white/90 mb-10 animate-fade-in-up animation-delay-200 text-center">
                             Your unified digital hub for seamless collaboration, innovation, and procurement management across the Bureau of Standards Jamaica, with additional enterprise modules on
@@ -497,23 +509,6 @@ const Login = () => {
                                             <IconEye className="w-5 h-5" />
                                         </button>
                                     </div>
-                                </div>
-
-                                <div className="flex items-center justify-between">
-                                    <label className="flex items-center cursor-pointer group">
-                                        <input
-                                            type="checkbox"
-                                            checked={rememberMe}
-                                            onChange={(e) => setRememberMe(e.target.checked)}
-                                            className="form-checkbox w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary/50"
-                                        />
-                                        <span className="ml-2.5 text-sm text-gray-600 dark:text-gray-400 font-medium group-hover:text-gray-900 dark:group-hover:text-gray-200 transition-colors">
-                                            Remember me
-                                        </span>
-                                    </label>
-                                    <Link to="/auth/forgot-password" className="text-sm text-primary hover:text-primary-dark font-bold transition-colors">
-                                        Forgot Password?
-                                    </Link>
                                 </div>
 
                                 <button

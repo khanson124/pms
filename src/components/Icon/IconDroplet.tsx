@@ -7,6 +7,9 @@ interface IconDropletProps {
 }
 
 const IconDroplet: FC<IconDropletProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -37,3 +40,4 @@ const IconDroplet: FC<IconDropletProps> = ({ className, fill = false, duotone = 
 };
 
 export default IconDroplet;
+

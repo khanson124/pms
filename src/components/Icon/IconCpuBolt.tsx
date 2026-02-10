@@ -7,6 +7,9 @@ interface IconCpuBoltProps {
 }
 
 const IconCpuBolt: FC<IconCpuBoltProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -60,3 +63,4 @@ const IconCpuBolt: FC<IconCpuBoltProps> = ({ className, fill = false, duotone = 
 };
 
 export default IconCpuBolt;
+

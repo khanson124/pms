@@ -7,6 +7,9 @@ interface IconLitecoinProps {
 }
 
 const IconLitecoin: FC<IconLitecoinProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0.847 0.876 329.254 329.256" className={className}>
             <title>Litecoin</title>
@@ -27,3 +30,4 @@ const IconLitecoin: FC<IconLitecoinProps> = ({ className, fill = false, duotone 
 };
 
 export default IconLitecoin;
+

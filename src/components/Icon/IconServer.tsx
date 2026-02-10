@@ -6,7 +6,9 @@ interface IconServerProps {
     duotone?: boolean;
 }
 
-const IconServer: FC<IconServerProps> = ({ className, fill = false, duotone = true }) => {
+const IconServer: FC<IconServerProps> = ({ className, duotone = true }) => {
+    void duotone;
+
     return (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
             <path
@@ -30,3 +32,4 @@ const IconServer: FC<IconServerProps> = ({ className, fill = false, duotone = tr
 };
 
 export default IconServer;
+

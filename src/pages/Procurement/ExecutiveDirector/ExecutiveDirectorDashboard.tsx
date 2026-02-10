@@ -117,7 +117,6 @@ const ExecutiveDirectorDashboard = () => {
     const [selectedDocument, setSelectedDocument] = useState<any>(null);
     const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
     const [recentSignOffs, setRecentSignOffs] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
 
     // Executive-level statistics
     const [stats, setStats] = useState({
@@ -293,6 +292,7 @@ const ExecutiveDirectorDashboard = () => {
     };
 
     const submitDigitalSignature = (action: 'approve' | 'reject') => {
+        void action;
         if (!digitalSignature.trim()) {
             alert('Please provide your digital signature/comments');
             return;
@@ -309,19 +309,6 @@ const ExecutiveDirectorDashboard = () => {
         // Implement document download logic
         // In a real app, this would trigger a file download
         alert(`Downloading ${document.name}...`);
-    };
-
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'Pending Executive Approval':
-                return 'badge-outline-warning';
-            case 'Approved':
-                return 'badge-outline-success';
-            case 'Rejected':
-                return 'badge-outline-danger';
-            default:
-                return 'badge-outline-primary';
-        }
     };
 
     const getPriorityBadge = (priority: string) => {

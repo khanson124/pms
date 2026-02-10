@@ -7,6 +7,9 @@ interface IconInfoTriangleProps {
 }
 
 const IconInfoTriangle: FC<IconInfoTriangleProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -39,3 +42,4 @@ const IconInfoTriangle: FC<IconInfoTriangleProps> = ({ className, fill = false, 
 };
 
 export default IconInfoTriangle;
+

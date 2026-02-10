@@ -3,9 +3,7 @@ import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import PerfectScrollbar from 'react-perfect-scrollbar';
-import IconPlus from '../../../components/Icon/IconPlus';
 import IconList from '../../../components/Icon/IconListCheck';
-import IconSearch from '../../../components/Icon/IconSearch';
 import IconArrowForward from '../../../components/Icon/IconArrowForward';
 
 const DepartmentManagerDashboard = () => {

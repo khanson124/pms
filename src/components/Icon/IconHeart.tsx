@@ -7,6 +7,9 @@ interface IconHeartProps {
 }
 
 const IconHeart: FC<IconHeartProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -42,3 +45,4 @@ const IconHeart: FC<IconHeartProps> = ({ className, fill = false, duotone = true
 };
 
 export default IconHeart;
+

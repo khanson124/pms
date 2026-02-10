@@ -7,6 +7,9 @@ interface IconMicrophoneOffProps {
 }
 
 const IconMicrophoneOff: FC<IconMicrophoneOffProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
             <path d="M7 8C7 5.23858 9.23858 3 12 3C14.7614 3 17 5.23858 17 8V11C17 13.7614 14.7614 16 12 16C9.23858 16 7 13.7614 7 11V8Z" stroke="currentColor" strokeWidth="1.5" />
@@ -21,3 +24,4 @@ const IconMicrophoneOff: FC<IconMicrophoneOffProps> = ({ className, fill = false
 };
 
 export default IconMicrophoneOff;
+

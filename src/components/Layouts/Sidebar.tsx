@@ -1,5 +1,4 @@
 import PerfectScrollbar from 'react-perfect-scrollbar';
-import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { NavLink, useLocation } from 'react-router-dom';
 import { toggleSidebar } from '../../store/themeConfigSlice';
@@ -11,18 +10,10 @@ import IconCaretDown from '../Icon/IconCaretDown';
 import IconMenuDashboard from '../Icon/Menu/IconMenuDashboard';
 import IconMinus from '../Icon/IconMinus';
 import IconMenuInvoice from '../Icon/Menu/IconMenuInvoice';
-import IconMenuCharts from '../Icon/Menu/IconMenuCharts';
-import IconMenuWidgets from '../Icon/Menu/IconMenuWidgets';
-import IconMenuFontIcons from '../Icon/Menu/IconMenuFontIcons';
-import IconMenuDragAndDrop from '../Icon/Menu/IconMenuDragAndDrop';
-import IconMenuTables from '../Icon/Menu/IconMenuTables';
-import IconMenuDocumentation from '../Icon/Menu/IconMenuDocumentation';
 import IconEdit from '../Icon/IconEdit';
-import IconDollarSignCircle from '../Icon/IconDollarSignCircle';
 import IconClipboardText from '../Icon/IconClipboardText';
 import IconChecks from '../Icon/IconChecks';
 import IconFile from '../Icon/IconFile';
-import IconShoppingCart from '../Icon/IconShoppingCart';
 import IconUsersGroup from '../Icon/IconUsersGroup';
 import IconBook from '../Icon/IconBook';
 import IconBarChart from '../Icon/IconBarChart';
@@ -43,8 +34,6 @@ import { getModuleLocks, type ModuleLockState } from '../../utils/moduleLocks';
 import IconBuilding from '../Icon/IconBuilding';
 import IconShield from '../Icon/IconShield';
 import IconHistory from '../Icon/IconHistory';
-import IconDollar from '../Icon/IconDollar';
-import IconUsers from '../Icon/IconUsers';
 import IconKey from '../Icon/IconKey';
 import IconUpload from '../Icon/IconUpload';
 import IconGear from '../Icon/IconGear';
@@ -54,7 +43,6 @@ import { getApiUrl } from '../../config/api';
 import { getToken } from '../../utils/auth';
 const Sidebar = () => {
     const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
-    const [errorSubMenu, setErrorSubMenu] = useState(false);
     const [moduleLocks, setModuleLocks] = useState<ModuleLockState>(() => getModuleLocks());
     // Initialize pinnedModule based on module lock status
     const [pinnedModule, setPinnedModule] = useState<string | null>(() => {
@@ -70,7 +58,6 @@ const Sidebar = () => {
     const semidark = useSelector((state: IRootState) => state.themeConfig.semidark);
     const location = useLocation();
     const dispatch = useDispatch();
-    const { t } = useTranslation();
 
     // Get current user to check role
     // Read directly to avoid stale role data after login or role changes
@@ -455,24 +442,6 @@ const Sidebar = () => {
                                                     <div className="flex items-center">
                                                         <IconHistory className="group-hover:!text-primary shrink-0" />
                                                         <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">Audit & Compliance</span>
-                                                    </div>
-                                                </NavLink>
-                                            </li>
-
-                                            <li className="nav-item">
-                                                <NavLink to="/procurement/admin/workflow-config" end className="group">
-                                                    <div className="flex items-center">
-                                                        <IconSettings className="group-hover:!text-primary shrink-0" />
-                                                        <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">Workflow Config</span>
-                                                    </div>
-                                                </NavLink>
-                                            </li>
-
-                                            <li className="nav-item">
-                                                <NavLink to="/procurement/admin/roles-permissions" end className="group">
-                                                    <div className="flex items-center">
-                                                        <IconKey className="group-hover:!text-primary shrink-0" />
-                                                        <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">Roles & Permissions</span>
                                                     </div>
                                                 </NavLink>
                                             </li>

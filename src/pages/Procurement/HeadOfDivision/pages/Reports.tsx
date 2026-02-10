@@ -28,7 +28,6 @@ const HODReports: React.FC = () => {
     const [filteredReports, setFilteredReports] = useState<Report[]>([]);
     const [searchValue, setSearchValue] = useState('');
     const [loading, setLoading] = useState(false);
-    const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         dispatch(setPageTitle('HOD - Reports'));
@@ -38,8 +37,6 @@ const HODReports: React.FC = () => {
         const interval = setInterval(() => {
             fetchReports();
         }, 20000);
-        setRefreshInterval(interval);
-
         return () => {
             if (interval) clearInterval(interval);
         };
@@ -53,7 +50,7 @@ const HODReports: React.FC = () => {
             const hodId = user?.id;
 
             const url = getApiUrl(
-                `/api/v1/reports?division=${encodeURIComponent(String(userDepartment))}&hod=${encodeURIComponent(String(hodId || ''))}&status=${encodeURIComponent('Completed,In Progress')}`
+                `/api/v1/reports?division=${encodeURIComponent(String(userDepartment))}&hod=${encodeURIComponent(String(hodId || ''))}&status=${encodeURIComponent('Completed,In Progress')}`,
             );
             const response = await fetch(url, { headers: getAuthHeadersSync() });
 
@@ -128,7 +125,7 @@ const HODReports: React.FC = () => {
         } else {
             const filtered = reports.filter(
                 (report) =>
-                    report.title.toLowerCase().includes(value.toLowerCase()) || report.type.toLowerCase().includes(value.toLowerCase()) || report.period.toLowerCase().includes(value.toLowerCase())
+                    report.title.toLowerCase().includes(value.toLowerCase()) || report.type.toLowerCase().includes(value.toLowerCase()) || report.period.toLowerCase().includes(value.toLowerCase()),
             );
             setFilteredReports(filtered);
         }

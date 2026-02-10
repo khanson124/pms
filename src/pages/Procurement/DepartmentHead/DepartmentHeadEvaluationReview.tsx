@@ -6,7 +6,6 @@ import IconClipboardText from '../../../components/Icon/IconClipboardText';
 import IconEye from '../../../components/Icon/IconEye';
 import IconChecks from '../../../components/Icon/IconChecks';
 import IconX from '../../../components/Icon/IconX';
-import IconDownload from '../../../components/Icon/IconDownload';
 import IconStar from '../../../components/Icon/IconStar';
 import IconClock from '../../../components/Icon/IconClock';
 import IconUser from '../../../components/Icon/IconUser';
@@ -23,7 +22,6 @@ const DepartmentHeadEvaluationReview = () => {
     const [filter, setFilter] = useState('pending');
     const [reviewModal, setReviewModal] = useState(false);
     const [selectedEvaluation, setSelectedEvaluation] = useState<any>(null);
-    const [reviewDecision, setReviewDecision] = useState('');
     const [reviewComments, setReviewComments] = useState('');
 
     // Evaluations requiring Department Head review and approval
@@ -54,7 +52,7 @@ const DepartmentHeadEvaluationReview = () => {
                 { supplier: 'Office Depot', score: 82, amount: 13200, rank: 2 },
                 { supplier: 'Staples Inc', score: 78, amount: 11800, rank: 3 },
                 { supplier: 'Business Supply Co', score: 75, amount: 14000, rank: 4 },
-                { supplier: 'Quick Office', score: 70, amount: 12800, rank: 5 }
+                { supplier: 'Quick Office', score: 70, amount: 12800, rank: 5 },
             ],
             justification: 'ABC Office Solutions provides the best balance of quality, price, and service. Strong delivery track record and excellent customer support.',
             riskAssessment: 'Low risk - established supplier with good payment terms and reliable delivery history.',
@@ -83,7 +81,7 @@ const DepartmentHeadEvaluationReview = () => {
             supplierComparison: [
                 { supplier: 'Tech Solutions Ltd', score: 92, amount: 35000, rank: 1 },
                 { supplier: 'Computer World', score: 85, amount: 32000, rank: 2 },
-                { supplier: 'IT Pro Services', score: 78, amount: 38000, rank: 3 }
+                { supplier: 'IT Pro Services', score: 78, amount: 38000, rank: 3 },
             ],
             justification: 'Tech Solutions Ltd offers premium quality equipment with excellent technical support and warranty terms. Price is competitive for the quality level.',
             riskAssessment: 'Low risk - certified partner with proven track record in enterprise IT solutions.',
@@ -113,7 +111,7 @@ const DepartmentHeadEvaluationReview = () => {
                 { supplier: 'CleanPro Services', score: 85, amount: 18000, rank: 1 },
                 { supplier: 'Sparkle Clean', score: 80, amount: 16500, rank: 2 },
                 { supplier: 'Elite Cleaning', score: 78, amount: 19500, rank: 3 },
-                { supplier: 'Quick Clean Co', score: 72, amount: 17000, rank: 4 }
+                { supplier: 'Quick Clean Co', score: 72, amount: 17000, rank: 4 },
             ],
             justification: 'CleanPro Services demonstrates strong quality standards and reliability. Competitive pricing with comprehensive service coverage.',
             riskAssessment: 'Medium risk - newer company but with strong references and insurance coverage.',
@@ -147,7 +145,7 @@ const DepartmentHeadEvaluationReview = () => {
                 { supplier: 'Marketing Pro', score: 83, amount: 48000, rank: 3 },
                 { supplier: 'Ad Agency Plus', score: 80, amount: 40000, rank: 4 },
                 { supplier: 'Digital Boost', score: 78, amount: 46000, rank: 5 },
-                { supplier: 'Market Leaders', score: 75, amount: 50000, rank: 6 }
+                { supplier: 'Market Leaders', score: 75, amount: 50000, rank: 6 },
             ],
             justification: 'Creative Marketing Hub offers innovative solutions with proven ROI. Strong portfolio and dedicated account management.',
             riskAssessment: 'Low risk - established agency with strong client testimonials and performance guarantees.',
@@ -155,7 +153,7 @@ const DepartmentHeadEvaluationReview = () => {
     ];
 
     // Filter evaluations based on status
-    const filteredEvaluations = evaluationReviews.filter(evaluation => {
+    const filteredEvaluations = evaluationReviews.filter((evaluation) => {
         if (filter === 'all') return true;
         if (filter === 'pending') return evaluation.status === 'Pending Department Head Review';
         if (filter === 'approved') return evaluation.status === 'Approved by Department Head';
@@ -166,16 +164,15 @@ const DepartmentHeadEvaluationReview = () => {
     // Statistics
     const stats = {
         total: evaluationReviews.length,
-        pending: evaluationReviews.filter(e => e.status === 'Pending Department Head Review').length,
-        approved: evaluationReviews.filter(e => e.status === 'Approved by Department Head').length,
-        rejected: evaluationReviews.filter(e => e.status === 'Rejected by Department Head').length,
+        pending: evaluationReviews.filter((e) => e.status === 'Pending Department Head Review').length,
+        approved: evaluationReviews.filter((e) => e.status === 'Approved by Department Head').length,
+        rejected: evaluationReviews.filter((e) => e.status === 'Rejected by Department Head').length,
         totalValue: evaluationReviews.reduce((sum, e) => sum + e.recommendedAmount, 0),
     };
 
     const handleReviewEvaluation = (evaluation: any) => {
         setSelectedEvaluation(evaluation);
         setReviewModal(true);
-        setReviewDecision('');
         setReviewComments('');
     };
 
@@ -198,7 +195,7 @@ const DepartmentHeadEvaluationReview = () => {
                 message = 'Request for better supplier justification - evaluation returned with feedback for improvement';
                 break;
         }
-        
+
         // Show success message (in production, this would be a toast notification)
         alert(message);
         setReviewModal(false);
@@ -300,28 +297,16 @@ const DepartmentHeadEvaluationReview = () => {
 
                 {/* Filters */}
                 <div className="mb-6 flex gap-2">
-                    <button
-                        onClick={() => setFilter('pending')}
-                        className={`btn btn-sm ${filter === 'pending' ? 'btn-warning' : 'btn-outline-warning'}`}
-                    >
+                    <button onClick={() => setFilter('pending')} className={`btn btn-sm ${filter === 'pending' ? 'btn-warning' : 'btn-outline-warning'}`}>
                         Pending Reviews
                     </button>
-                    <button
-                        onClick={() => setFilter('approved')}
-                        className={`btn btn-sm ${filter === 'approved' ? 'btn-success' : 'btn-outline-success'}`}
-                    >
+                    <button onClick={() => setFilter('approved')} className={`btn btn-sm ${filter === 'approved' ? 'btn-success' : 'btn-outline-success'}`}>
                         Approved
                     </button>
-                    <button
-                        onClick={() => setFilter('rejected')}
-                        className={`btn btn-sm ${filter === 'rejected' ? 'btn-danger' : 'btn-outline-danger'}`}
-                    >
+                    <button onClick={() => setFilter('rejected')} className={`btn btn-sm ${filter === 'rejected' ? 'btn-danger' : 'btn-outline-danger'}`}>
                         Rejected
                     </button>
-                    <button
-                        onClick={() => setFilter('all')}
-                        className={`btn btn-sm ${filter === 'all' ? 'btn-primary' : 'btn-outline-primary'}`}
-                    >
+                    <button onClick={() => setFilter('all')} className={`btn btn-sm ${filter === 'all' ? 'btn-primary' : 'btn-outline-primary'}`}>
                         All Reviews
                     </button>
                 </div>
@@ -334,15 +319,13 @@ const DepartmentHeadEvaluationReview = () => {
                                 <div className="flex-1">
                                     <div className="mb-2 flex items-center gap-2">
                                         <h5 className="text-lg font-semibold">{evaluation.evalNumber}</h5>
-                                        <span className={`badge ${getPriorityBadge(evaluation.priority)}`}>
-                                            {evaluation.priority}
-                                        </span>
-                                        <span className={`badge ${getStatusBadge(evaluation.status)}`}>
-                                            {evaluation.status}
-                                        </span>
+                                        <span className={`badge ${getPriorityBadge(evaluation.priority)}`}>{evaluation.priority}</span>
+                                        <span className={`badge ${getStatusBadge(evaluation.status)}`}>{evaluation.status}</span>
                                     </div>
                                     <p className="mb-2 text-lg font-medium">{evaluation.description}</p>
-                                    <p className="mb-3 text-sm text-white-dark">Department: {evaluation.department} | Evaluator: {evaluation.evaluator}</p>
+                                    <p className="mb-3 text-sm text-white-dark">
+                                        Department: {evaluation.department} | Evaluator: {evaluation.evaluator}
+                                    </p>
                                 </div>
                                 <div className="flex flex-col items-end gap-2">
                                     <div className="text-right">
@@ -351,11 +334,7 @@ const DepartmentHeadEvaluationReview = () => {
                                         <div className="text-xl font-bold text-primary">${evaluation.recommendedAmount.toLocaleString()}</div>
                                     </div>
                                     {evaluation.status === 'Pending Department Head Review' && (
-                                        <button
-                                            onClick={() => handleReviewEvaluation(evaluation)}
-                                            className="btn btn-primary btn-sm"
-                                            title="Review Evaluation"
-                                        >
+                                        <button onClick={() => handleReviewEvaluation(evaluation)} className="btn btn-primary btn-sm" title="Review Evaluation">
                                             <IconEye className="h-4 w-4 mr-1" />
                                             Review
                                         </button>
@@ -368,7 +347,7 @@ const DepartmentHeadEvaluationReview = () => {
                                     )}
                                 </div>
                             </div>
-                            
+
                             <div className="mb-4 grid grid-cols-1 gap-4 border-t border-[#e0e6ed] pt-4 dark:border-[#253b5c] lg:grid-cols-2">
                                 <div>
                                     <h6 className="mb-2 font-semibold">Recommended Supplier Analysis</h6>
@@ -441,15 +420,11 @@ const DepartmentHeadEvaluationReview = () => {
                                 <IconClipboardText />
                                 Department Head Review - {selectedEvaluation.evalNumber}
                             </h4>
-                            <button 
-                                onClick={() => setReviewModal(false)} 
-                                className="text-white-dark hover:text-danger"
-                                title="Close Modal"
-                            >
+                            <button onClick={() => setReviewModal(false)} className="text-white-dark hover:text-danger" title="Close Modal">
                                 <IconX />
                             </button>
                         </div>
-                        
+
                         <div className="mb-6 space-y-4">
                             {/* Evaluation Summary */}
                             <div className="rounded-lg border border-[#e0e6ed] p-4 dark:border-[#253b5c]">
@@ -515,8 +490,7 @@ const DepartmentHeadEvaluationReview = () => {
                                                 <tr key={supplier.supplier} className={supplier.rank === 1 ? 'bg-success-light dark:bg-success-dark-light' : ''}>
                                                     <td className="p-2">
                                                         <span className={`flex items-center gap-1 ${supplier.rank === 1 ? 'text-success font-bold' : ''}`}>
-                                                            {supplier.rank === 1 && <IconStar className="h-4 w-4" />}
-                                                            #{supplier.rank}
+                                                            {supplier.rank === 1 && <IconStar className="h-4 w-4" />}#{supplier.rank}
                                                         </span>
                                                     </td>
                                                     <td className="p-2 font-medium">{supplier.supplier}</td>
@@ -535,7 +509,7 @@ const DepartmentHeadEvaluationReview = () => {
                                 <p>{selectedEvaluation.riskAssessment}</p>
                             </div>
                         </div>
-                        
+
                         <div className="mb-6">
                             <label className="mb-2 block text-sm font-medium">Department Head Supplier Approval Justification</label>
                             <textarea
@@ -546,36 +520,21 @@ const DepartmentHeadEvaluationReview = () => {
                                 placeholder="Justify your supplier approval decision. Confirm the recommended supplier meets departmental requirements, budget constraints, and strategic objectives..."
                             />
                         </div>
-                        
+
                         <div className="flex items-center justify-end gap-2 border-t border-[#e0e6ed] pt-4 dark:border-[#253b5c]">
-                            <button
-                                onClick={() => submitReview('approve')}
-                                className="btn btn-success"
-                                disabled={!reviewComments.trim()}
-                            >
+                            <button onClick={() => submitReview('approve')} className="btn btn-success" disabled={!reviewComments.trim()}>
                                 <IconThumbUp className="mr-2" />
                                 Approve Recommended Supplier
                             </button>
-                            <button
-                                onClick={() => submitReview('request_revision')}
-                                className="btn btn-warning"
-                                disabled={!reviewComments.trim()}
-                            >
+                            <button onClick={() => submitReview('request_revision')} className="btn btn-warning" disabled={!reviewComments.trim()}>
                                 <IconClock className="mr-2" />
                                 Request Better Justification
                             </button>
-                            <button
-                                onClick={() => submitReview('reject')}
-                                className="btn btn-danger"
-                                disabled={!reviewComments.trim()}
-                            >
+                            <button onClick={() => submitReview('reject')} className="btn btn-danger" disabled={!reviewComments.trim()}>
                                 <IconX className="mr-2" />
                                 Reject Supplier Selection
                             </button>
-                            <button
-                                onClick={() => setReviewModal(false)}
-                                className="btn btn-outline-secondary"
-                            >
+                            <button onClick={() => setReviewModal(false)} className="btn btn-outline-secondary">
                                 Cancel
                             </button>
                         </div>

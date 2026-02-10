@@ -1,12 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { IRootState } from '../../../store';
-import Dropdown from '../../../components/Dropdown';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import { useEffect, useState } from 'react';
 import { getToken, getUser } from '../../../utils/auth';
 import { getApiUrl } from '../../../config/api';
-import { computeRoleContext, ProfilePageVisibility, getPerformanceMetrics, getRoleSpecificAccess } from '../../../utils/roleVisibilityHelper';
 import IconPencilPaper from '../../../components/Icon/IconPencilPaper';
 import IconCalendar from '../../../components/Icon/IconCalendar';
 import IconMapPin from '../../../components/Icon/IconMapPin';
@@ -14,19 +12,14 @@ import IconMail from '../../../components/Icon/IconMail';
 import IconPhone from '../../../components/Icon/IconPhone';
 import IconShoppingBag from '../../../components/Icon/IconShoppingBag';
 import IconTag from '../../../components/Icon/IconTag';
-import IconCreditCard from '../../../components/Icon/IconCreditCard';
-import IconHorizontalDots from '../../../components/Icon/IconHorizontalDots';
 import IconFile from '../../../components/Icon/IconFile';
 import IconClipboardText from '../../../components/Icon/IconClipboardText';
 import IconChecks from '../../../components/Icon/IconChecks';
 import IconPlus from '../../../components/Icon/IconPlus';
 import IconUsers from '../../../components/Icon/IconUsers';
 import IconSettings from '../../../components/Icon/IconSettings';
-import IconLayoutGrid from '../../../components/Icon/IconLayoutGrid';
 import IconBulb from '../../../components/Icon/IconOpenBook';
 import IconThumbUp from '../../../components/Icon/IconThumbUp';
-import IconStar from '../../../components/Icon/IconStar';
-import IconSearch from '../../../components/Icon/IconSearch';
 
 const Profile = () => {
     const dispatch = useDispatch();
@@ -37,7 +30,6 @@ const Profile = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [uploadingPhoto, setUploadingPhoto] = useState(false);
     const [imageError, setImageError] = useState(false);
-    const [roleContext, setRoleContext] = useState<any>(null);
     const [stats, setStats] = useState<any>({
         // Procurement stats
         evaluationsCompleted: 0,
@@ -137,10 +129,6 @@ const Profile = () => {
                     } catch (statsError) {
                         // Continue without stats - not a critical error
                     }
-
-                    // Compute role context for visibility rules
-                    const context = computeRoleContext(data.roles);
-                    setRoleContext(context);
                 } else {
                 }
 
@@ -334,8 +322,6 @@ const Profile = () => {
             })
             .join(', ');
     };
-
-    const isRtl = useSelector((state: IRootState) => state.themeConfig.rtlClass) === 'rtl';
 
     // Normalize user roles to CODE format (e.g., 'Procurement Manager' -> 'PROCUREMENT_MANAGER') for reliable checks
     const roleCodes: string[] = Array.isArray((profileData as any)?.roles || user?.roles)

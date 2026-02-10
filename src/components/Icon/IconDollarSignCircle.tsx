@@ -7,6 +7,9 @@ interface IconDollarSignCircleProps {
 }
 
 const IconDollarSignCircle: FC<IconDollarSignCircleProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -39,3 +42,4 @@ const IconDollarSignCircle: FC<IconDollarSignCircleProps> = ({ className, fill =
     );
 };
 export default IconDollarSignCircle;
+

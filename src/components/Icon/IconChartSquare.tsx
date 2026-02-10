@@ -7,6 +7,9 @@ interface IconChartSquareProps {
 }
 
 const IconChartSquare: FC<IconChartSquareProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -47,3 +50,4 @@ const IconChartSquare: FC<IconChartSquareProps> = ({ className, fill = false, du
 };
 
 export default IconChartSquare;
+

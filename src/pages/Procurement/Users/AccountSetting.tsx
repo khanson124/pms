@@ -1,27 +1,17 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { setPageTitle } from '../../../store/themeConfigSlice';
-import { useDispatch, useSelector } from 'react-redux';
-import { IRootState } from '../../../store';
+import { useDispatch } from 'react-redux';
 import { getToken, getUser } from '../../../utils/auth';
 import { getApiUrl } from '../../../config/api';
 import { computeRoleContext, AccountSettingsVisibility } from '../../../utils/roleVisibilityHelper';
 import Swal from 'sweetalert2';
 import IconHome from '../../../components/Icon/IconHome';
-import IconDollarSignCircle from '../../../components/Icon/IconDollarSignCircle';
 import IconUser from '../../../components/Icon/IconUser';
-import IconPhone from '../../../components/Icon/IconPhone';
-import IconLinkedin from '../../../components/Icon/IconLinkedin';
-import IconTwitter from '../../../components/Icon/IconTwitter';
-import IconFacebook from '../../../components/Icon/IconFacebook';
-import IconGithub from '../../../components/Icon/IconGithub';
-import IconBell from '../../../components/Icon/IconBell';
-import IconLock from '../../../components/Icon/IconLock';
 
 const AccountSetting = () => {
     const dispatch = useDispatch();
     const location = useLocation();
-    const { user } = useSelector((state: IRootState) => state.auth);
     const [tabs, setTabs] = useState<string>('home');
     const [profileData, setProfileData] = useState<any>(null);
     const [roleContext, setRoleContext] = useState<any>(null);
@@ -171,10 +161,6 @@ const AccountSetting = () => {
         if (profileImage) {
             setUseProfileImage((prev) => !prev);
         }
-    };
-
-    const toggleTabs = (name: string) => {
-        setTabs(name);
     };
 
     const handleFormChange = (e: any) => {

@@ -6,7 +6,9 @@ interface IconShoppingBagProps {
     duotone?: boolean;
 }
 
-const IconShoppingBag: FC<IconShoppingBagProps> = ({ className, fill = false, duotone = true }) => {
+const IconShoppingBag: FC<IconShoppingBagProps> = ({ className, duotone = true }) => {
+    void duotone;
+
     return (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
             <path
@@ -27,3 +29,4 @@ const IconShoppingBag: FC<IconShoppingBagProps> = ({ className, fill = false, du
 };
 
 export default IconShoppingBag;
+

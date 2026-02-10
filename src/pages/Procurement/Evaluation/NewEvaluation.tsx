@@ -3,7 +3,6 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import IconX from '../../../components/Icon/IconX';
-import IconSave from '../../../components/Icon/IconSave';
 import IconArrowLeft from '../../../components/Icon/IconArrowLeft';
 import IconChecks from '../../../components/Icon/IconChecks';
 import { getUser } from '../../../utils/auth';
@@ -22,11 +21,9 @@ const NewEvaluation = () => {
     const requestIdParam = searchParams.get('requestId');
 
     const [combinedRequestIdState, setCombinedRequestIdState] = useState<string | null>(combinedRequestIdParam || null);
-    const [prefilledRequest, setPrefilledRequest] = useState<any>(null);
 
     // Combined request data
     const [combinedRequest, setCombinedRequest] = useState<any>(null);
-    const [loadingCombinedRequest, setLoadingCombinedRequest] = useState(false);
 
     useEffect(() => {
         dispatch(setPageTitle(t('evaluation.new.pageTitle', 'Create BSJ Evaluation Report')));
@@ -38,7 +35,6 @@ const NewEvaluation = () => {
             if (!combinedRequestIdState) return;
 
             try {
-                setLoadingCombinedRequest(true);
                 const response = await fetch(getApiUrl(`/api/requests/combine/${combinedRequestIdState}`), {
                     headers: getAuthHeadersSync(),
                 });
@@ -59,7 +55,7 @@ const NewEvaluation = () => {
                 console.error('Error fetching combined request:', error);
                 toast('Failed to load combined request data', 'error');
             } finally {
-                setLoadingCombinedRequest(false);
+                // no-op
             }
         };
 
@@ -78,7 +74,6 @@ const NewEvaluation = () => {
                 if (!response.ok) throw new Error('Failed to fetch request');
 
                 const data = await response.json();
-                setPrefilledRequest(data);
 
                 // Calculate total from items
                 let totalEstimate = 0;
@@ -1409,9 +1404,7 @@ const NewEvaluation = () => {
                                                                     const selectedUser = availableUsers.find((u) => Number(u.id) === Number(nextId));
                                                                     setEligibilityColumns((cols) =>
                                                                         cols.map((c) =>
-                                                                            c.id === col.id
-                                                                                ? { ...c, assigneeId: nextId, assigneeName: selectedUser?.name || selectedUser?.email || '' }
-                                                                                : c,
+                                                                            c.id === col.id ? { ...c, assigneeId: nextId, assigneeName: selectedUser?.name || selectedUser?.email || '' } : c,
                                                                         ),
                                                                     );
                                                                 }}
@@ -1511,9 +1504,7 @@ const NewEvaluation = () => {
                                                                     const selectedUser = availableUsers.find((u) => Number(u.id) === Number(nextId));
                                                                     setComplianceColumns((cols) =>
                                                                         cols.map((c) =>
-                                                                            c.id === col.id
-                                                                                ? { ...c, assigneeId: nextId, assigneeName: selectedUser?.name || selectedUser?.email || '' }
-                                                                                : c,
+                                                                            c.id === col.id ? { ...c, assigneeId: nextId, assigneeName: selectedUser?.name || selectedUser?.email || '' } : c,
                                                                         ),
                                                                     );
                                                                 }}

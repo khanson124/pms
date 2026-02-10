@@ -3,10 +3,6 @@ import { useDispatch } from 'react-redux';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import { getApiUrl } from '../../../config/api';
 import IconLoader from '../../../components/Icon/IconLoader';
-import IconSquareCheck from '../../../components/Icon/IconSquareCheck';
-import IconAlertCircle from '../../../components/Icon/IconAlertCircle';
-import IconTrendingUp from '../../../components/Icon/IconTrendingUp';
-import IconTrendingDown from '../../../components/Icon/IconTrendingDown';
 import IconSearch from '../../../components/Icon/IconSearch';
 
 interface DepartmentBudget {
@@ -35,7 +31,6 @@ const FinancialManagement = () => {
     const [reports, setReports] = useState<FinancialReport[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedPeriod, setSelectedPeriod] = useState('current');
     const [showBudgetForm, setShowBudgetForm] = useState(false);
     const [editingBudget, setEditingBudget] = useState<string | null>(null);
     const [formData, setFormData] = useState({

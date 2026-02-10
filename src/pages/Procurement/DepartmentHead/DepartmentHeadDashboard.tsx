@@ -4,7 +4,6 @@ import { useDispatch } from 'react-redux';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import IconClipboardText from '../../../components/Icon/IconClipboardText';
 import IconChecks from '../../../components/Icon/IconChecks';
-import IconClock from '../../../components/Icon/IconClock';
 import IconEye from '../../../components/Icon/IconEye';
 import IconDollarSignCircle from '../../../components/Icon/IconDollarSignCircle';
 import { getApiUrl } from '../../../config/api';

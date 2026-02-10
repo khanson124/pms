@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import IconArrowLeft from '../../../components/Icon/IconArrowLeft';
@@ -12,7 +12,6 @@ import IconPrinter from '../../../components/Icon/IconPrinter';
 const RFQDetail = () => {
     const dispatch = useDispatch();
     const { id } = useParams();
-    const navigate = useNavigate();
 
     useEffect(() => {
         dispatch(setPageTitle('RFQ Details'));
@@ -147,17 +146,19 @@ const RFQDetail = () => {
                 </div>
                 <div className="panel">
                     <div className="mb-2 text-white-dark">Estimated Value</div>
-                    <div className="text-xl font-bold text-primary">{rfq.currency} ${rfq.estimatedValue.toLocaleString()}</div>
+                    <div className="text-xl font-bold text-primary">
+                        {rfq.currency} ${rfq.estimatedValue.toLocaleString()}
+                    </div>
                 </div>
                 <div className="panel">
                     <div className="mb-2 text-white-dark">Quotes Received</div>
-                    <div className="text-xl font-bold">{rfq.quotesReceived} / {rfq.suppliersInvited}</div>
+                    <div className="text-xl font-bold">
+                        {rfq.quotesReceived} / {rfq.suppliersInvited}
+                    </div>
                 </div>
                 <div className="panel">
                     <div className="mb-2 text-white-dark">Days Remaining</div>
-                    <div className={`text-xl font-bold ${rfq.daysRemaining > 0 ? 'text-info' : 'text-danger'}`}>
-                        {rfq.daysRemaining > 0 ? `${rfq.daysRemaining} days` : 'Closed'}
-                    </div>
+                    <div className={`text-xl font-bold ${rfq.daysRemaining > 0 ? 'text-info' : 'text-danger'}`}>{rfq.daysRemaining > 0 ? `${rfq.daysRemaining} days` : 'Closed'}</div>
                 </div>
             </div>
 
@@ -260,11 +261,7 @@ const RFQDetail = () => {
                         <div key={vendor.id} className="rounded border border-white-light p-4 dark:border-dark">
                             <div className="mb-2 flex items-start justify-between">
                                 <div className="font-semibold">{vendor.name}</div>
-                                {vendor.quotedDate ? (
-                                    <span className="badge bg-success">Quote Submitted</span>
-                                ) : (
-                                    <span className="badge bg-warning">Pending</span>
-                                )}
+                                {vendor.quotedDate ? <span className="badge bg-success">Quote Submitted</span> : <span className="badge bg-warning">Pending</span>}
                             </div>
                             <div className="space-y-1 text-sm text-white-dark">
                                 <div>📧 {vendor.email}</div>
@@ -273,9 +270,7 @@ const RFQDetail = () => {
                                     <span className="rounded bg-primary-light px-2 py-0.5 text-primary dark:bg-primary/20">{vendor.category}</span>
                                     <span className="text-warning">★ {vendor.rating}</span>
                                 </div>
-                                {vendor.quotedDate && (
-                                    <div className="text-xs text-success">Quoted on: {vendor.quotedDate}</div>
-                                )}
+                                {vendor.quotedDate && <div className="text-xs text-success">Quoted on: {vendor.quotedDate}</div>}
                             </div>
                         </div>
                     ))}
@@ -300,12 +295,20 @@ const RFQDetail = () => {
                 <div className="space-y-3">
                     {/* Mock Q&A list */}
                     <div className="rounded border p-3">
-                        <div className="text-sm text-gray-600"><strong>Q:</strong> Can vendors propose alternative brands?</div>
-                        <div className="text-sm text-white-dark mt-2"><strong>A:</strong> Yes, alternative brands may be proposed if they meet specification requirements.</div>
+                        <div className="text-sm text-gray-600">
+                            <strong>Q:</strong> Can vendors propose alternative brands?
+                        </div>
+                        <div className="text-sm text-white-dark mt-2">
+                            <strong>A:</strong> Yes, alternative brands may be proposed if they meet specification requirements.
+                        </div>
                     </div>
                     <div className="rounded border p-3">
-                        <div className="text-sm text-gray-600"><strong>Q:</strong> Is partial delivery allowed?</div>
-                        <div className="text-sm text-white-dark mt-2"><strong>A:</strong> Partial delivery may be allowed with prior approval. Indicate in your proposal.</div>
+                        <div className="text-sm text-gray-600">
+                            <strong>Q:</strong> Is partial delivery allowed?
+                        </div>
+                        <div className="text-sm text-white-dark mt-2">
+                            <strong>A:</strong> Partial delivery may be allowed with prior approval. Indicate in your proposal.
+                        </div>
                     </div>
 
                     {rfq.status === 'Open' && (

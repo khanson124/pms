@@ -7,6 +7,9 @@ interface IconLaptopProps {
 }
 
 const IconLaptop: FC<IconLaptopProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -43,3 +46,4 @@ const IconLaptop: FC<IconLaptopProps> = ({ className, fill = false, duotone = tr
 };
 
 export default IconLaptop;
+

@@ -7,6 +7,9 @@ interface IconPencilProps {
 }
 
 const IconPencil: FC<IconPencilProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {fill ? (
@@ -40,3 +43,4 @@ const IconPencil: FC<IconPencilProps> = ({ className, fill = false, duotone = tr
     );
 };
 export default IconPencil;
+

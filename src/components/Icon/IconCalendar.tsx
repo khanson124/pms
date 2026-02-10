@@ -7,6 +7,9 @@ interface IconCalendarProps {
 }
 
 const IconCalendar: FC<IconCalendarProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -49,3 +52,4 @@ const IconCalendar: FC<IconCalendarProps> = ({ className, fill = false, duotone 
 };
 
 export default IconCalendar;
+

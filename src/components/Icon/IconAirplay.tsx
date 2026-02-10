@@ -7,6 +7,9 @@ interface IconAirplayProps {
 }
 
 const IconAirplay: FC<IconAirplayProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -43,3 +46,4 @@ const IconAirplay: FC<IconAirplayProps> = ({ className, fill = false, duotone = 
 };
 
 export default IconAirplay;
+

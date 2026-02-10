@@ -9,14 +9,10 @@ import IconClipboardText from '../../components/Icon/IconClipboardText';
 import IconChecks from '../../components/Icon/IconChecks';
 import IconClock from '../../components/Icon/IconClock';
 import IconEye from '../../components/Icon/IconEye';
-import IconUser from '../../components/Icon/IconUser';
 import IconDollarSignCircle from '../../components/Icon/IconDollarSignCircle';
-import IconTrendingUp from '../../components/Icon/IconTrendingUp';
-import IconChartSquare from '../../components/Icon/IconChartSquare';
 import IconThumbUp from '../../components/Icon/IconThumbUp';
 import IconX from '../../components/Icon/IconX';
 import IconDownload from '../../components/Icon/IconDownload';
-import IconStar from '../../components/Icon/IconStar';
 
 const DepartmentHeadDashboard = () => {
     const dispatch = useDispatch();
@@ -275,24 +271,11 @@ const DepartmentHeadDashboard = () => {
         setApprovalModal(true);
     };
 
-    const handleApproval = (action: 'approve' | 'reject') => {
+    const handleApproval = () => {
         // Evaluation action logic would be implemented here
         // Implement approval logic
         setApprovalModal(false);
         setSelectedEvaluation(null);
-    };
-
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'Pending Review':
-                return 'badge-outline-warning';
-            case 'Approved':
-                return 'badge-outline-success';
-            case 'Rejected':
-                return 'badge-outline-danger';
-            default:
-                return 'badge-outline-primary';
-        }
     };
 
     const getPriorityBadge = (priority: string) => {
@@ -390,9 +373,7 @@ const DepartmentHeadDashboard = () => {
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2 mb-2">
                                             <h6 className="font-semibold">{evaluation.evalNumber}</h6>
-                                            <span className={`badge ${getPriorityBadge(evaluation.priority)}`}>
-                                                {evaluation.priority}
-                                            </span>
+                                            <span className={`badge ${getPriorityBadge(evaluation.priority)}`}>{evaluation.priority}</span>
                                         </div>
                                         <p className="text-sm text-white-dark">{evaluation.description}</p>
                                         <div className="flex items-center gap-4 mt-2 text-xs text-white-dark">
@@ -406,11 +387,7 @@ const DepartmentHeadDashboard = () => {
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
-                                        <button
-                                            onClick={() => handleViewEvaluation(evaluation)}
-                                            className="btn btn-outline-primary btn-sm"
-                                            title="View Evaluation Details"
-                                        >
+                                        <button onClick={() => handleViewEvaluation(evaluation)} className="btn btn-outline-primary btn-sm" title="View Evaluation Details">
                                             <IconEye className="h-4 w-4" />
                                         </button>
                                     </div>
@@ -428,18 +405,16 @@ const DepartmentHeadDashboard = () => {
                             <div className="space-y-4">
                                 {recentActivities.map((activity) => (
                                     <div key={activity.id} className="flex items-start gap-3">
-                                        <div className={`flex h-8 w-8 items-center justify-center rounded-full ${
-                                            activity.action === 'Approved' ? 'bg-success-light text-success' : 'bg-danger-light text-danger'
-                                        }`}>
+                                        <div
+                                            className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                                                activity.action === 'Approved' ? 'bg-success-light text-success' : 'bg-danger-light text-danger'
+                                            }`}
+                                        >
                                             {activity.action === 'Approved' ? <IconThumbUp className="h-4 w-4" /> : <IconX className="h-4 w-4" />}
                                         </div>
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2">
-                                                <span className={`font-semibold ${
-                                                    activity.action === 'Approved' ? 'text-success' : 'text-danger'
-                                                }`}>
-                                                    {activity.action}
-                                                </span>
+                                                <span className={`font-semibold ${activity.action === 'Approved' ? 'text-success' : 'text-danger'}`}>{activity.action}</span>
                                                 <span className="text-xs text-white-dark">{activity.time}</span>
                                             </div>
                                             <p className="text-sm font-medium">{activity.description}</p>
@@ -448,9 +423,7 @@ const DepartmentHeadDashboard = () => {
                                                 <span>Amount: ${activity.amount.toLocaleString()}</span>
                                             </div>
                                             <span className="text-xs text-white-dark">Evaluator: {activity.evaluator}</span>
-                                            {activity.reason && (
-                                                <p className="text-xs text-danger mt-1">Reason: {activity.reason}</p>
-                                            )}
+                                            {activity.reason && <p className="text-xs text-danger mt-1">Reason: {activity.reason}</p>}
                                         </div>
                                     </div>
                                 ))}
@@ -466,15 +439,11 @@ const DepartmentHeadDashboard = () => {
                     <div className="w-full max-w-2xl rounded-lg bg-white p-6 dark:bg-[#1b2e4b]">
                         <div className="mb-4 flex items-center justify-between">
                             <h4 className="text-lg font-semibold">Evaluation Review</h4>
-                            <button 
-                                onClick={() => setApprovalModal(false)} 
-                                className="text-white-dark hover:text-danger"
-                                title="Close Modal"
-                            >
+                            <button onClick={() => setApprovalModal(false)} className="text-white-dark hover:text-danger" title="Close Modal">
                                 <IconX />
                             </button>
                         </div>
-                        
+
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -486,12 +455,12 @@ const DepartmentHeadDashboard = () => {
                                     <p className="font-semibold">{selectedEvaluation.rfqNumber}</p>
                                 </div>
                             </div>
-                            
+
                             <div>
                                 <label className="text-sm font-medium text-white-dark">Description</label>
                                 <p className="font-semibold">{selectedEvaluation.description}</p>
                             </div>
-                            
+
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="text-sm font-medium text-white-dark">Department</label>
@@ -502,7 +471,7 @@ const DepartmentHeadDashboard = () => {
                                     <p>{selectedEvaluation.evaluator}</p>
                                 </div>
                             </div>
-                            
+
                             <div className="rounded-lg bg-success-light p-4 dark:bg-success-dark-light">
                                 <h6 className="mb-2 font-semibold text-success">Recommended Supplier</h6>
                                 <div className="flex items-center justify-between">
@@ -518,26 +487,17 @@ const DepartmentHeadDashboard = () => {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => handleApproval('approve')}
-                                    className="btn btn-success"
-                                >
+                                <button onClick={handleApproval} className="btn btn-success">
                                     <IconChecks className="mr-2" />
                                     Approve Recommendation
                                 </button>
-                                <button
-                                    onClick={() => handleApproval('reject')}
-                                    className="btn btn-danger"
-                                >
+                                <button onClick={handleApproval} className="btn btn-danger">
                                     <IconX className="mr-2" />
                                     Reject & Request Revision
                                 </button>
-                                <Link
-                                    to={`/procurement/evaluations/${selectedEvaluation.id}`}
-                                    className="btn btn-outline-primary"
-                                >
+                                <Link to={`/procurement/evaluations/${selectedEvaluation.id}`} className="btn btn-outline-primary">
                                     <IconDownload className="mr-2" />
                                     Download Report
                                 </Link>

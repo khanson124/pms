@@ -6,7 +6,7 @@ interface IconTetherProps {
     duotone?: boolean;
 }
 
-const IconTether: FC<IconTetherProps> = ({ className, fill = false, duotone = true }) => {
+const IconTether: FC<IconTetherProps> = ({ className }) => {
     return (
         <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 2000 2000" className={className}>
             <path d="M1000,0c552.26,0,1000,447.74,1000,1000S1552.24,2000,1000,2000,0,1552.38,0,1000,447.68,0,1000,0" fill="#53ae94" />

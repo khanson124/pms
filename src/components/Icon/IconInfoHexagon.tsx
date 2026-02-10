@@ -7,6 +7,9 @@ interface IconInfoHexagonProps {
 }
 
 const IconInfoHexagon: FC<IconInfoHexagonProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -39,3 +42,4 @@ const IconInfoHexagon: FC<IconInfoHexagonProps> = ({ className, fill = false, du
 };
 
 export default IconInfoHexagon;
+

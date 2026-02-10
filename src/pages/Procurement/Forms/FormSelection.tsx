@@ -53,7 +53,7 @@ const FORMS: ProcurementForm[] = [
 
 export default function FormSelection() {
     const dispatch = useDispatch();
-    const [forms, setForms] = useState<ProcurementForm[]>(FORMS);
+    const [forms] = useState<ProcurementForm[]>(FORMS);
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
     const [isLoading, setIsLoading] = useState(true);
     const [edForms, setEdForms] = useState<EDFormListItem[]>([]);

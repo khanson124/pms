@@ -7,6 +7,9 @@ interface IconUserProps {
 }
 
 const IconUser: FC<IconUserProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -33,3 +36,4 @@ const IconUser: FC<IconUserProps> = ({ className, fill = false, duotone = true }
     );
 };
 export default IconUser;
+

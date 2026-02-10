@@ -49,7 +49,6 @@ export default function ReviewIdeas() {
     // Pagination
     const [page, setPage] = useState(1);
     const [perPage] = useState(20);
-    const [totalCount, setTotalCount] = useState(0);
 
     // Keyboard nav
     const [focusedIndex, setFocusedIndex] = useState(-1);
@@ -112,7 +111,6 @@ export default function ReviewIdeas() {
                 const data = Array.isArray(response) ? response : (response as any).ideas || response;
                 if (!cancelled) {
                     setIdeas(data);
-                    setTotalCount(data.length);
                 }
             } catch (e) {
                 if (!cancelled) setError(e instanceof Error ? e.message : 'Unable to load ideas');

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setPageTitle } from '../../../store/themeConfigSlice';
@@ -92,9 +92,7 @@ const QuoteDetail = () => {
             ],
             notes: 'Installation and setup services included. On-site technical support for 3 months.',
             termsAndConditions: 'Payment net 45 days. 60-day return policy for defective items.',
-            attachments: [
-                { name: 'Quotation.pdf', size: '1.8 MB', uploadedDate: '2024-10-21' },
-            ],
+            attachments: [{ name: 'Quotation.pdf', size: '1.8 MB', uploadedDate: '2024-10-21' }],
             evaluationCriteria: [
                 { criterion: 'Price Competitiveness', weight: 40, score: 72, weightedScore: 28.8 },
                 { criterion: 'Delivery Time', weight: 25, score: 75, weightedScore: 18.75 },
@@ -152,7 +150,10 @@ const QuoteDetail = () => {
                 <div>
                     <h2 className="text-2xl font-bold">{quote.quoteNumber}</h2>
                     <p className="text-white-dark">
-                        From {quote.supplier.name} • RFQ: <Link to={`/procurement/rfq/${quote.rfqNumber}`} className="text-info hover:underline">{quote.rfqNumber}</Link>
+                        From {quote.supplier.name} • RFQ:{' '}
+                        <Link to={`/procurement/rfq/${quote.rfqNumber}`} className="text-info hover:underline">
+                            {quote.rfqNumber}
+                        </Link>
                     </p>
                 </div>
                 <div className="flex gap-2">
@@ -179,17 +180,16 @@ const QuoteDetail = () => {
                 </div>
                 <div className="panel">
                     <div className="mb-2 text-white-dark">Total Amount</div>
-                    <div className="text-xl font-bold text-primary">{quote.currency} ${quote.amount.toLocaleString()}</div>
+                    <div className="text-xl font-bold text-primary">
+                        {quote.currency} ${quote.amount.toLocaleString()}
+                    </div>
                 </div>
                 <div className="panel">
                     <div className="mb-2 text-white-dark">Overall Score</div>
                     <div className="flex items-center gap-3">
                         <div className="text-xl font-bold">{quote.score}</div>
                         <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-                            <div
-                                className={`h-full ${quote.score >= 80 ? 'bg-success' : quote.score >= 60 ? 'bg-warning' : 'bg-danger'}`}
-                                style={{ width: `${quote.score}%` }}
-                            ></div>
+                            <div className={`h-full ${quote.score >= 80 ? 'bg-success' : quote.score >= 60 ? 'bg-warning' : 'bg-danger'}`} style={{ width: `${quote.score}%` }}></div>
                         </div>
                     </div>
                 </div>
@@ -242,7 +242,9 @@ const QuoteDetail = () => {
                         <div className="grid grid-cols-3 gap-4">
                             <div className="font-semibold text-white-dark">RFQ Reference:</div>
                             <div className="col-span-2">
-                                <Link to={`/procurement/rfq/${quote.rfqNumber}`} className="text-info hover:underline">{quote.rfqNumber}</Link>
+                                <Link to={`/procurement/rfq/${quote.rfqNumber}`} className="text-info hover:underline">
+                                    {quote.rfqNumber}
+                                </Link>
                             </div>
                         </div>
                         <div className="grid grid-cols-3 gap-4">

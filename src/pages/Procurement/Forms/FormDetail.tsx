@@ -181,15 +181,6 @@ export default function FormDetail() {
         }
     };
 
-    const handleFieldChange = (field: keyof FormDetail, value: any) => {
-        if (editedForm) {
-            setEditedForm({
-                ...editedForm,
-                [field]: value,
-            });
-        }
-    };
-
     const handleSectionChange = (idx: number, field: 'title' | 'content', value: string) => {
         if (editedForm && editedForm.sections) {
             const newSections = [...editedForm.sections];

@@ -2,7 +2,6 @@ import React, { useMemo, useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { selectIsAuthenticated, selectUserRoles } from '../store/authSlice';
-import { UserRole } from '../types/auth';
 import { fetchModuleLocks } from '../utils/moduleLocks';
 
 interface ProcurementRouteProps {
@@ -38,7 +37,7 @@ const ProcurementRoute: React.FC<ProcurementRouteProps> = ({ children }) => {
     }, []);
 
     // Storage fallbacks to avoid redirect loops before Redux hydration completes
-    const { hasToken, rolesFromStorage, isProcurementFromStorage } = useMemo(() => {
+    const { hasToken, isProcurementFromStorage } = useMemo(() => {
         const token = sessionStorage.getItem('token') || localStorage.getItem('token') || sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token');
 
         // Read user snapshot written at login
@@ -61,10 +60,10 @@ const ProcurementRoute: React.FC<ProcurementRouteProps> = ({ children }) => {
 
         // Check if user has procurement/admin or executive director access
         const isProcurement = rolesFlat.some(
-            (role) => role.includes('PROCUREMENT') || role.includes('ADMIN') || role.includes('ADMINISTRATOR') || role.includes('EXECUTIVE_DIRECTOR') || role.includes('EXECUTIVE')
+            (role) => role.includes('PROCUREMENT') || role.includes('ADMIN') || role.includes('ADMINISTRATOR') || role.includes('EXECUTIVE_DIRECTOR') || role.includes('EXECUTIVE'),
         );
 
-        return { hasToken: !!token, rolesFromStorage: rolesFlat, isProcurementFromStorage: isProcurement };
+        return { hasToken: !!token, isProcurementFromStorage: isProcurement };
     }, []);
 
     // Determine procurement access using Redux first, then storage fallback

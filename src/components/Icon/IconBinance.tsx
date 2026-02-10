@@ -7,6 +7,9 @@ interface IconBinanceProps {
 }
 
 const IconBinance: FC<IconBinanceProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <svg width="100%" height="100%" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" className={className}>
             <g id="Icon">
@@ -22,3 +25,4 @@ const IconBinance: FC<IconBinanceProps> = ({ className, fill = false, duotone = 
 };
 
 export default IconBinance;
+

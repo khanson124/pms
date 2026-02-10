@@ -77,7 +77,6 @@ const ReportsList = lazy(() => import('../pages/Procurement/Reports/ReportsList'
 const NewReport = lazy(() => import('../pages/Procurement/Reports/NewReport'));
 const PaymentsList = lazy(() => import('../pages/Procurement/Payments/PaymentsList'));
 const PaymentDetail = lazy(() => import('../pages/Procurement/Payments/PaymentDetail'));
-const FinanceDashboard = lazy(() => import('../pages/Procurement/Payments/FinanceDashboard'));
 const AwaitingDelivery = lazy(() => import('../pages/Procurement/Payments/AwaitingDelivery'));
 const PaymentsToProcess = lazy(() => import('../pages/Procurement/Payments/PaymentsToProcess'));
 const AdminDashboard = lazy(() => import('../pages/Procurement/Admin/AdminDashboard'));
@@ -88,10 +87,8 @@ const SystemDashboard = lazy(() => import('../pages/Procurement/Admin/SystemDash
 const DepartmentManagement = lazy(() => import('../pages/Procurement/Admin/DepartmentManagement'));
 const UserSecurityAccess = lazy(() => import('../pages/Procurement/Admin/UserSecurityAccess'));
 const AuditCompliance = lazy(() => import('../pages/Procurement/Admin/AuditCompliance'));
-const RequestWorkflowConfiguration = lazy(() => import('../pages/Procurement/Admin/RequestWorkflowConfiguration'));
 const FinancialManagement = lazy(() => import('../pages/Procurement/Admin/FinancialManagement'));
 const VendorManagement = lazy(() => import('../pages/Procurement/Admin/VendorManagement'));
-const RolePermissionManagement = lazy(() => import('../pages/Procurement/Admin/RolePermissionManagement'));
 const BulkUserManagement = lazy(() => import('../pages/Procurement/Admin/BulkUserManagement'));
 const SystemConfiguration = lazy(() => import('../pages/Procurement/Admin/SystemConfiguration'));
 const HiddenRequests = lazy(() => import('../pages/Procurement/Admin/HiddenRequests'));
@@ -116,13 +113,11 @@ const FinanceManagerDashboard = lazy(() => import('../pages/Procurement/Finance/
 const AuditorDashboard = lazy(() => import('../pages/Procurement/Audit/AuditorDashboard'));
 const DepartmentHeadDashboard = lazy(() => import('../pages/Procurement/DepartmentHead/DepartmentHeadDashboardNew'));
 const DepartmentManagerDashboard = lazy(() => import('../pages/Procurement/DepartmentManager/DepartmentManagerDashboard'));
-const ExecutiveDashboard = lazy(() => import('../pages/Procurement/Executive/ExecutiveDashboard'));
 const SeniorDirectorDashboard = lazy(() => import('../pages/Procurement/Director/SeniorDirectorDashboard'));
 const PaymentStageDashboard = lazy(() => import('../pages/Procurement/Payments/PaymentStageDashboard'));
 
 // Department Head Pages
 const DepartmentHeadEvaluationReview = lazy(() => import('../pages/Procurement/DepartmentHead/DepartmentHeadEvaluationReview'));
-const DepartmentHeadReportReview = lazy(() => import('../pages/Procurement/DepartmentHead/DepartmentHeadReportReview'));
 
 // Executive Director Pages
 const ExecutiveDirectorDashboard = lazy(() => import('../pages/Procurement/ExecutiveDirector/ExecutiveDirectorDashboard'));
@@ -908,14 +903,6 @@ const routes = [
         ),
     },
     {
-        path: '/procurement/admin/workflow-config',
-        element: (
-            <AdminRoute>
-                <RequestWorkflowConfiguration />
-            </AdminRoute>
-        ),
-    },
-    {
         path: '/procurement/admin/financial',
         element: (
             <AdminRoute>
@@ -928,14 +915,6 @@ const routes = [
         element: (
             <AdminRoute>
                 <VendorManagement />
-            </AdminRoute>
-        ),
-    },
-    {
-        path: '/procurement/admin/roles-permissions',
-        element: (
-            <AdminRoute>
-                <RolePermissionManagement />
             </AdminRoute>
         ),
     },

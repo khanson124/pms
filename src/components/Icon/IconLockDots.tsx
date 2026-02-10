@@ -7,6 +7,9 @@ interface IconLockDotsProps {
 }
 
 const IconLockDots: FC<IconLockDotsProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -52,3 +55,4 @@ const IconLockDots: FC<IconLockDotsProps> = ({ className, fill = false, duotone 
     );
 };
 export default IconLockDots;
+

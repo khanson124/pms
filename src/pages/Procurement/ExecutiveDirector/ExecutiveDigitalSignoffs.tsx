@@ -13,7 +13,6 @@ import IconDownload from '../../../components/Icon/IconDownload';
 import IconUser from '../../../components/Icon/IconUser';
 import IconClock from '../../../components/Icon/IconClock';
 import IconDollarSignCircle from '../../../components/Icon/IconDollarSignCircle';
-import IconArchive from '../../../components/Icon/IconArchive';
 import IconCircleCheck from '../../../components/Icon/IconCircleCheck';
 
 const ExecutiveDigitalSignoffs = () => {
@@ -29,7 +28,6 @@ const ExecutiveDigitalSignoffs = () => {
     const [signoffComments, setSignoffComments] = useState('');
     const [documentModal, setDocumentModal] = useState(false);
     const [digitalSignoffItems, setDigitalSignoffItems] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchSignoffs();
@@ -84,7 +82,6 @@ const ExecutiveDigitalSignoffs = () => {
             console.error('Error fetching sign-offs:', error);
             Swal.fire('Error', 'Failed to load digital sign-offs', 'error');
         } finally {
-            setLoading(false);
         }
     };
 

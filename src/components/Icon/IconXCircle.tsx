@@ -6,7 +6,9 @@ interface IconXCircleProps {
     duotone?: boolean;
 }
 
-const IconXCircle: FC<IconXCircleProps> = ({ className, fill = false, duotone = true }) => {
+const IconXCircle: FC<IconXCircleProps> = ({ className, duotone = true }) => {
+    void duotone;
+
     return (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
             <circle opacity={duotone ? '0.5' : '1'} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" />
@@ -16,3 +18,4 @@ const IconXCircle: FC<IconXCircleProps> = ({ className, fill = false, duotone = 
 };
 
 export default IconXCircle;
+

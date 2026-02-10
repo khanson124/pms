@@ -7,6 +7,9 @@ interface IconInfoCircleProps {
 }
 
 const IconInfoCircle: FC<IconInfoCircleProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -29,3 +32,4 @@ const IconInfoCircle: FC<IconInfoCircleProps> = ({ className, fill = false, duot
     );
 };
 export default IconInfoCircle;
+

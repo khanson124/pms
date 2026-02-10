@@ -7,6 +7,9 @@ interface IconMinusCircleProps {
 }
 
 const IconMinusCircle: FC<IconMinusCircleProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {fill ? (
@@ -27,3 +30,4 @@ const IconMinusCircle: FC<IconMinusCircleProps> = ({ className, fill = false, du
     );
 };
 export default IconMinusCircle;
+

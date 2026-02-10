@@ -101,7 +101,7 @@ const ProcurementManagerDashboard = () => {
         return days;
     };
 
-    const { trendOptions, trendSeries, spendOptions, spendSeries, scoreOptions, scoreSeries } = useMemo(() => {
+    const { trendOptions, trendSeries, scoreOptions, scoreSeries } = useMemo(() => {
         // Build 7-day trend for requests submitted vs approved (from API stats)
         const labels = lastNDays(7);
         const submissions = stats.trendSubmissions;
@@ -122,8 +122,6 @@ const ProcurementManagerDashboard = () => {
         ];
 
         // Removed RFQ spend donut — RFQs are not shown on Manager overview
-        const spendOptions: ApexOptions = { chart: { type: 'donut' }, labels: [], legend: { position: 'bottom' }, stroke: { show: false } };
-        const spendSeries: number[] = [];
 
         // Average pending evaluation score
         const avg = stats.avgPendingEvalScore || (pendingEvals.length ? Math.round(pendingEvals.reduce((a, b) => a + b.score, 0) / pendingEvals.length) : 0);
@@ -141,7 +139,7 @@ const ProcurementManagerDashboard = () => {
         };
         const scoreSeries = [avg];
 
-        return { trendOptions, trendSeries, spendOptions, spendSeries, scoreOptions, scoreSeries };
+        return { trendOptions, trendSeries, scoreOptions, scoreSeries };
     }, [stats, pendingEvals]);
 
     // Heron-only API base

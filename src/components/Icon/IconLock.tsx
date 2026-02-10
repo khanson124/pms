@@ -7,6 +7,9 @@ interface IconLockProps {
 }
 
 const IconLock: FC<IconLockProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -36,3 +39,4 @@ const IconLock: FC<IconLockProps> = ({ className, fill = false, duotone = true }
 };
 
 export default IconLock;
+

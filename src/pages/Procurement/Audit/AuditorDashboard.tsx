@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { IRootState } from '../../../store';
+import { useDispatch } from 'react-redux';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import PerfectScrollbar from 'react-perfect-scrollbar';
-import IconPlus from '../../../components/Icon/IconPlus';
 import IconCheckCircle from '../../../components/Icon/IconCircleCheck';
-import IconFileText from '../../../components/Icon/IconFile';
 import IconUsers from '../../../components/Icon/IconUsers';
 import IconBarChart from '../../../components/Icon/IconBarChart';
 import IconClipboardText from '../../../components/Icon/IconClipboardText';
@@ -18,8 +15,6 @@ const AuditorDashboard = () => {
     useEffect(() => {
         dispatch(setPageTitle('Auditor Dashboard'));
     }, [dispatch]);
-
-    const isDark = useSelector((state: IRootState) => state.themeConfig.theme === 'dark' || state.themeConfig.isDarkMode);
 
     const [stats, setStats] = useState({
         auditRecords: 0,

@@ -7,6 +7,9 @@ interface IconCaretDownProps {
 }
 
 const IconCaretDown: FC<IconCaretDownProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -27,3 +30,4 @@ const IconCaretDown: FC<IconCaretDownProps> = ({ className, fill = false, duoton
 };
 
 export default IconCaretDown;
+

@@ -7,13 +7,8 @@ import ReactApexChart from 'react-apexcharts';
 import PerfectScrollbar from 'react-perfect-scrollbar';
 import IconDollarSignCircle from '../../components/Icon/IconDollarSignCircle';
 import IconInbox from '../../components/Icon/IconInbox';
-import IconCreditCard from '../../components/Icon/IconCreditCard';
 import IconClipboardText from '../../components/Icon/IconClipboardText';
-import IconFolder from '../../components/Icon/IconFolder';
 import IconUser from '../../components/Icon/IconUser';
-import IconSettings from '../../components/Icon/IconSettings';
-import IconChartSquare from '../../components/Icon/IconChartSquare';
-import IconChecks from '../../components/Icon/IconChecks';
 import IconBell from '../../components/Icon/IconBell';
 import IconClock from '../../components/Icon/IconClock';
 import { getUser } from '../../utils/auth';
@@ -63,7 +58,6 @@ const ProcurementOfficerDashboard = () => {
     const [spendChartData, setSpendChartData] = useState<any>(null);
     const [chartLoading, setChartLoading] = useState<boolean>(false);
     const [evaluationCount, setEvaluationCount] = useState<number>(0);
-    const [evaluationsLoading, setEvaluationsLoading] = useState<boolean>(false);
 
     // Base statistics with defaults
     const baseStats = useMemo(
@@ -73,7 +67,7 @@ const ProcurementOfficerDashboard = () => {
             workflowTemplates: 12,
             requestsThisMonth: 0,
         }),
-        []
+        [],
     );
 
     const metrics = useMemo(
@@ -85,7 +79,7 @@ const ProcurementOfficerDashboard = () => {
             monthlyReports: liveStats?.monthlyReports ?? baseStats.monthlyReports,
             requestsThisMonth: liveStats?.requestsThisMonth ?? baseStats.requestsThisMonth,
         }),
-        [baseStats, liveStats, evaluationCount]
+        [baseStats, liveStats, evaluationCount],
     );
 
     useEffect(() => {
@@ -216,7 +210,6 @@ const ProcurementOfficerDashboard = () => {
 
         const loadEvaluations = async () => {
             try {
-                setEvaluationsLoading(true);
                 const headers = await getAuthHeaders();
                 // Backend expects a single status filter; fetch all and filter client-side
                 const res = await fetch(getApiUrl('/api/evaluations'), { headers });
@@ -232,7 +225,6 @@ const ProcurementOfficerDashboard = () => {
                 console.error('Failed to fetch evaluations:', error);
                 setEvaluationCount(0);
             } finally {
-                setEvaluationsLoading(false);
             }
         };
 

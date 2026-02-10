@@ -7,6 +7,9 @@ interface IconMailProps {
 }
 
 const IconMail: FC<IconMailProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -41,3 +44,4 @@ const IconMail: FC<IconMailProps> = ({ className, fill = false, duotone = true }
     );
 };
 export default IconMail;
+

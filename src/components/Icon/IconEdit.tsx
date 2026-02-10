@@ -7,6 +7,9 @@ interface IconEditProps {
 }
 
 const IconEdit: FC<IconEditProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -52,3 +55,4 @@ const IconEdit: FC<IconEditProps> = ({ className, fill = false, duotone = true }
 };
 
 export default IconEdit;
+

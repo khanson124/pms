@@ -7,6 +7,9 @@ interface IconCashBanknotesProps {
 }
 
 const IconCashBanknotes: FC<IconCashBanknotesProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -54,3 +57,4 @@ const IconCashBanknotes: FC<IconCashBanknotesProps> = ({ className, fill = false
 };
 
 export default IconCashBanknotes;
+

@@ -7,6 +7,9 @@ interface IconDesktopProps {
 }
 
 const IconDesktop: FC<IconDesktopProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -47,3 +50,4 @@ const IconDesktop: FC<IconDesktopProps> = ({ className, fill = false, duotone = 
     );
 };
 export default IconDesktop;
+

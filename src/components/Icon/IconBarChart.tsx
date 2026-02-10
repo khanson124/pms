@@ -7,6 +7,9 @@ interface IconBarChartProps {
 }
 
 const IconBarChart: FC<IconBarChartProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -42,3 +45,4 @@ const IconBarChart: FC<IconBarChartProps> = ({ className, fill = false, duotone 
 };
 
 export default IconBarChart;
+

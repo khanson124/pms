@@ -1,7 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useDispatch } from 'react-redux';
 import { setPageTitle } from '../../../store/themeConfigSlice';
-import { getApiUrl } from '../../../config/api';
 import adminService, { type AdminUser } from '../../../services/adminService';
 import IconLock from '../../../components/Icon/IconLock';
 import IconLockOpen from '../../../components/Icon/IconLockOpen';

@@ -6,7 +6,9 @@ interface IconTwitterProps {
     duotone?: boolean;
 }
 
-const IconTwitter: FC<IconTwitterProps> = ({ className, fill = false, duotone = true }) => {
+const IconTwitter: FC<IconTwitterProps> = ({ className, fill = false }) => {
+    void fill;
+
     return (
         <>
             {fill ? (
@@ -36,3 +38,4 @@ const IconTwitter: FC<IconTwitterProps> = ({ className, fill = false, duotone = 
     );
 };
 export default IconTwitter;
+

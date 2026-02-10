@@ -7,6 +7,9 @@ interface IconFileProps {
 }
 
 const IconFile: FC<IconFileProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -38,3 +41,4 @@ const IconFile: FC<IconFileProps> = ({ className, fill = false, duotone = true }
 };
 
 export default IconFile;
+

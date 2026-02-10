@@ -4,7 +4,6 @@ import { setPageTitle } from '../../../store/themeConfigSlice';
 import { Link } from 'react-router-dom';
 import IconShoppingCart from '../../../components/Icon/IconShoppingCart';
 import IconTag from '../../../components/Icon/IconTag';
-import IconCreditCard from '../../../components/Icon/IconCreditCard';
 import IconBell from '../../../components/Icon/IconBell';
 
 interface RFQ {
@@ -39,7 +38,7 @@ const SupplierDashboard = () => {
         dispatch(setPageTitle('Supplier Dashboard'));
     }, [dispatch]);
 
-    const [rfqs, setRfqs] = useState<RFQ[]>([
+    const [rfqs] = useState<RFQ[]>([
         { id: 1, rfqNumber: 'RFQ-2025-001', title: 'Office Supplies', dueDate: '2025-11-05', status: 'Open', invitedBy: 'Procurement Officer' },
         { id: 2, rfqNumber: 'RFQ-2025-002', title: 'IT Equipment', dueDate: '2025-11-10', status: 'Open', invitedBy: 'Procurement Officer' },
         { id: 3, rfqNumber: 'RFQ-2025-003', title: 'Cleaning Services', dueDate: '2025-11-15', status: 'New', invitedBy: 'Procurement Officer' },
@@ -100,10 +99,14 @@ const SupplierDashboard = () => {
                 <div className="panel lg:col-span-2">
                     <div className="mb-5 flex items-center justify-between">
                         <h5 className="text-lg font-semibold">
-                            <span className="inline-flex h-8 w-8 items-center justify-center rounded bg-primary/10 text-primary mr-2"><IconShoppingCart className="h-4 w-4"/></span>
+                            <span className="inline-flex h-8 w-8 items-center justify-center rounded bg-primary/10 text-primary mr-2">
+                                <IconShoppingCart className="h-4 w-4" />
+                            </span>
                             RFQs Inbox
                         </h5>
-                        <Link to="/procurement/rfq/list" className="text-sm font-semibold text-primary hover:underline">All RFQs</Link>
+                        <Link to="/procurement/rfq/list" className="text-sm font-semibold text-primary hover:underline">
+                            All RFQs
+                        </Link>
                     </div>
                     <div className="table-responsive">
                         <table className="table-hover">
@@ -120,7 +123,9 @@ const SupplierDashboard = () => {
                                 {rfqs.map((r) => (
                                     <tr key={r.id}>
                                         <td>
-                                            <Link to={`/procurement/rfq/${r.id}`} className="text-primary hover:underline">{r.rfqNumber}</Link>
+                                            <Link to={`/procurement/rfq/${r.id}`} className="text-primary hover:underline">
+                                                {r.rfqNumber}
+                                            </Link>
                                         </td>
                                         <td>{r.title}</td>
                                         <td>{r.dueDate}</td>
@@ -129,7 +134,9 @@ const SupplierDashboard = () => {
                                         </td>
                                         <td>
                                             <div className="flex gap-2">
-                                                <Link to={`/procurement/rfq/${r.id}`} className="btn btn-sm btn-outline-primary">View</Link>
+                                                <Link to={`/procurement/rfq/${r.id}`} className="btn btn-sm btn-outline-primary">
+                                                    View
+                                                </Link>
                                                 <button onClick={() => openSubmitQuote(r)} className="btn btn-sm btn-primary">
                                                     Submit Quote
                                                 </button>
@@ -146,10 +153,14 @@ const SupplierDashboard = () => {
                 <div className="panel">
                     <div className="mb-5 flex items-center justify-between">
                         <h5 className="text-lg font-semibold">
-                            <span className="inline-flex h-8 w-8 items-center justify-center rounded bg-success/10 text-success mr-2"><IconBell className="h-4 w-4"/></span>
+                            <span className="inline-flex h-8 w-8 items-center justify-center rounded bg-success/10 text-success mr-2">
+                                <IconBell className="h-4 w-4" />
+                            </span>
                             Awards & Notifications
                         </h5>
-                        <Link to="/procurement/purchase-orders" className="text-sm font-semibold text-success hover:underline">POs</Link>
+                        <Link to="/procurement/purchase-orders" className="text-sm font-semibold text-success hover:underline">
+                            POs
+                        </Link>
                     </div>
                     <ul className="space-y-3">
                         {notifications.map((n) => (
@@ -164,9 +175,13 @@ const SupplierDashboard = () => {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     {!n.read && (
-                                        <button onClick={() => markNotificationRead(n.id)} className="btn btn-outline-secondary btn-sm">Mark read</button>
+                                        <button onClick={() => markNotificationRead(n.id)} className="btn btn-outline-secondary btn-sm">
+                                            Mark read
+                                        </button>
                                     )}
-                                    <Link to={n.type === 'PO' ? `/procurement/purchase-orders/${n.number}` : '#'} className="btn btn-success btn-sm">View</Link>
+                                    <Link to={n.type === 'PO' ? `/procurement/purchase-orders/${n.number}` : '#'} className="btn btn-success btn-sm">
+                                        View
+                                    </Link>
                                 </div>
                             </li>
                         ))}
@@ -178,10 +193,14 @@ const SupplierDashboard = () => {
             <div className="panel mt-6">
                 <div className="mb-5 flex items-center justify-between">
                     <h5 className="text-lg font-semibold">
-                        <span className="inline-flex h-8 w-8 items-center justify-center rounded bg-warning/10 text-warning mr-2"><IconTag className="h-4 w-4"/></span>
+                        <span className="inline-flex h-8 w-8 items-center justify-center rounded bg-warning/10 text-warning mr-2">
+                            <IconTag className="h-4 w-4" />
+                        </span>
                         My Quotes
                     </h5>
-                    <Link to="/procurement/quotes" className="text-sm font-semibold text-warning hover:underline">All Quotes</Link>
+                    <Link to="/procurement/quotes" className="text-sm font-semibold text-warning hover:underline">
+                        All Quotes
+                    </Link>
                 </div>
                 <div className="table-responsive">
                     <table className="table-hover">
@@ -200,12 +219,21 @@ const SupplierDashboard = () => {
                                     <td>{q.rfqNumber}</td>
                                     <td className="font-semibold text-primary">${q.amount.toLocaleString()}</td>
                                     <td>
-                                        <span className={`badge ${q.status === 'Submitted' ? 'bg-success' : q.status === 'Draft' ? 'bg-info' : q.status === 'Awarded' ? 'bg-success' : 'bg-secondary'}`}>{q.status}</span>
+                                        <span
+                                            className={`badge ${q.status === 'Submitted' ? 'bg-success' : q.status === 'Draft' ? 'bg-info' : q.status === 'Awarded' ? 'bg-success' : 'bg-secondary'}`}
+                                        >
+                                            {q.status}
+                                        </span>
                                     </td>
                                     <td>{q.submittedAt || '-'}</td>
                                     <td>
                                         {q.status === 'Draft' ? (
-                                            <button className="btn btn-sm btn-primary" onClick={() => openSubmitQuote({ id: 0, rfqNumber: q.rfqNumber, title: '', dueDate: '', status: 'Open', invitedBy: '' })}>Submit</button>
+                                            <button
+                                                className="btn btn-sm btn-primary"
+                                                onClick={() => openSubmitQuote({ id: 0, rfqNumber: q.rfqNumber, title: '', dueDate: '', status: 'Open', invitedBy: '' })}
+                                            >
+                                                Submit
+                                            </button>
                                         ) : (
                                             <button className="btn btn-sm btn-outline-secondary">View</button>
                                         )}
@@ -223,7 +251,9 @@ const SupplierDashboard = () => {
                     <div className="panel w-full max-w-2xl">
                         <div className="mb-5 flex items-center justify-between">
                             <h5 className="text-xl font-semibold">Submit Quote — {activeRFQ.rfqNumber}</h5>
-                            <button onClick={() => setShowQuoteModal(false)} className="text-white-dark hover:text-dark">×</button>
+                            <button onClick={() => setShowQuoteModal(false)} className="text-white-dark hover:text-dark">
+                                ×
+                            </button>
                         </div>
                         <div className="grid gap-4 sm:grid-cols-2">
                             <div>
@@ -237,12 +267,22 @@ const SupplierDashboard = () => {
                             </div>
                             <div className="sm:col-span-2">
                                 <label className="block text-sm font-semibold mb-2">Notes</label>
-                                <textarea className="form-textarea" rows={4} value={quoteNotes} onChange={(e) => setQuoteNotes(e.target.value)} placeholder="Optional notes or clarifications"></textarea>
+                                <textarea
+                                    className="form-textarea"
+                                    rows={4}
+                                    value={quoteNotes}
+                                    onChange={(e) => setQuoteNotes(e.target.value)}
+                                    placeholder="Optional notes or clarifications"
+                                ></textarea>
                             </div>
                         </div>
                         <div className="mt-6 flex items-center justify-end gap-3">
-                            <button onClick={() => setShowQuoteModal(false)} className="btn btn-outline-danger">Cancel</button>
-                            <button onClick={submitQuote} className="btn btn-primary">Submit Quote</button>
+                            <button onClick={() => setShowQuoteModal(false)} className="btn btn-outline-danger">
+                                Cancel
+                            </button>
+                            <button onClick={submitQuote} className="btn btn-primary">
+                                Submit Quote
+                            </button>
                         </div>
                     </div>
                 </div>

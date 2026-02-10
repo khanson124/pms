@@ -7,6 +7,9 @@ interface IconChatNotificationProps {
 }
 
 const IconChatNotification: FC<IconChatNotificationProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -35,3 +38,4 @@ const IconChatNotification: FC<IconChatNotificationProps> = ({ className, fill =
 };
 
 export default IconChatNotification;
+

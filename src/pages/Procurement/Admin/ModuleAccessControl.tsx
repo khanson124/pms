@@ -1,13 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import IconLock from '../../../components/Icon/IconLock';
 import IconLockOpen from '../../../components/Icon/IconLockOpen';
-import IconChevronRight from '../../../components/Icon/IconChevronRight';
 import IconInfoCircle from '../../../components/Icon/IconInfoCircle';
 import IconLoader from '../../../components/Icon/IconLoader';
 import { LOCKABLE_MODULES, type LockableModuleKey, type ModuleLockState } from '../../../utils/moduleLocks';
-import { getUser } from '../../../utils/auth';
 import { getApiUrl } from '../../../config/api';
 import { getAuthHeadersSync } from '../../../utils/api';
 
@@ -41,11 +39,6 @@ const ModuleAccessControl = () => {
     const [reasonType, setReasonType] = useState<'preset' | 'custom'>('preset');
     const [selectedPreset, setSelectedPreset] = useState(PRESET_REASONS[0]);
     const [customReason, setCustomReason] = useState('');
-
-    const adminIdentity = useMemo(() => {
-        const user = getUser();
-        return user?.name || user?.email || 'Admin';
-    }, []);
 
     // Load module locks from API
     useEffect(() => {

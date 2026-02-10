@@ -7,6 +7,9 @@ interface IconBookProps {
 }
 
 const IconBook: FC<IconBookProps> = ({ className, fill = false, duotone = true }) => {
+    void fill;
+    void duotone;
+
     return (
         <>
             {!fill ? (
@@ -63,3 +66,4 @@ const IconBook: FC<IconBookProps> = ({ className, fill = false, duotone = true }
 };
 
 export default IconBook;
+
