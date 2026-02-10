@@ -83,7 +83,6 @@ const ProcurementManagerDashboard = () => {
             setValidateTarget(null);
             setValidationNotes('');
         } catch (error) {
-            console.error('Validation error:', error);
             alert('Failed to validate evaluation. Please try again.');
         }
     };
@@ -197,8 +196,8 @@ const ProcurementManagerDashboard = () => {
                 }
             } catch (e) {
                 // Fail silently on dashboard; keep defaults
-                if (!(e instanceof DOMException && e.name === 'AbortError')) {
-                    console.error('Failed to load manager dashboard data:', e);
+                if (e instanceof DOMException && e.name === 'AbortError') {
+                    return;
                 }
             }
         };

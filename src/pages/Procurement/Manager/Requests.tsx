@@ -78,7 +78,7 @@ const ProcurementManagerRequests = () => {
             }
         }
     } catch (err) {
-        console.error('Error parsing user profile:', err);
+        // Ignore malformed profile cache
     }
 
     useEffect(() => {
@@ -103,8 +103,7 @@ const ProcurementManagerRequests = () => {
                 const contentType = res.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
                     const text = await res.text();
-                    console.error('Non-JSON response:', text);
-                    throw new Error('Server returned invalid response');
+                    throw new Error(text || 'Server returned invalid response');
                 }
 
                 const data = await res.json();
@@ -114,7 +113,6 @@ const ProcurementManagerRequests = () => {
 
                 setRequests(procurementRequests);
             } catch (err: any) {
-                console.error('Error fetching procurement requests:', err);
                 setError(err.message || 'Failed to load requests');
                 toast(err.message || 'Failed to load requests', 'error');
             } finally {
@@ -171,12 +169,10 @@ const ProcurementManagerRequests = () => {
 
             if (!res.ok) {
                 const errorText = await res.text();
-                console.error('Failed to fetch request:', errorText);
-                throw new Error('Failed to fetch request details');
+                throw new Error(errorText || 'Failed to fetch request details');
             }
 
             const responseData = await res.json();
-            console.log('Request data:', responseData);
             const request = responseData.data || responseData;
 
             // Fetch approval history/actions
@@ -190,24 +186,18 @@ const ProcurementManagerRequests = () => {
             let approvalHistory: any[] = [];
             if (actionsRes.ok) {
                 const actionsData = await actionsRes.json();
-                console.log('Actions data:', actionsData);
                 approvalHistory = actionsData.data || [];
-            } else {
-                console.warn('Could not fetch approval history');
             }
 
             // Generate formatted print view
             printFormattedRequest(request, approvalHistory);
         } catch (error: any) {
-            console.error('Print error:', error);
             toast(error.message || 'Failed to generate print view', 'error');
         }
     };
 
     const printFormattedRequest = (request: any, approvalHistory: any[]) => {
         try {
-            console.log('Generating print view for request:', request);
-
             // Helper to format dates without timezone issues
             const formatDateSafe = (dateString: string | null | undefined): string => {
                 if (!dateString) return '—';
@@ -617,7 +607,6 @@ const ProcurementManagerRequests = () => {
 
             printWindow.document.close();
         } catch (err) {
-            console.error('Error in printFormattedRequest:', err);
             toast('Failed to generate print view', 'error');
         }
     };
@@ -664,7 +653,6 @@ const ProcurementManagerRequests = () => {
 
                 toast('Request assigned to you', 'success');
             } catch (err: any) {
-                console.error('Error assigning request:', err);
                 toast(err.message || 'Failed to assign the request', 'error');
             }
         }
@@ -732,7 +720,6 @@ const ProcurementManagerRequests = () => {
                 showConfirmButton: false,
             });
         } catch (err: any) {
-            console.error('Error returning request:', err);
             toast(err.message || 'Failed to return the request', 'error');
         }
     };

@@ -61,10 +61,13 @@ const AccountSetting = () => {
                 const token = getToken();
                 const currentUser = getUser();
 
-                if (!token || !currentUser) {
                     setIsLoading(false);
                     return;
                 }
+                        if (!token || !currentUser) {
+                            setIsLoading(false);
+                            return;
+                        }
 
                 // Fetch user profile from API (uses /api/auth/me)
                 const response = await fetch(getApiUrl('/api/auth/me'), {
@@ -90,7 +93,7 @@ const AccountSetting = () => {
                                 const photoData = await photoResponse.json();
                                 if (photoData.success && photoData.data?.profileImage) {
                                     data.profileImage = photoData.data.profileImage;
-                                }
+                                    // Ignore photo fallback errors
                             }
                         } catch (error) {
                             console.warn('Could not fetch profile photo:', error);
@@ -122,7 +125,7 @@ const AccountSetting = () => {
                         supervisor: data.supervisor || '',
                     };
                     setFormData(userData);
-                    setOriginalFormData(userData);
+                        // Ignore errors fetching profile data
 
                     // Compute role context for visibility rules
                     const context = computeRoleContext(data.roles);
@@ -241,7 +244,7 @@ const AccountSetting = () => {
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-
+                        // Ignore errors saving profile
         // Validate file type
         if (!file.type.startsWith('image/')) {
             Swal.fire({
@@ -398,13 +401,13 @@ const AccountSetting = () => {
             <ul className="flex space-x-2 rtl:space-x-reverse">
                 <li>
                     <Link to="/profile" state={{ module: moduleState }} className="text-primary hover:underline">
-                        Users
+                                                                            // Ignore photo fallback errors
                     </Link>
                 </li>
                 <li className="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
                     <span>Account Settings</span>
                 </li>
-            </ul>
+                                                                // Ignore errors refetching profile
             <div className="pt-5">
                 <div className="flex items-center justify-between mb-5">
                     <h5 className="font-semibold text-lg dark:text-white-light">Settings</h5>
@@ -431,7 +434,7 @@ const AccountSetting = () => {
                                         onClick={() => setTabs('preferences')}
                                         className={`flex gap-2 border-b border-transparent p-4 hover:border-primary hover:text-primary ${tabs === 'preferences' ? '!border-primary text-primary' : ''}`}
                                     >
-                                        <IconUser className="w-5 h-5" />
+                                                    // Ignore errors uploading image
                                         Preferences
                                     </button>
                                 </li>

@@ -152,9 +152,10 @@ export const { clearError, setUser } = authSlice.actions;
 export default authSlice.reducer;
 
 // Selectors
+const EMPTY_ROLES: User['roles'] = [];
 export const selectAuth = (state: { auth: AuthState }) => state.auth;
 export const selectUser = (state: { auth: AuthState }) => state.auth.user;
-export const selectUserRoles = (state: { auth: AuthState }) => state.auth.user?.roles || [];
+export const selectUserRoles = (state: { auth: AuthState }) => state.auth.user?.roles ?? EMPTY_ROLES;
 export const selectPrimaryUserRole = (state: { auth: AuthState }) => state.auth.user?.roles?.[0];
 export const selectIsAuthenticated = (state: { auth: AuthState }) => state.auth.isAuthenticated;
 export const selectAuthLoading = (state: { auth: AuthState }) => state.auth.isLoading;

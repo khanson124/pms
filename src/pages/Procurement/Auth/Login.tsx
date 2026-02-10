@@ -556,7 +556,6 @@ const Login = () => {
                                                     const result = await loginWithMicrosoft();
                                                     const idToken = result.idToken;
                                                     if (!idToken) throw new Error('No idToken from Microsoft');
-                                                    // TODO: implement backend endpoint for Microsoft login when enabling Azure AD
                                                     throw new Error('Microsoft SSO is not yet enabled.');
                                                 } catch (e: any) {
                                                     const msg = e?.message || 'Microsoft sign-in failed';

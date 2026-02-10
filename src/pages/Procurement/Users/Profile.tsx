@@ -99,8 +99,8 @@ const Profile = () => {
                                     data.profileImage = photoData.data.profileImage;
                                 }
                             }
-                        } catch (error) {
-                            console.warn('Could not fetch photo from profile endpoint:', error);
+                        } catch (_error) {
+                            // Ignore photo fallback errors
                         }
                     }
 
