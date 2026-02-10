@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Request, type Response } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -63,7 +63,7 @@ function normalizeBugReportBody(req: AuthenticatedRequest, _res: any, next: any)
 }
 
 // POST /api/bug-reports - Submit a bug report
-router.post('/', authMiddleware, upload.single('screenshot'), normalizeBugReportBody, validate(createBugReportSchema), async (req, res) => {
+router.post('/', authMiddleware, upload.single('screenshot'), normalizeBugReportBody, validate(createBugReportSchema), async (req: Request, res: Response) => {
     try {
         const authReq = req as AuthenticatedRequest;
         const userId = authReq.user?.sub;
