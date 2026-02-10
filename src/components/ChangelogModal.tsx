@@ -10,6 +10,17 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
     {
+        version: '2.6.0',
+        date: 'February 10, 2026',
+        type: 'improvement',
+        changes: [
+            'New bug report form with clearer fields and helpful guidance',
+            'Optional screenshot upload to support your report',
+            'Clearer validation prompts while submitting',
+            'Improved confirmation message after submission',
+        ],
+    },
+    {
         version: '2.5.0',
         date: 'December 15, 2025',
         type: 'feature',
