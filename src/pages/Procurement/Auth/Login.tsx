@@ -74,6 +74,7 @@ const Login = () => {
             const res = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ email, password, rememberMe }),
             });
 
@@ -84,18 +85,13 @@ const Login = () => {
                 throw new Error(msg);
             }
 
-            const { token, refreshToken, user } = data || {};
-            if (!token || !user) throw new Error('Invalid login response');
-
-            // Store refresh token if provided
-            if (refreshToken) {
-                localStorage.setItem('refreshToken', refreshToken);
-            }
+            const { token, user } = data || {};
+            if (!user) throw new Error('Invalid login response');
 
             // Clear Redux module state before setting new auth (forces re-initialization with new user)
             dispatch(clearModule());
 
-            setAuth(token, user, rememberMe);
+            setAuth(token || '', user, rememberMe);
             // Also persist legacy userProfile structure expected by RequestForm & index pages
             try {
                 const legacyProfile = {

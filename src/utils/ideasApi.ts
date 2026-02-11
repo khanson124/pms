@@ -1,4 +1,3 @@
-import { getToken, getUser, clearAuth } from './auth';
 import { getApiUrl } from '../config/api';
 
 export type Idea = {
@@ -49,21 +48,14 @@ export type Idea = {
 };
 
 function authHeaders(): Record<string, string> {
-    const token = getToken();
-    const user = getUser();
-
-    const h: Record<string, string> = { 'Content-Type': 'application/json' };
-
-    // Backend accepts either x-user-id or Authorization: Bearer <id>
-    if (user?.id) {
-        h['x-user-id'] = user.id;
-    }
-    if (token) {
-        h['Authorization'] = `Bearer ${token}`;
-    }
-
-    return h;
+    return { 'Content-Type': 'application/json' };
 }
+
+const fetchWithCredentials = (input: RequestInfo, init: RequestInit = {}) =>
+    fetch(input, {
+        ...init,
+        credentials: 'include',
+    });
 
 export type PaginatedIdeas = {
     ideas: Idea[];
@@ -106,7 +98,7 @@ export async function fetchIdeas(params?: {
     qs.set('t', Date.now().toString());
 
     try {
-        const res = await fetch(getApiUrl(`/api/ideas${qs.toString() ? `?${qs.toString()}` : ''}`), {
+        const res = await fetchWithCredentials(getApiUrl(`/api/ideas${qs.toString() ? `?${qs.toString()}` : ''}`), {
             headers: {
                 ...authHeaders(),
                 'Cache-Control': 'no-store',
@@ -157,7 +149,7 @@ export async function fetchIdeaById(id: string | number, opts?: { includeAttachm
     qs.set('t', Date.now().toString());
 
     try {
-        const res = await fetch(getApiUrl(`/api/ideas/${id}?${qs.toString()}`), {
+        const res = await fetchWithCredentials(getApiUrl(`/api/ideas/${id}?${qs.toString()}`), {
             headers: {
                 ...authHeaders(),
                 'Cache-Control': 'no-store',
@@ -198,7 +190,7 @@ export async function fetchIdeaById(id: string | number, opts?: { includeAttachm
 
 export async function fetchComments(ideaId: number | string): Promise<IdeaComment[]> {
     try {
-        const res = await fetch(getApiUrl(`/api/ideas/${ideaId}/comments?t=${Date.now()}`), {
+        const res = await fetchWithCredentials(getApiUrl(`/api/ideas/${ideaId}/comments?t=${Date.now()}`), {
             headers: authHeaders(),
             cache: 'no-store',
         });
@@ -224,7 +216,7 @@ export async function fetchComments(ideaId: number | string): Promise<IdeaCommen
 }
 
 export async function postComment(ideaId: number | string, data: { text: string; parentId?: number | null }): Promise<IdeaComment> {
-    const res = await fetch(getApiUrl(`/api/ideas/${ideaId}/comments`), {
+    const res = await fetchWithCredentials(getApiUrl(`/api/ideas/${ideaId}/comments`), {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({ text: data.text, parentId: data.parentId ?? null }),
@@ -234,7 +226,7 @@ export async function postComment(ideaId: number | string, data: { text: string;
 }
 
 export async function deleteComment(commentId: number): Promise<{ ok: boolean }> {
-    const res = await fetch(getApiUrl(`/api/ideas/comments/${commentId}`), {
+    const res = await fetchWithCredentials(getApiUrl(`/api/ideas/comments/${commentId}`), {
         method: 'DELETE',
         headers: authHeaders(),
     });
@@ -245,14 +237,14 @@ export async function deleteComment(commentId: number): Promise<{ ok: boolean }>
 export type MentionUser = { id: number; name: string; email: string };
 export async function searchUsers(term: string, take = 8): Promise<MentionUser[]> {
     const qs = new URLSearchParams({ search: term, take: String(take), t: Date.now().toString() });
-    const res = await fetch(getApiUrl(`/api/users?${qs.toString()}`), { headers: authHeaders(), cache: 'no-store' });
+    const res = await fetchWithCredentials(getApiUrl(`/api/users?${qs.toString()}`), { headers: authHeaders(), cache: 'no-store' });
     if (!res.ok) throw new Error(await res.text());
     return (await res.json()) as MentionUser[];
 }
 
 export type RelatedIdea = { id: number; title: string; snippet: string; score: number; firstAttachmentUrl?: string | null };
 export async function fetchRelatedIdeas(id: number | string): Promise<RelatedIdea[]> {
-    const res = await fetch(getApiUrl(`/api/ideas/${id}/related?t=${Date.now()}`), { headers: authHeaders(), cache: 'no-store' });
+    const res = await fetchWithCredentials(getApiUrl(`/api/ideas/${id}/related?t=${Date.now()}`), { headers: authHeaders(), cache: 'no-store' });
     if (!res.ok) throw new Error(await res.text());
     const data = await res.json();
     return data.related as RelatedIdea[];
@@ -260,7 +252,7 @@ export async function fetchRelatedIdeas(id: number | string): Promise<RelatedIde
 
 export type LeaderboardRow = { userId: number; name: string; email: string; ideaCount: number; upvotes: number; comments: number; points: number; badge: string | null };
 export async function fetchLeaderboard(): Promise<LeaderboardRow[]> {
-    const res = await fetch(getApiUrl(`/api/leaderboard?t=${Date.now()}`), { headers: authHeaders(), cache: 'no-store' });
+    const res = await fetchWithCredentials(getApiUrl(`/api/leaderboard?t=${Date.now()}`), { headers: authHeaders(), cache: 'no-store' });
     if (!res.ok) throw new Error(await res.text());
     const data = await res.json();
     return data.leaderboard as LeaderboardRow[];
@@ -292,7 +284,7 @@ export type AnalyticsData = {
 
 export async function fetchAnalytics(): Promise<AnalyticsData> {
     try {
-        const res = await fetch(getApiUrl(`/api/innovation/analytics?t=${Date.now()}`), {
+        const res = await fetchWithCredentials(getApiUrl(`/api/innovation/analytics?t=${Date.now()}`), {
             headers: {
                 ...authHeaders(),
                 'Cache-Control': 'no-store',
@@ -342,9 +334,6 @@ export async function submitIdea(
     },
     opts?: { image?: File; images?: File[] },
 ) {
-    const token = getToken();
-    const user = getUser();
-
     // Use multipart/form-data if any file(s) provided
     // Backend only supports single 'image' field, so use first image if multiple provided
     if (opts?.image || (opts?.images && opts.images.length)) {
@@ -367,13 +356,8 @@ export async function submitIdea(
         if (data.challengeId) form.append('challengeId', String(data.challengeId));
         if (data.tagIds && data.tagIds.length) form.append('tagIds', data.tagIds.join(','));
 
-        const headers: Record<string, string> = {};
-        if (user?.id) headers['x-user-id'] = user.id;
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-
-        const res = await fetch(getApiUrl('/api/ideas'), {
+        const res = await fetchWithCredentials(getApiUrl('/api/ideas'), {
             method: 'POST',
-            headers,
             body: form,
         });
         if (!res.ok) {
@@ -390,7 +374,7 @@ export async function submitIdea(
 
     // Fallback to JSON
     const headers = authHeaders();
-    const res = await fetch(getApiUrl('/api/ideas'), {
+    const res = await fetchWithCredentials(getApiUrl('/api/ideas'), {
         method: 'POST',
         headers,
         body: JSON.stringify(data),
@@ -416,64 +400,64 @@ export type IdeaComment = {
 };
 
 export async function fetchTags(): Promise<Array<{ id: number; name: string }>> {
-    const res = await fetch(getApiUrl(`/api/tags?t=${Date.now()}`), { headers: authHeaders(), cache: 'no-store' });
+    const res = await fetchWithCredentials(getApiUrl(`/api/tags?t=${Date.now()}`), { headers: authHeaders(), cache: 'no-store' });
     if (!res.ok) throw new Error(await res.text());
     return await res.json();
 }
 export async function createTag(name: string) {
-    const res = await fetch(getApiUrl('/api/tags'), { method: 'POST', headers: authHeaders(), body: JSON.stringify({ name }) });
+    const res = await fetchWithCredentials(getApiUrl('/api/tags'), { method: 'POST', headers: authHeaders(), body: JSON.stringify({ name }) });
     if (!res.ok) throw new Error(await res.text());
     return await res.json();
 }
 
 export async function fetchChallenges(): Promise<Array<{ id: number; title: string; description?: string; isActive: boolean }>> {
-    const res = await fetch(getApiUrl(`/api/challenges?t=${Date.now()}`), { headers: authHeaders(), cache: 'no-store' });
+    const res = await fetchWithCredentials(getApiUrl(`/api/challenges?t=${Date.now()}`), { headers: authHeaders(), cache: 'no-store' });
     if (!res.ok) throw new Error(await res.text());
     return await res.json();
 }
 export async function fetchChallenge(id: number | string) {
-    const res = await fetch(getApiUrl(`/api/challenges/${id}?t=${Date.now()}`), { headers: authHeaders(), cache: 'no-store' });
+    const res = await fetchWithCredentials(getApiUrl(`/api/challenges/${id}?t=${Date.now()}`), { headers: authHeaders(), cache: 'no-store' });
     if (!res.ok) throw new Error(await res.text());
     return await res.json();
 }
 
 export async function transitionStage(ideaId: number | string, toStage: string, note?: string) {
-    const res = await fetch(getApiUrl(`/api/ideas/${ideaId}/stage-transition`), { method: 'POST', headers: authHeaders(), body: JSON.stringify({ toStage, note }) });
+    const res = await fetchWithCredentials(getApiUrl(`/api/ideas/${ideaId}/stage-transition`), { method: 'POST', headers: authHeaders(), body: JSON.stringify({ toStage, note }) });
     if (!res.ok) throw new Error(await res.text());
     return await res.json();
 }
 export async function fetchStageHistory(ideaId: number | string) {
-    const res = await fetch(getApiUrl(`/api/ideas/${ideaId}/stage-history?t=${Date.now()}`), { headers: authHeaders(), cache: 'no-store' });
+    const res = await fetchWithCredentials(getApiUrl(`/api/ideas/${ideaId}/stage-history?t=${Date.now()}`), { headers: authHeaders(), cache: 'no-store' });
     if (!res.ok) throw new Error(await res.text());
     return await res.json();
 }
 
 export async function fetchAuditLog(ideaId: number | string) {
-    const res = await fetch(getApiUrl(`/api/ideas/${ideaId}/audit?t=${Date.now()}`), { headers: authHeaders(), cache: 'no-store' });
+    const res = await fetchWithCredentials(getApiUrl(`/api/ideas/${ideaId}/audit?t=${Date.now()}`), { headers: authHeaders(), cache: 'no-store' });
     if (!res.ok) throw new Error(await res.text());
     return await res.json();
 }
 
 export async function fetchNotifications() {
-    const res = await fetch(getApiUrl(`/api/notifications?t=${Date.now()}`), { headers: authHeaders(), cache: 'no-store' });
+    const res = await fetchWithCredentials(getApiUrl(`/api/notifications?t=${Date.now()}`), { headers: authHeaders(), cache: 'no-store' });
     if (!res.ok) throw new Error(await res.text());
     return await res.json();
 }
 export async function markNotificationRead(id: number) {
-    const res = await fetch(getApiUrl(`/api/notifications/${id}/read`), { method: 'POST', headers: authHeaders() });
+    const res = await fetchWithCredentials(getApiUrl(`/api/notifications/${id}/read`), { method: 'POST', headers: authHeaders() });
     if (!res.ok) throw new Error(await res.text());
     return await res.json();
 }
 
 export async function searchIdeas(q: string) {
     const qs = new URLSearchParams({ q, t: Date.now().toString() });
-    const res = await fetch(getApiUrl(`/api/ideas/search?${qs.toString()}`), { headers: authHeaders(), cache: 'no-store' });
+    const res = await fetchWithCredentials(getApiUrl(`/api/ideas/search?${qs.toString()}`), { headers: authHeaders(), cache: 'no-store' });
     if (!res.ok) throw new Error(await res.text());
     return await res.json();
 }
 
 export async function fetchInnovationStats() {
-    const res = await fetch(getApiUrl(`/api/innovation/stats?t=${Date.now()}`), { headers: authHeaders(), cache: 'no-store' });
+    const res = await fetchWithCredentials(getApiUrl(`/api/innovation/stats?t=${Date.now()}`), { headers: authHeaders(), cache: 'no-store' });
     if (!res.ok) throw new Error(await res.text());
     return await res.json();
 }
@@ -487,7 +471,7 @@ export async function fetchIdeaCounts(): Promise<{
     total: number;
 }> {
     try {
-        const res = await fetch(getApiUrl(`/api/ideas/counts?t=${Date.now()}`), {
+        const res = await fetchWithCredentials(getApiUrl(`/api/ideas/counts?t=${Date.now()}`), {
             headers: {
                 ...authHeaders(),
                 'Cache-Control': 'no-store',
@@ -510,7 +494,7 @@ export async function fetchIdeaCounts(): Promise<{
 }
 
 export async function approveIdea(id: string, notes?: string) {
-    const res = await fetch(getApiUrl(`/api/ideas/${id}/approve`), {
+    const res = await fetchWithCredentials(getApiUrl(`/api/ideas/${id}/approve`), {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({ notes }),
@@ -520,7 +504,7 @@ export async function approveIdea(id: string, notes?: string) {
 }
 
 export async function rejectIdea(id: string, notes?: string) {
-    const res = await fetch(getApiUrl(`/api/ideas/${id}/reject`), {
+    const res = await fetchWithCredentials(getApiUrl(`/api/ideas/${id}/reject`), {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({ notes }),
@@ -530,7 +514,7 @@ export async function rejectIdea(id: string, notes?: string) {
 }
 
 export async function promoteIdea(id: string, projectCode?: string) {
-    const res = await fetch(getApiUrl(`/api/ideas/${id}/promote`), {
+    const res = await fetchWithCredentials(getApiUrl(`/api/ideas/${id}/promote`), {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({ projectCode }),
@@ -540,7 +524,7 @@ export async function promoteIdea(id: string, projectCode?: string) {
 }
 
 export async function voteForIdea(id: string | number, voteType: 'UPVOTE' | 'DOWNVOTE' = 'UPVOTE') {
-    const res = await fetch(getApiUrl(`/api/ideas/${id}/vote`), {
+    const res = await fetchWithCredentials(getApiUrl(`/api/ideas/${id}/vote`), {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({ voteType }),
@@ -568,7 +552,7 @@ export async function voteForIdea(id: string | number, voteType: 'UPVOTE' | 'DOW
 }
 
 export async function removeVote(id: string | number) {
-    const res = await fetch(getApiUrl(`/api/ideas/${id}/vote`), {
+    const res = await fetchWithCredentials(getApiUrl(`/api/ideas/${id}/vote`), {
         method: 'DELETE',
         headers: authHeaders(),
     });

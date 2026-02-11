@@ -32,14 +32,8 @@ const SupplierList = () => {
             setLoading(true);
             setError(null);
 
-            const token = localStorage.getItem('token');
-            const userId = localStorage.getItem('userId');
-
             const response = await fetch('http://localhost:4000/api/suppliers', {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'x-user-id': userId || '',
-                },
+                credentials: 'include',
             });
 
             if (!response.ok) {
@@ -77,14 +71,14 @@ const SupplierList = () => {
             stars.push(
                 <span key={`full-${i}`} className="text-warning">
                     ★
-                </span>
+                </span>,
             );
         }
         if (hasHalfStar) {
             stars.push(
                 <span key="half" className="text-warning">
                     ★
-                </span>
+                </span>,
             );
         }
         const emptyStars = 5 - stars.length;
@@ -92,7 +86,7 @@ const SupplierList = () => {
             stars.push(
                 <span key={`empty-${i}`} className="text-gray-400">
                     ★
-                </span>
+                </span>,
             );
         }
         return stars;

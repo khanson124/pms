@@ -37,6 +37,7 @@ import { requireCommittee as requireCommitteeRole, requireEvaluationCommittee, r
 import { validate, createIdeaSchema, voteSchema, approveRejectIdeaSchema, promoteIdeaSchema, sanitizeInput as sanitize } from './middleware/validation.js';
 import { errorHandler, notFoundHandler, asyncHandler, NotFoundError, BadRequestError } from './middleware/errorHandler.js';
 import { auditMiddleware, auditLogger } from './middleware/auditMiddleware.js';
+import { authMiddleware } from './middleware/auth.js';
 import statsRouter from './routes/stats.js';
 import combineRouter from './routes/combine.js';
 import approvalsRouter from './routes/approvals.js';
@@ -161,7 +162,7 @@ app.use(auditLogger); // Log mutating API calls globally
 // Static files for uploads
 const UPLOAD_DIR = path.resolve(process.cwd(), 'uploads');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-app.use('/uploads', express.static(UPLOAD_DIR));
+app.use('/uploads', authMiddleware, express.static(UPLOAD_DIR));
 
 // Utility: attempt to repair invalid Request.status values that break Prisma enum queries
 // Covers NULL/empty and common legacy statuses not present in current enum

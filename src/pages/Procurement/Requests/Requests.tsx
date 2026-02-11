@@ -21,7 +21,6 @@ import { getStatusBadge } from '../../../utils/statusBadges';
 import { searchRequests, filterRequests, paginate, formatDate, sortRequestsByDateDesc, adaptRequestsResponse, normalizeStatus } from '../../../utils/requestUtils';
 import { checkExecutiveThreshold, getThresholdBadge, shouldShowThresholdNotification } from '../../../utils/thresholdUtils';
 import { getApiUrl } from '../../../config/api';
-import { getAuthHeadersSync } from '../../../utils/api';
 import { SkeletonTableRow, SkeletonStats, SkeletonLine } from '../../../components/SkeletonLoading';
 
 const MySwal = withReactContent(Swal);
@@ -78,15 +77,8 @@ const Requests = () => {
             setIsLoading(true);
             setError(null);
             try {
-                const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
-                const userRaw = localStorage.getItem('auth_user') || sessionStorage.getItem('auth_user');
-                const user = userRaw ? JSON.parse(userRaw) : null;
-                const headers: Record<string, string> = {};
-                if (token) headers['Authorization'] = `Bearer ${token}`;
-                if (user?.id || currentUserId) headers['x-user-id'] = String(user?.id || currentUserId || '');
-
                 const res = await fetch(getApiUrl('/api/requests'), {
-                    headers,
+                    credentials: 'include',
                     signal,
                 });
                 let payload: any = null;
@@ -112,7 +104,7 @@ const Requests = () => {
                 ) {
                     try {
                         const combinedRes = await fetch(getApiUrl('/api/requests/combinable'), {
-                            headers,
+                            credentials: 'include',
                             signal,
                         });
                         if (combinedRes.ok) {
@@ -122,8 +114,8 @@ const Requests = () => {
                             setCombinedRequests([]);
                         }
                     } catch (e) {
-                        if (!(e instanceof DOMException && e.name === 'AbortError')) {
-                            console.debug('Combined requests not available:', e);
+                        if (e instanceof DOMException && e.name === 'AbortError') {
+                            throw e;
                         }
                         setCombinedRequests([]);
                     }
@@ -136,7 +128,7 @@ const Requests = () => {
                 setIsLoading(false);
             }
         },
-        [currentUserId, currentUserRoles],
+        [currentUserRoles],
     );
 
     // Fetch requests from API
@@ -234,12 +226,8 @@ const Requests = () => {
     // Print request - formatted view with approval history
     const printRequest = async (req: Request) => {
         try {
-            const baseHeaders = getAuthHeadersSync();
             const res = await fetch(getApiUrl(`/api/requests/${req.id}`), {
-                headers: {
-                    ...baseHeaders,
-                    ...(currentUserId ? { 'x-user-id': String(currentUserId) } : {}),
-                },
+                credentials: 'include',
             });
 
             if (!res.ok) {
@@ -251,10 +239,7 @@ const Requests = () => {
 
             // Fetch approval history
             const actionsRes = await fetch(getApiUrl(`/api/requests/${req.id}/actions`), {
-                headers: {
-                    ...baseHeaders,
-                    ...(currentUserId ? { 'x-user-id': String(currentUserId) } : {}),
-                },
+                credentials: 'include',
             });
 
             let approvalHistory: any[] = [];
@@ -625,7 +610,6 @@ const Requests = () => {
             `);
             printWindow.document.close();
         } catch (err) {
-            console.error('Error in printFormattedRequest:', err);
             MySwal.fire({ icon: 'error', title: 'Error', text: 'Failed to generate print view' });
         }
     };
@@ -660,11 +644,10 @@ const Requests = () => {
 
             setHideActionId(req.id);
             try {
-                const headers = getAuthHeadersSync();
-                if (!headers['x-user-id'] && currentUserId != null) headers['x-user-id'] = String(currentUserId);
                 const res = await fetch(getApiUrl(`/api/admin/requests/${req.id}/hide`), {
                     method: 'POST',
-                    headers,
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({ reason: trimmedReason }),
                 });
                 const data: ApiResponse = await res.json().catch(() => ({}) as ApiResponse);
@@ -701,28 +684,20 @@ const Requests = () => {
 
         setIsSavingComment(true);
         try {
-            const headers = getAuthHeadersSync();
-            headers['Content-Type'] = 'application/json';
-            if (!headers['x-user-id'] && currentUserId != null) headers['x-user-id'] = String(currentUserId);
-
             const payload = { statusComment: commentText.trim() };
-            console.log('[Comment Modal] Saving comment for request:', selectedRequest.id, payload);
-
             const res = await fetch(getApiUrl(`/api/requests/${selectedRequest.id}`), {
                 method: 'PUT',
-                headers,
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify(payload),
             });
-
-            console.log('[Comment Modal] Response status:', res.status);
 
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
                 throw new Error(data?.message || 'Failed to save comment');
             }
 
-            const updated = await res.json();
-            console.log('[Comment Modal] Updated request:', updated);
+            await res.json();
 
             // Refresh requests list
             await fetchRequests();

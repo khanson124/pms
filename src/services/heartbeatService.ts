@@ -3,7 +3,7 @@
  * Sends periodic heartbeat signals to track active user sessions per module
  */
 
-import { getToken, clearAuth } from '../utils/auth';
+import { clearAuth } from '../utils/auth';
 import { getApiUrl } from '../config/api';
 
 type ModuleType = 'pms' | 'ih';
@@ -55,18 +55,12 @@ class HeartbeatService {
         try {
             const apiUrl = getApiUrl('/api/stats/heartbeat');
 
-            const token = getToken();
-
-            if (!token) {
-                return;
-            }
-
             const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
                 },
+                credentials: 'include',
                 body: JSON.stringify({ module }),
             });
 
@@ -95,14 +89,12 @@ class HeartbeatService {
         try {
             const apiUrl = getApiUrl('/api/stats/heartbeat');
 
-            const token = getToken();
-
             await fetch(apiUrl, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: token ? `Bearer ${token}` : '',
                 },
+                credentials: 'include',
             });
         } catch (error) {
             // Silent fail

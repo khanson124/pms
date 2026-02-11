@@ -38,16 +38,12 @@ const NewSupplier = () => {
         try {
             setLoading(true);
 
-            const token = localStorage.getItem('token');
-            const userId = localStorage.getItem('userId');
-
             const response = await fetch('http://localhost:4000/api/suppliers', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                    'x-user-id': userId || '',
                 },
+                credentials: 'include',
                 body: JSON.stringify({
                     name,
                     email,

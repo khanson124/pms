@@ -1,6 +1,6 @@
 import Swal from 'sweetalert2';
 import { getApiUrl } from '../config/api';
-import { getToken, getUser, setAuth, isRemembered } from './auth';
+import { getUser, isRemembered, setAuth } from './auth';
 import type { Dispatch } from 'redux';
 import { setUser } from '../store/authSlice';
 import { detectUserRoles, getDashboardPath } from './roleDetection';
@@ -41,8 +41,8 @@ export function startRoleChangeMonitor(dispatch: Dispatch) {
     let lastConfirmedRoles: Role[] = [];
 
     const check = async () => {
-        const token = getToken();
-        if (!token) {
+        const currentUser = getUser();
+        if (!currentUser) {
             // Stop monitoring when unauthenticated
             if (intervalId) {
                 clearInterval(intervalId);
@@ -53,12 +53,11 @@ export function startRoleChangeMonitor(dispatch: Dispatch) {
 
         try {
             const res = await fetch(getApiUrl('/api/auth/me'), {
-                headers: { Authorization: `Bearer ${token}` },
+                credentials: 'include',
             });
             if (!res.ok) return;
             const serverUser: UserResponse = await res.json();
-            const current = getUser();
-            const currentRoles: Role[] = (current?.roles as Role[]) || (current?.role ? [current.role as Role] : []);
+            const currentRoles: Role[] = (currentUser?.roles as Role[]) || (currentUser?.role ? [currentUser.role as Role] : []);
             const serverRoles: Role[] = (serverUser.roles as Role[]) || [];
 
             if (rolesChanged(currentRoles, serverRoles)) {
@@ -99,6 +98,7 @@ export function startRoleChangeMonitor(dispatch: Dispatch) {
             } else {
                 // No role change detected, update our confirmed roles
                 lastConfirmedRoles = serverRoles;
+                setAuth('', serverUser as any, isRemembered());
             }
         } catch {
             // Silent failure; will retry on next tick

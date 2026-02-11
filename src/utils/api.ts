@@ -1,7 +1,6 @@
 /**
  * Utility functions for API requests
  */
-import { ensureValidToken } from './tokenRefresh';
 
 /**
  * Get the API base URL for development vs production
@@ -31,20 +30,6 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
         'Content-Type': 'application/json',
     };
 
-    // Ensure valid token (auto-refresh if needed)
-    const token = await ensureValidToken();
-
-    // Get user data from auth storage
-    const userProfile = localStorage.getItem('auth_user') || sessionStorage.getItem('auth_user');
-    const user = userProfile ? JSON.parse(userProfile) : null;
-
-    if (user?.id) {
-        headers['x-user-id'] = String(user.id);
-    }
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-
     return headers;
 }
 
@@ -56,18 +41,6 @@ export function getAuthHeadersSync(): Record<string, string> {
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
     };
-
-    // Get user data from auth storage
-    const userProfile = localStorage.getItem('auth_user') || sessionStorage.getItem('auth_user');
-    const user = userProfile ? JSON.parse(userProfile) : null;
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-
-    if (user?.id) {
-        headers['x-user-id'] = String(user.id);
-    }
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
 
     return headers;
 }

@@ -100,6 +100,7 @@ export const fetchModuleLocks = async (): Promise<ModuleLockState> => {
     try {
         const response = await fetch(getApiUrl('/api/admin/module-locks'), {
             headers: getAuthHeadersSync(),
+            credentials: 'include',
         });
 
         if (response.ok) {

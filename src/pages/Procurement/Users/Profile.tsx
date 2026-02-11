@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { IRootState } from '../../../store';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import { useEffect, useState } from 'react';
-import { getToken, getUser } from '../../../utils/auth';
+import { getUser } from '../../../utils/auth';
 import { getApiUrl } from '../../../config/api';
 import IconPencilPaper from '../../../components/Icon/IconPencilPaper';
 import IconCalendar from '../../../components/Icon/IconCalendar';
@@ -185,9 +185,8 @@ const Profile = () => {
         setUploadingPhoto(true);
 
         try {
-            const token = getToken();
             const currentUser = getUser();
-            if (!token || !currentUser) {
+            if (!currentUser) {
                 throw new Error('Not authenticated');
             }
 
@@ -196,11 +195,8 @@ const Profile = () => {
 
             const response = await fetch(getApiUrl('/api/auth/upload-photo'), {
                 method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'x-user-id': currentUser.id.toString(),
-                },
                 body: formData,
+                credentials: 'include',
             });
             if (!response.ok) {
                 const errorText = await response.text();

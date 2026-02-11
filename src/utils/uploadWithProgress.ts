@@ -1,26 +1,22 @@
 /**
  * uploadWithProgress - Upload file with progress tracking
- * 
+ *
  * Features:
  * - Real-time upload progress (0-100%)
  * - Abort support
  * - Error handling
  * - Works with FormData
- * 
+ *
  * @param url - Upload endpoint URL
  * @param formData - FormData containing files and data
- * @param token - Authorization token
+ * @param token - Optional bearer token (cookies are preferred)
  * @param onProgress - Progress callback (0-100)
  * @returns Promise with response data
  */
-export const uploadWithProgress = <T = any>(
-    url: string,
-    formData: FormData,
-    token: string,
-    onProgress?: (progress: number) => void
-): Promise<T> => {
+export const uploadWithProgress = <T = any>(url: string, formData: FormData, token?: string, onProgress?: (progress: number) => void): Promise<T> => {
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
+        xhr.withCredentials = true;
 
         // Track upload progress
         xhr.upload.addEventListener('progress', (e) => {
@@ -60,7 +56,9 @@ export const uploadWithProgress = <T = any>(
 
         // Setup and send request
         xhr.open('POST', url);
-        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        if (token) {
+            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        }
         xhr.send(formData);
     });
 };
@@ -70,9 +68,9 @@ export const uploadWithProgress = <T = any>(
  */
 export const createFormData = (data: Record<string, any>, files?: File[]): FormData => {
     const formData = new FormData();
-    
+
     // Append JSON data
-    Object.keys(data).forEach(key => {
+    Object.keys(data).forEach((key) => {
         const value = data[key];
         if (value !== undefined && value !== null) {
             if (typeof value === 'object' && !Array.isArray(value)) {

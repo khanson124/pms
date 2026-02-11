@@ -67,7 +67,7 @@ if (config.NODE_ENV === 'production') {
 
 // CORS configuration
 const corsOptions = {
-    origin: config.CORS_ORIGIN ? [config.CORS_ORIGIN] : true,
+    origin: config.NODE_ENV === 'production' ? [config.CORS_ORIGIN] : config.CORS_ORIGIN ? [config.CORS_ORIGIN] : true,
     credentials: true,
     optionsSuccessStatus: 200,
 };
@@ -93,7 +93,7 @@ app.use(globalLimiter);
 if (!fs.existsSync(config.UPLOAD_DIR)) {
     fs.mkdirSync(config.UPLOAD_DIR, { recursive: true });
 }
-app.use('/uploads', express.static(config.UPLOAD_DIR));
+app.use('/uploads', authMiddleware, express.static(config.UPLOAD_DIR));
 
 // Health check endpoint
 app.get('/health', async (_req, res) => {

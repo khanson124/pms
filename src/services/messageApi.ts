@@ -3,7 +3,6 @@
  * Handles all message-related API calls
  */
 
-import { getToken, getUser } from '../utils/auth';
 import { getApiBaseUrl } from '../config/api';
 
 // Get API URL from centralized configuration
@@ -40,23 +39,7 @@ export interface MessageResponse {
 }
 
 function authHeaders(): Record<string, string> {
-    const token = getToken();
-    const user = getUser();
-    const h: Record<string, string> = { 'Content-Type': 'application/json' };
-
-    // Backend accepts either x-user-id or Authorization: Bearer <token>
-    if (user?.id) {
-        // Convert string ID to number for backend
-        const numericId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
-        if (!isNaN(numericId)) {
-            h['x-user-id'] = String(numericId);
-        }
-    }
-    if (token) {
-        h['Authorization'] = `Bearer ${token}`;
-    }
-
-    return h;
+    return { 'Content-Type': 'application/json' };
 }
 
 /**
@@ -66,6 +49,7 @@ export async function fetchMessages(): Promise<Message[]> {
     try {
         const response = await fetch(`${API_URL}/api/messages`, {
             headers: authHeaders(),
+            credentials: 'include',
         });
 
         // Check if response is JSON before parsing
@@ -97,6 +81,7 @@ export async function markMessageAsRead(messageId: number): Promise<boolean> {
         const response = await fetch(`${API_URL}/api/messages/${messageId}/read`, {
             method: 'PATCH',
             headers: authHeaders(),
+            credentials: 'include',
         });
 
         const result = await response.json();
@@ -115,6 +100,7 @@ export async function deleteMessage(messageId: number): Promise<boolean> {
         const response = await fetch(`${API_URL}/api/messages/${messageId}`, {
             method: 'DELETE',
             headers: authHeaders(),
+            credentials: 'include',
         });
 
         const result = await response.json();

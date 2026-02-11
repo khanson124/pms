@@ -43,6 +43,10 @@ function validateEnvironment(): EnvironmentConfig {
         throw new Error('JWT_SECRET must be set to a secure value in production');
     }
 
+    if (env.NODE_ENV === 'production' && !env.CORS_ORIGIN) {
+        throw new Error('CORS_ORIGIN must be set in production');
+    }
+
     // Optional LDAP configuration
     const ldapConfig: LDAPConfig | undefined = env.LDAP_URL
         ? {
