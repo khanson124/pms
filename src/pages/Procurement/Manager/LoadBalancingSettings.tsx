@@ -50,9 +50,7 @@ const LoadBalancingSettings = () => {
                 }
 
                 const res = await fetch(apiUrl, {
-                    headers: {
-                        'x-user-id': String(currentUser.id),
-                    },
+                    credentials: 'include',
                 });
                 if (!res.ok) {
                     if (res.status === 404) {
@@ -111,8 +109,8 @@ const LoadBalancingSettings = () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-user-id': String(currentUser.id),
                 },
+                credentials: 'include',
                 body: JSON.stringify(settings),
             });
 

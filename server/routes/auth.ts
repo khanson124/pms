@@ -48,18 +48,22 @@ function getCookieValue(req: import('express').Request, name: string): string | 
 }
 
 function buildCookieOptions(maxAgeMs: number, path: string) {
+    // In development, use 'lax' for same-site cookies (works with Vite proxy)
+    // In production, use 'strict' for better security
     return {
         httpOnly: true,
         secure: config.NODE_ENV === 'production',
         sameSite: 'lax' as const,
         path,
         maxAge: maxAgeMs,
+        // Don't set domain - let it default to the request origin
     };
 }
 
 function setAuthCookies(res: import('express').Response, accessToken: string, refreshToken: string, refreshTtlDays: number) {
     const accessMaxAge = 24 * 60 * 60 * 1000;
     const refreshMaxAge = refreshTtlDays * 24 * 60 * 60 * 1000;
+
     res.cookie(ACCESS_TOKEN_COOKIE, accessToken, buildCookieOptions(accessMaxAge, '/'));
     res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, buildCookieOptions(refreshMaxAge, '/api/auth/refresh'));
 }

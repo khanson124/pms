@@ -49,14 +49,13 @@ const PaymentStageDashboard = () => {
     const loadData = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            const headers = {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            };
-
             // Fetch payment stage requests
-            const response = await fetch(getApiUrl('/api/requests?status=PAYMENT_STAGE&sortBy=createdAt&sortOrder=asc'), { headers });
+            const response = await fetch(getApiUrl('/api/requests?status=PAYMENT_STAGE&sortBy=createdAt&sortOrder=asc'), {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+            });
             const data = await response.json();
 
             setRequests(data.requests || []);
@@ -79,13 +78,12 @@ const PaymentStageDashboard = () => {
 
     const handleProcessPayment = async (requestId: number) => {
         try {
-            const token = localStorage.getItem('token');
             await fetch(getApiUrl(`/api/payments/${requestId}/process`), {
                 method: 'POST',
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
                 body: JSON.stringify({ notes: 'Payment processed' }),
             });
             loadData();
@@ -96,13 +94,12 @@ const PaymentStageDashboard = () => {
 
     const handleRejectPayment = async (requestId: number) => {
         try {
-            const token = localStorage.getItem('token');
             await fetch(getApiUrl(`/api/payments/${requestId}/reject`), {
                 method: 'POST',
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
                 body: JSON.stringify({ notes: 'Payment rejected - requires clarification' }),
             });
             loadData();

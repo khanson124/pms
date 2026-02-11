@@ -33,7 +33,7 @@ const ReviewList = () => {
             const headers = await getAuthHeaders();
 
             // Fetch evaluations and filter client-side for supported statuses
-            const res = await fetch(getApiUrl('/api/evaluations'), { headers });
+            const res = await fetch(getApiUrl('/api/evaluations'), { headers, credentials: 'include' });
 
             if (!res.ok) throw new Error('Failed to fetch reviews');
             const data = await res.json();

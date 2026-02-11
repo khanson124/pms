@@ -8,6 +8,7 @@ import { fetchIdeaById, voteForIdea, removeVote, fetchRelatedIdeas, type Idea } 
 import Comments from '../../../components/Comments';
 import IconThumbUp from '../../../components/Icon/IconThumbUp';
 import { getApiUrl } from '../../../config/api';
+import { getUser } from '../../../utils/auth';
 
 export default function IdeaDetails() {
     const { t } = useTranslation();
@@ -77,18 +78,15 @@ export default function IdeaDetails() {
 
         const timer = setTimeout(async () => {
             try {
-                const token = localStorage.getItem('token');
-                const userId = localStorage.getItem('userId');
-
-                if (!token || !userId) return;
+                const user = getUser();
+                if (!user) return;
 
                 await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/ideas/${id}/view`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`,
-                        'x-user-id': userId,
                     },
+                    credentials: 'include',
                 });
             } catch (err) {
                 // Silently fail - view tracking is not critical

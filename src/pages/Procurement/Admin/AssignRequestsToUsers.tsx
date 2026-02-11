@@ -32,7 +32,7 @@ const AssignRequestsToUsers = () => {
         setLoading(true);
         setError(null);
         try {
-            const [usersData, requestsData] = await Promise.all([adminService.getUsers(), fetch(getApiUrl('/api/requests')).then((r) => r.json())]);
+            const [usersData, requestsData] = await Promise.all([adminService.getUsers(), fetch(getApiUrl('/api/requests'), { credentials: 'include' }).then((r) => r.json())]);
             setUsers(usersData);
             setRequests(requestsData);
         } catch (e: any) {
@@ -60,8 +60,8 @@ const AssignRequestsToUsers = () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-user-id': String(adminUser.id),
                 },
+                credentials: 'include',
                 body: JSON.stringify({
                     assigneeId: userId,
                     comment: 'Assigned from Assign Requests page',

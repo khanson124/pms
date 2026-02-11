@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import { getApiUrl } from '../../../config/api';
-import { getToken } from '../../../utils/auth';
 import Swal from 'sweetalert2';
 import IconPencilPaper from '../../../components/Icon/IconPencilPaper';
 import IconEye from '../../../components/Icon/IconEye';
@@ -36,12 +35,9 @@ const ExecutiveDigitalSignoffs = () => {
     const fetchSignoffs = async () => {
         try {
             const apiUrl = getApiUrl();
-            const token = getToken();
 
             const response = await fetch(`${apiUrl}/requests`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+                credentials: 'include',
             });
 
             if (!response.ok) throw new Error('Failed to fetch sign-offs');
@@ -123,14 +119,13 @@ const ExecutiveDigitalSignoffs = () => {
 
         try {
             const apiUrl = getApiUrl();
-            const token = getToken();
 
             const response = await fetch(`${apiUrl}/requests/${selectedItem?.id}/action`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
                 },
+                credentials: 'include',
                 body: JSON.stringify({
                     action: action === 'approve' ? 'APPROVE' : 'REJECT',
                     comments: signoffComments,

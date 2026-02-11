@@ -23,9 +23,8 @@ const DepartmentHeadDashboard = () => {
         const controller = new AbortController();
         async function loadRequests() {
             try {
-                const token = localStorage.getItem('auth_token') || '';
                 const res = await fetch(getApiUrl('/requisitions'), {
-                    headers: { Authorization: token ? `Bearer ${token}` : '' },
+                    credentials: 'include',
                     signal: controller.signal,
                 });
                 if (res.ok) {

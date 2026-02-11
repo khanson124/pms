@@ -43,7 +43,9 @@ const SplinteringDashboard = () => {
     const loadStats = async () => {
         setIsLoading(true);
         try {
-            const response = await fetch(`${getApiUrl('api/splintering/splintering-stats')}?timeFrame=${timeFrame}`);
+            const response = await fetch(`${getApiUrl('api/splintering/splintering-stats')}?timeFrame=${timeFrame}`, {
+                credentials: 'include',
+            });
             if (response.ok) {
                 const data = await response.json();
                 setStats(data);

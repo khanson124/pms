@@ -260,10 +260,7 @@ const EvaluationDetail = () => {
             try {
                 // Load all users for search dropdown
                 const response = await fetch('/api/admin/users', {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`,
-                        'x-user-id': String(authUser?.id || ''),
-                    },
+                    credentials: 'include',
                 });
                 if (response.ok) {
                     const users = await response.json();

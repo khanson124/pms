@@ -270,9 +270,7 @@ const MyIdeas = () => {
     const fetchCommentsForIdea = async (ideaId: string) => {
         try {
             const response = await fetch(getApiUrl(`/api/ideas/${ideaId}/comments`), {
-                headers: {
-                    'x-user-id': String(currentUser?.id || ''),
-                },
+                credentials: 'include',
             });
 
             if (response.ok) {
@@ -328,9 +326,8 @@ const MyIdeas = () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-user-id': String(currentUser?.id || ''),
-                    Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
                 },
+                credentials: 'include',
                 body: JSON.stringify({ text }),
             });
 

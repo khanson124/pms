@@ -95,8 +95,8 @@ const ProcurementManagerRequests = () => {
                 const res = await fetch(getApiUrl('/api/requests'), {
                     headers: {
                         ...baseHeaders,
-                        ...(currentUserId ? { 'x-user-id': String(currentUserId) } : {}),
                     },
+                    credentials: 'include',
                 });
 
                 // Check if response is JSON
@@ -163,8 +163,8 @@ const ProcurementManagerRequests = () => {
             const res = await fetch(getApiUrl(`/api/requests/${req.id}`), {
                 headers: {
                     ...baseHeaders,
-                    ...(currentUserId ? { 'x-user-id': String(currentUserId) } : {}),
                 },
+                credentials: 'include',
             });
 
             if (!res.ok) {
@@ -179,8 +179,8 @@ const ProcurementManagerRequests = () => {
             const actionsRes = await fetch(getApiUrl(`/api/requests/${req.id}/actions`), {
                 headers: {
                     ...baseHeaders,
-                    ...(currentUserId ? { 'x-user-id': String(currentUserId) } : {}),
                 },
+                credentials: 'include',
             });
 
             let approvalHistory: any[] = [];
@@ -636,8 +636,8 @@ const ProcurementManagerRequests = () => {
                     method: 'POST',
                     headers: {
                         ...baseHeaders,
-                        ...(currentUserId ? { 'x-user-id': String(currentUserId) } : {}),
                     },
+                    credentials: 'include',
                     body: JSON.stringify({
                         assigneeId: currentUserId,
                     }),
@@ -698,8 +698,8 @@ const ProcurementManagerRequests = () => {
                 method: 'POST',
                 headers: {
                     ...baseHeaders,
-                    ...(currentUserId ? { 'x-user-id': String(currentUserId) } : {}),
                 },
+                credentials: 'include',
                 body: JSON.stringify({ action: 'REJECT', comment: comment.trim() || undefined }),
             });
 

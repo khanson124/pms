@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import { getApiUrl } from '../../../config/api';
-import { getToken } from '../../../utils/auth';
 import Swal from 'sweetalert2';
 import IconEye from '../../../components/Icon/IconEye';
 import IconChecks from '../../../components/Icon/IconChecks';
@@ -28,13 +27,12 @@ const ExecutiveDirectorReports = () => {
     const fetchReports = async () => {
         try {
             const apiUrl = getApiUrl();
-            const token = getToken();
 
             const response = await fetch(`${apiUrl}/requests`, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
             });
 
             if (!response.ok) throw new Error('Failed to fetch reports');
@@ -78,14 +76,13 @@ const ExecutiveDirectorReports = () => {
 
         try {
             const apiUrl = getApiUrl();
-            const token = getToken();
 
             const response = await fetch(`${apiUrl}/requests/${selectedReport?.id}/action`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
                 },
+                credentials: 'include',
                 body: JSON.stringify({
                     action: decision === 'approve' ? 'APPROVE' : 'REJECT',
                     comments: executiveComments,

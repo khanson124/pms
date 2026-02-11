@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import { useDispatch } from 'react-redux';
-import { getToken, getUser } from '../../../utils/auth';
+import { getUser } from '../../../utils/auth';
 import { getApiUrl } from '../../../config/api';
 import { computeRoleContext, AccountSettingsVisibility } from '../../../utils/roleVisibilityHelper';
 import Swal from 'sweetalert2';
@@ -58,23 +58,18 @@ const AccountSetting = () => {
     useEffect(() => {
         const fetchProfileData = async () => {
             try {
-                const token = getToken();
                 const currentUser = getUser();
-
+                if (!currentUser) {
                     setIsLoading(false);
                     return;
                 }
-                        if (!token || !currentUser) {
-                            setIsLoading(false);
-                            return;
-                        }
 
                 // Fetch user profile from API (uses /api/auth/me)
                 const response = await fetch(getApiUrl('/api/auth/me'), {
                     headers: {
-                        Authorization: `Bearer ${token}`,
                         'Content-Type': 'application/json',
                     },
+                    credentials: 'include',
                 });
 
                 if (response.ok) {
@@ -85,15 +80,15 @@ const AccountSetting = () => {
                         try {
                             const photoResponse = await fetch(getApiUrl('/api/auth/profile-photo'), {
                                 headers: {
-                                    Authorization: `Bearer ${token}`,
                                     'Content-Type': 'application/json',
                                 },
+                                credentials: 'include',
                             });
                             if (photoResponse.ok) {
                                 const photoData = await photoResponse.json();
                                 if (photoData.success && photoData.data?.profileImage) {
                                     data.profileImage = photoData.data.profileImage;
-                                    // Ignore photo fallback errors
+                                }
                             }
                         } catch (error) {
                             console.warn('Could not fetch profile photo:', error);
@@ -125,7 +120,7 @@ const AccountSetting = () => {
                         supervisor: data.supervisor || '',
                     };
                     setFormData(userData);
-                        // Ignore errors fetching profile data
+                    setOriginalFormData(userData);
 
                     // Compute role context for visibility rules
                     const context = computeRoleContext(data.roles);
@@ -177,8 +172,8 @@ const AccountSetting = () => {
     const handleSave = async () => {
         try {
             setIsSaving(true);
-            const token = getToken();
-            if (!token) {
+            const currentUser = getUser();
+            if (!currentUser) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Authentication Error',
@@ -192,9 +187,9 @@ const AccountSetting = () => {
             const response = await fetch(getApiUrl('/api/auth/profile'), {
                 method: 'PUT',
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
                 body: JSON.stringify({
                     // For LDAP users, only send editable fields
                     // LDAP-managed fields (name, email, jobTitle for LDAP users) are not sent
@@ -269,8 +264,8 @@ const AccountSetting = () => {
 
         try {
             setIsUploadingImage(true);
-            const token = getToken();
-            if (!token) {
+            const currentUser = getUser();
+            if (!currentUser) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Authentication Error',
@@ -285,9 +280,7 @@ const AccountSetting = () => {
 
             const response = await fetch(getApiUrl('/api/auth/profile-image'), {
                 method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+                credentials: 'include',
                 body: formData,
             });
 
@@ -302,12 +295,11 @@ const AccountSetting = () => {
                 // Refetch full profile to ensure persistence
                 setTimeout(async () => {
                     try {
-                        const token = getToken();
                         const response = await fetch(getApiUrl('/api/auth/me'), {
                             headers: {
-                                Authorization: `Bearer ${token}`,
                                 'Content-Type': 'application/json',
                             },
+                            credentials: 'include',
                         });
                         if (response.ok) {
                             const updatedData = await response.json();
@@ -317,9 +309,9 @@ const AccountSetting = () => {
                                 try {
                                     const photoResponse = await fetch(getApiUrl('/api/auth/profile-photo'), {
                                         headers: {
-                                            Authorization: `Bearer ${token}`,
                                             'Content-Type': 'application/json',
                                         },
+                                        credentials: 'include',
                                     });
                                     if (photoResponse.ok) {
                                         const photoData = await photoResponse.json();

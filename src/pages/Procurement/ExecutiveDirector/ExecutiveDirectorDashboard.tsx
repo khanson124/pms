@@ -17,7 +17,6 @@ import IconPencil from '@/components/Icon/IconPencil';
 import IconLock from '@/components/Icon/IconLock';
 import IconCircleCheck from '@/components/Icon/IconCircleCheck';
 import { getApiUrl } from '@/config/api';
-import { getToken } from '@/utils/auth';
 
 const ExecutiveDirectorDashboard = () => {
     const dispatch = useDispatch();
@@ -29,15 +28,14 @@ const ExecutiveDirectorDashboard = () => {
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
-                const token = getToken();
                 const apiUrl = getApiUrl();
 
                 // Fetch requests and derive pending executive approvals
                 const approvalsResponse = await fetch(`${apiUrl}/requests`, {
                     headers: {
-                        Authorization: `Bearer ${token}`,
                         'Content-Type': 'application/json',
                     },
+                    credentials: 'include',
                 });
 
                 if (approvalsResponse.ok) {
@@ -50,9 +48,9 @@ const ExecutiveDirectorDashboard = () => {
                 // Fetch all requests for statistics (reuse same endpoint)
                 const requestsResponse = await fetch(`${apiUrl}/requests`, {
                     headers: {
-                        Authorization: `Bearer ${token}`,
                         'Content-Type': 'application/json',
                     },
+                    credentials: 'include',
                 });
 
                 if (requestsResponse.ok) {

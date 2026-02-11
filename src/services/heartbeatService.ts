@@ -22,13 +22,16 @@ class HeartbeatService {
 
         this.currentModule = module;
 
-        // Send initial heartbeat immediately
-        this.sendHeartbeat(module);
-
-        // Set up periodic heartbeat
-        this.intervalId = setInterval(() => {
+        // Delay first heartbeat by 10 seconds to ensure cookies are settled
+        setTimeout(() => {
+            // Send initial heartbeat
             this.sendHeartbeat(module);
-        }, this.HEARTBEAT_INTERVAL);
+
+            // Set up periodic heartbeat
+            this.intervalId = setInterval(() => {
+                this.sendHeartbeat(module);
+            }, this.HEARTBEAT_INTERVAL);
+        }, 10000);
     }
 
     /**
@@ -64,14 +67,20 @@ class HeartbeatService {
                 body: JSON.stringify({ module }),
             });
 
-            if (response.status === 401) {
+            // Only logout on auth failures (401/403), not server errors
+            if (response.status === 401 || response.status === 403) {
                 this.stopHeartbeat();
                 clearAuth();
                 window.location.href = '/auth/login';
                 return;
             }
+
+            if (!response.ok) {
+                // Don't logout on server errors - keep heartbeat running
+                return;
+            }
         } catch (error) {
-            // Silent fail
+            // Network errors should not trigger logout
         }
     }
 

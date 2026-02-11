@@ -59,6 +59,7 @@ export async function fetchRequests(): Promise<Request[]> {
         const url = import.meta.env.DEV ? '/api/requests' : getApiUrl('/api/requests');
         const response = await fetch(url, {
             headers: getAuthHeadersSync(),
+            credentials: 'include',
         });
 
         if (!response.ok) {
@@ -80,6 +81,7 @@ export async function getRequestById(id: string): Promise<Request | null> {
         const url = import.meta.env.DEV ? `/api/requests/${id}` : getApiUrl(`/api/requests/${id}`);
         const response = await fetch(url, {
             headers: getAuthHeadersSync(),
+            credentials: 'include',
         });
 
         if (response.status === 404) {
@@ -106,6 +108,7 @@ export async function createRequest(input: CreateRequestInput): Promise<Request>
         const response = await fetch(url, {
             method: 'POST',
             headers: getAuthHeadersSync(),
+            credentials: 'include',
             body: JSON.stringify(input),
         });
 
@@ -130,6 +133,7 @@ export async function updateRequest(id: string, input: Partial<CreateRequestInpu
         const response = await fetch(url, {
             method: 'PUT',
             headers: getAuthHeadersSync(),
+            credentials: 'include',
             body: JSON.stringify(input),
         });
 
@@ -154,6 +158,7 @@ export async function submitRequest(id: string): Promise<Request> {
         const response = await fetch(url, {
             method: 'POST',
             headers: getAuthHeadersSync(),
+            credentials: 'include',
         });
 
         if (!response.ok) {
@@ -177,6 +182,7 @@ export async function performAction(id: string, action: 'approve' | 'reject', no
         const response = await fetch(url, {
             method: 'POST',
             headers: getAuthHeadersSync(),
+            credentials: 'include',
             body: JSON.stringify({ action, notes }),
         });
 
@@ -200,6 +206,7 @@ export async function getRequestPdf(id: string): Promise<Blob> {
         const url = import.meta.env.DEV ? `/api/requests/${id}/pdf` : getApiUrl(`/api/requests/${id}/pdf`);
         const response = await fetch(url, {
             headers: getAuthHeadersSync(),
+            credentials: 'include',
         });
 
         if (!response.ok) {

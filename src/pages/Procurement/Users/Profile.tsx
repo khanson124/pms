@@ -65,9 +65,8 @@ const Profile = () => {
     useEffect(() => {
         const fetchProfileData = async () => {
             try {
-                const token = getToken();
                 const currentUser = getUser();
-                if (!token || !currentUser) {
+                if (!currentUser) {
                     setIsLoading(false);
                     return;
                 }
@@ -75,9 +74,9 @@ const Profile = () => {
                 // Fetch user profile details from auth endpoint
                 const meResponse = await fetch(getApiUrl('/api/auth/me'), {
                     headers: {
-                        Authorization: `Bearer ${token}`,
                         'Content-Type': 'application/json',
                     },
+                    credentials: 'include',
                     cache: 'no-store', // Force fresh fetch, no cache
                 });
                 if (meResponse.ok) {
@@ -88,9 +87,9 @@ const Profile = () => {
                         try {
                             const photoResponse = await fetch(getApiUrl('/api/auth/profile-photo'), {
                                 headers: {
-                                    Authorization: `Bearer ${token}`,
                                     'Content-Type': 'application/json',
                                 },
+                                credentials: 'include',
                                 cache: 'no-store',
                             });
                             if (photoResponse.ok) {
@@ -111,9 +110,9 @@ const Profile = () => {
                     try {
                         const statsResponse = await fetch(getApiUrl('/api/auth/me/innovation-stats'), {
                             headers: {
-                                Authorization: `Bearer ${token}`,
                                 'Content-Type': 'application/json',
                             },
+                            credentials: 'include',
                             cache: 'no-store',
                         });
 

@@ -27,7 +27,9 @@ const FinanceOfficerDashboard = () => {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const response = await fetch(getApiUrl('/api/stats/finance-officer'));
+                const response = await fetch(getApiUrl('/api/stats/finance-officer'), {
+                    credentials: 'include',
+                });
                 if (response.ok) {
                     const data = await response.json();
                     setStats(data);

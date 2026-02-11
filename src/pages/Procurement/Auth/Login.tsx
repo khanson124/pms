@@ -92,6 +92,7 @@ const Login = () => {
             dispatch(clearModule());
 
             setAuth(token || '', user, rememberMe);
+
             // Also persist legacy userProfile structure expected by RequestForm & index pages
             try {
                 const legacyProfile = {

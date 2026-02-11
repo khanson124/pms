@@ -149,7 +149,14 @@ const batchLimiter = rateLimit({
 // For development: set to false or use loopback
 app.set('trust proxy', process.env.NODE_ENV === 'production' ? 1 : 'loopback');
 
-app.use(cors());
+// CORS configuration - required for cookie-based authentication
+// When credentials: 'include' is used, origin cannot be wildcard '*'
+const corsOptions = {
+    origin: process.env.CORS_ORIGIN || process.env.FRONTEND_URL || 'http://localhost:5173',
+    credentials: true, // Allow cookies to be sent
+    optionsSuccessStatus: 200,
+};
+app.use(cors(corsOptions));
 // Body parsing middleware - MUST come before routes
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
@@ -500,15 +507,29 @@ app.get('/api/ping', (_req, res) => {
 // Auth endpoints are now in /routes/auth.ts and mounted at /api/auth
 
 async function authMiddleware(req: any, res: any, next: any) {
-    // Accept either Bearer token OR x-user-id header for flexibility
     const auth = req.headers.authorization || '';
     const userId = req.headers['x-user-id'];
 
-    console.log('[AUTH] Headers:', { auth: auth.substring(0, 20), userId, path: req.path });
+    // Extract cookie token
+    const ACCESS_TOKEN_COOKIE = 'pms_access_token';
+    function getCookieValue(name: string): string | null {
+        const raw = req.headers.cookie;
+        if (!raw) return null;
+        const parts = raw.split(';').map((part: string) => part.trim());
+        for (const part of parts) {
+            if (part.startsWith(`${name}=`)) {
+                return decodeURIComponent(part.substring(name.length + 1));
+            }
+        }
+        return null;
+    }
+    const cookieToken = getCookieValue(ACCESS_TOKEN_COOKIE);
 
-    // Try Bearer token first
-    if (auth && auth.startsWith('Bearer ')) {
-        const [, token] = auth.split(' ');
+    // Try Bearer token first, then cookie
+    const bearerToken = auth.startsWith('Bearer ') ? auth.substring(7) : undefined;
+    const token = bearerToken || cookieToken;
+
+    if (token) {
         try {
             const payload = jwt.verify(token, JWT_SECRET);
             (req as any).user = payload;

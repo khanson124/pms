@@ -9,7 +9,7 @@ import Setting from './Setting';
 import Sidebar from './Sidebar';
 import Portals from '../../components/Portals';
 import ErrorBoundary from '../../components/ErrorBoundary';
-import { getToken, getUser, clearAuth } from '../../utils/auth';
+import { getUser, clearAuth, isAuthenticated } from '../../utils/auth';
 import { heartbeatService } from '../../services/heartbeatService';
 import { AppInitializer } from '../AppInitializer';
 
@@ -54,8 +54,7 @@ const DefaultLayout = ({ children }: PropsWithChildren) => {
 
     // Global heartbeat tracking for all authenticated users
     useEffect(() => {
-        const token = getToken();
-        if (token) {
+        if (isAuthenticated()) {
             // Determine module based on current path
             const path = location.pathname;
             const module = path.startsWith('/innovation') ? 'ih' : 'pms';
@@ -70,11 +69,10 @@ const DefaultLayout = ({ children }: PropsWithChildren) => {
         }
     }, [location.pathname]);
 
-    // Auth guard: if no token present, redirect to login.
+    // Auth guard: if not authenticated, redirect to login.
     // This runs only for routes using DefaultLayout (protected). Blank layout routes (login/onboarding) are unaffected.
-    const token = getToken();
     const user = getUser();
-    if (!token) {
+    if (!isAuthenticated()) {
         if (user) clearAuth();
         if (location.pathname !== '/auth/login') {
             return <Navigate to="/auth/login" replace state={{ from: location.pathname }} />;

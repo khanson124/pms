@@ -42,15 +42,11 @@ const ApprovalsList = () => {
             setLoading(true);
             setError(null);
 
-            const token = localStorage.getItem('token');
-            const userId = localStorage.getItem('userId');
-
             const response = await fetch(getApiUrl('/api/approvals'), {
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                    'x-user-id': userId || '',
                 },
+                credentials: 'include',
             });
 
             if (!response.ok) {

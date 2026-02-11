@@ -230,23 +230,14 @@ const CombineRequests = () => {
 
             console.log('[COMBINE] Sending request data:', combinedRequestData);
 
-            const token = reduxToken || localStorage.getItem('token');
-            const userId = user?.id ? String(user.id) : localStorage.getItem('userId');
-
-            if (!token && !userId) {
-                throw new Error('You are not authenticated. Please log in again.');
-            }
-
             const headers: Record<string, string> = {
                 'Content-Type': 'application/json',
             };
 
-            if (token) headers.Authorization = `Bearer ${token}`;
-            if (userId) headers['x-user-id'] = userId;
-
             const response = await fetch(getApiUrl('/api/requests/combine'), {
                 method: 'POST',
                 headers,
+                credentials: 'include',
                 body: JSON.stringify(combinedRequestData),
             });
 

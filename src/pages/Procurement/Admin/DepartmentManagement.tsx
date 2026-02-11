@@ -53,8 +53,10 @@ const DepartmentManagement = () => {
     const loadDepartments = async () => {
         setLoading(true);
         try {
-            const token = getToken();
-            const res = await fetch(getApiUrl('/api/departments'), { headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+            const res = await fetch(getApiUrl('/api/departments'), {
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+            });
             if (!res.ok) throw new Error('Failed to fetch departments');
             const data = await res.json();
             setDepartments(data);
@@ -100,10 +102,10 @@ const DepartmentManagement = () => {
             const url = editingId ? `/api/departments/${editingId}` : '/api/departments';
             const method = editingId ? 'PUT' : 'POST';
 
-            const token = getToken();
             const res = await fetch(getApiUrl(url), {
                 method,
-                headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({
                     name: formData.name,
                     code: formData.code,
@@ -131,8 +133,11 @@ const DepartmentManagement = () => {
         if (!confirm('Are you sure? This action cannot be undone.')) return;
 
         try {
-            const token = getToken();
-            const res = await fetch(getApiUrl(`/api/departments/${id}`), { method: 'DELETE', headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+            const res = await fetch(getApiUrl(`/api/departments/${id}`), {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+            });
             if (!res.ok) throw new Error('Failed to delete department');
             setSuccessMessage('Department deleted successfully');
             setShowSuccess(true);

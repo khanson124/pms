@@ -72,9 +72,9 @@ const FinanceRequests = () => {
 
                 const res = await fetch(getApiUrl('/api/requests'), {
                     headers: {
-                        'x-user-id': String(currentUserId),
                         'Content-Type': 'application/json',
                     },
+                    credentials: 'include',
                 });
 
                 if (!res.ok) {
@@ -174,8 +174,8 @@ const FinanceRequests = () => {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'x-user-id': String(currentUserId || ''),
                     },
+                    credentials: 'include',
                     body: JSON.stringify({
                         action: apiAction,
                         comment: comment.trim() || undefined,
@@ -218,8 +218,8 @@ const FinanceRequests = () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-user-id': String(currentUserId),
                 },
+                credentials: 'include',
             });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}) as any);
@@ -257,8 +257,8 @@ const FinanceRequests = () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-user-id': String(currentUserId),
                 },
+                credentials: 'include',
                 body: JSON.stringify({ userId: targetUserId }),
             });
             if (!res.ok) {

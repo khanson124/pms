@@ -29,7 +29,7 @@ const RequesterDashboard = () => {
         const fetchStats = async () => {
             try {
                 const headers = await getAuthHeaders();
-                const response = await fetch('/api/stats/requester', { headers });
+                const response = await fetch('/api/stats/requester', { headers, credentials: 'include' });
                 if (response.ok) {
                     const data = await response.json();
                     setStats(data);
@@ -93,7 +93,7 @@ const RequesterDashboard = () => {
         const fetchActivities = async () => {
             try {
                 const headers = await getAuthHeaders();
-                const res = await fetch('/api/requests/activities', { headers });
+                const res = await fetch('/api/requests/activities', { headers, credentials: 'include' });
                 if (res.ok) {
                     const data = await res.json();
                     const list: unknown = (data as { activities?: unknown }).activities;

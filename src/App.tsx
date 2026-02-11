@@ -6,6 +6,7 @@ import { verifyToken } from './store/authSlice';
 import store from './store';
 import { applyHolidayTheme } from './utils/holidayTheme';
 import { refreshTokenIfNeeded } from './utils/apiInterceptor';
+import { getUser } from './utils/auth';
 
 function App({ children }: PropsWithChildren) {
     const themeConfig = useSelector((state: IRootState) => state.themeConfig);
@@ -22,14 +23,11 @@ function App({ children }: PropsWithChildren) {
         dispatch(toggleSemidark(localStorage.getItem('semidark') || themeConfig.semidark));
         dispatch(toggleAccent(localStorage.getItem('accent') || (themeConfig as any).accent || 'blue'));
 
-        // Verify and restore existing token on app load
-        const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
-        const refreshToken = localStorage.getItem('refreshToken');
-
-        if (token || refreshToken) {
+        // Verify and restore existing session on app load
+        if (getUser()) {
             // First, check if token is about to expire and refresh if needed
             refreshTokenIfNeeded();
-            // Then verify the token
+            // Then verify the session
             dispatch(verifyToken() as any);
         }
 
@@ -37,14 +35,22 @@ function App({ children }: PropsWithChildren) {
         applyHolidayTheme();
 
         // Check for theme changes daily
-        const holidayInterval = setInterval(() => {
-            applyHolidayTheme();
-        }, 1000 * 60 * 60 * 24); // Check daily
+        const holidayInterval = setInterval(
+            () => {
+                applyHolidayTheme();
+            },
+            1000 * 60 * 60 * 24,
+        ); // Check daily
 
         // Proactively refresh token every 20 minutes to maintain session
-        const tokenRefreshInterval = setInterval(async () => {
-            await refreshTokenIfNeeded();
-        }, 20 * 60 * 1000);
+        const tokenRefreshInterval = setInterval(
+            async () => {
+                if (getUser()) {
+                    await refreshTokenIfNeeded();
+                }
+            },
+            20 * 60 * 1000,
+        );
 
         return () => {
             clearInterval(holidayInterval);

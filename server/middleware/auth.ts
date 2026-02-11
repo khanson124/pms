@@ -43,9 +43,10 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
         const userIdHeader = req.headers['x-user-id'];
         const cookieToken = getCookieValue(req, ACCESS_TOKEN_COOKIE);
 
-        logger.debug('[Auth] Headers', {
-            hasAuth: !!authHeader,
-            authPrefix: authHeader?.substring(0, 10),
+        logger.debug('[Auth Middleware] Request received', {
+            path: req.path,
+            method: req.method,
+            hasAuthHeader: !!authHeader,
             hasUserId: !!userIdHeader,
             hasCookieToken: !!cookieToken,
         });
@@ -54,10 +55,12 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
         const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : undefined;
         const token = bearerToken || cookieToken || undefined;
         if (token) {
-            logger.debug('[Auth] Attempting JWT verification', { tokenLength: token.length });
+            logger.debug('[Auth Middleware] Token found, verifying...', {
+                tokenSource: bearerToken ? 'Bearer' : 'Cookie',
+            });
             try {
                 const payload = jwt.verify(token, config.JWT_SECRET) as any;
-                logger.debug('[Auth] JWT verified successfully', { sub: payload.sub, email: payload.email });
+                logger.debug('[Auth Middleware] JWT verified successfully', { sub: payload.sub, email: payload.email });
 
                 // Resolve roles and permissions using RoleResolver
                 const userWithRoles = await enrichUserWithRoles(payload.sub, payload.email, payload.name, payload.ldapData);

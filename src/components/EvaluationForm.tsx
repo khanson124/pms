@@ -250,32 +250,9 @@ export const EvaluationForm: React.FC<Props> = ({
             const fd = new FormData();
             attachments.forEach((f) => fd.append('attachments', f));
 
-            // Get token from localStorage
-            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
-            const headers: Record<string, string> = {};
-
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
-            }
-
-            // Fallback: try to get user ID for X-User-Id header
-            try {
-                const rawUser = localStorage.getItem('auth_user') || sessionStorage.getItem('auth_user');
-                if (rawUser) {
-                    const parsed = JSON.parse(rawUser);
-                    const uid = parsed?.id ?? parsed?.userId;
-                    const numericId = typeof uid === 'number' ? uid : parseInt(String(uid), 10);
-                    if (Number.isFinite(numericId)) {
-                        headers['X-User-Id'] = String(numericId);
-                    }
-                }
-            } catch {
-                /* ignore parse errors */
-            }
-
             const res = await fetch(`/api/evaluations/${evaluation.id}/attachments`, {
                 method: 'POST',
-                headers,
+                credentials: 'include',
                 body: fd,
             });
 
@@ -306,32 +283,9 @@ export const EvaluationForm: React.FC<Props> = ({
         if (!window.confirm('Delete this attachment?')) return;
 
         try {
-            // Get token from localStorage
-            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
-            const headers: Record<string, string> = {};
-
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
-            }
-
-            // Fallback: try to get user ID for X-User-Id header
-            try {
-                const rawUser = localStorage.getItem('auth_user') || sessionStorage.getItem('auth_user');
-                if (rawUser) {
-                    const parsed = JSON.parse(rawUser);
-                    const uid = parsed?.id ?? parsed?.userId;
-                    const numericId = typeof uid === 'number' ? uid : parseInt(String(uid), 10);
-                    if (Number.isFinite(numericId)) {
-                        headers['X-User-Id'] = String(numericId);
-                    }
-                }
-            } catch {
-                /* ignore parse errors */
-            }
-
             const res = await fetch(`/api/evaluations/${evaluation.id}/attachments/${attachmentId}`, {
                 method: 'DELETE',
-                headers,
+                credentials: 'include',
             });
 
             if (!res.ok) {

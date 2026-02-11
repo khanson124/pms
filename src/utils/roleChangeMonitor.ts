@@ -55,7 +55,17 @@ export function startRoleChangeMonitor(dispatch: Dispatch) {
             const res = await fetch(getApiUrl('/api/auth/me'), {
                 credentials: 'include',
             });
-            if (!res.ok) return;
+
+            // Only proceed if we get a valid response
+            // Silently ignore 401/403 as user might be logging out
+            if (res.status === 401 || res.status === 403) {
+                return;
+            }
+
+            if (!res.ok) {
+                return;
+            }
+
             const serverUser: UserResponse = await res.json();
             const currentRoles: Role[] = (currentUser?.roles as Role[]) || (currentUser?.role ? [currentUser.role as Role] : []);
             const serverRoles: Role[] = (serverUser.roles as Role[]) || [];
@@ -65,8 +75,11 @@ export function startRoleChangeMonitor(dispatch: Dispatch) {
                 // by checking if it's different from our last confirmed state
                 if (!rolesChanged(lastConfirmedRoles, serverRoles)) {
                     // No actual change from what we last confirmed, skip
+                    console.log('[RoleChangeMonitor] No change from last confirmed state');
                     return;
                 }
+
+                console.warn('[RoleChangeMonitor] Role change detected!');
 
                 // Stop the monitor immediately to prevent duplicate triggers
                 if (intervalId) {
@@ -100,14 +113,17 @@ export function startRoleChangeMonitor(dispatch: Dispatch) {
                 lastConfirmedRoles = serverRoles;
                 setAuth('', serverUser as any, isRemembered());
             }
-        } catch {
+        } catch (error) {
             // Silent failure; will retry on next tick
         }
     };
 
-    // Initial check, then poll every 10s
-    check();
-    intervalId = window.setInterval(check, 10_000);
+    // Delay first check by 10 seconds to allow system to stabilize after login
+    setTimeout(() => {
+        check();
+        // Then poll every 30s (reduced from 10s to be less aggressive)
+        intervalId = window.setInterval(check, 30_000);
+    }, 10_000);
 }
 
 export function stopRoleChangeMonitor() {

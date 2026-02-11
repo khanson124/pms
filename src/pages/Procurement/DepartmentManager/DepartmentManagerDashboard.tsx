@@ -22,7 +22,9 @@ const DepartmentManagerDashboard = () => {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const response = await fetch('/api/stats/department-manager');
+                const response = await fetch('/api/stats/department-manager', {
+                    credentials: 'include',
+                });
                 if (response.ok) {
                     const data = await response.json();
                     setStats({

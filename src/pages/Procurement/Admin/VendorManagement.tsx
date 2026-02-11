@@ -60,7 +60,9 @@ const VendorManagement = () => {
     const loadVendors = async () => {
         setLoading(true);
         try {
-            const response = await fetch(getApiUrl('/api/suppliers'));
+            const response = await fetch(getApiUrl('/api/suppliers'), {
+                credentials: 'include',
+            });
             if (response.ok) {
                 const data = await response.json();
                 const vendors = Array.isArray(data) ? data : data.data || data.suppliers || [];
@@ -127,8 +129,8 @@ const VendorManagement = () => {
                                   ...v,
                                   ...formData,
                               }
-                            : v
-                    )
+                            : v,
+                    ),
                 );
                 setSuccess('Vendor updated successfully');
             } else {

@@ -9,11 +9,10 @@
  *
  * @param url - Upload endpoint URL
  * @param formData - FormData containing files and data
- * @param token - Optional bearer token (cookies are preferred)
  * @param onProgress - Progress callback (0-100)
  * @returns Promise with response data
  */
-export const uploadWithProgress = <T = any>(url: string, formData: FormData, token?: string, onProgress?: (progress: number) => void): Promise<T> => {
+export const uploadWithProgress = <T = any>(url: string, formData: FormData, onProgress?: (progress: number) => void): Promise<T> => {
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.withCredentials = true;
@@ -56,9 +55,6 @@ export const uploadWithProgress = <T = any>(url: string, formData: FormData, tok
 
         // Setup and send request
         xhr.open('POST', url);
-        if (token) {
-            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-        }
         xhr.send(formData);
     });
 };

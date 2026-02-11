@@ -111,7 +111,7 @@ const AdminSettings = () => {
     async function loadDepartments() {
         setDeptLoading(true);
         try {
-            const depts = await fetch(getApiUrl('/api/departments')).then((r) => r.json());
+            const depts = await fetch(getApiUrl('/api/departments'), { credentials: 'include' }).then((r) => r.json());
             setAllDepartments(depts);
         } catch (e: any) {
             // Error handled in component state
@@ -821,7 +821,9 @@ function AssignRequestsToUsersPanel({ users }: { users: FlatUser[] }) {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch(getApiUrl('/api/requests'));
+            const res = await fetch(getApiUrl('/api/requests'), {
+                credentials: 'include',
+            });
             if (!res.ok) {
                 throw new Error('Failed to fetch requests');
             }
@@ -852,8 +854,8 @@ function AssignRequestsToUsersPanel({ users }: { users: FlatUser[] }) {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-user-id': String(adminUser.id),
                 },
+                credentials: 'include',
                 body: JSON.stringify({
                     assigneeId: userId,
                     comment: 'Assigned to user from User Management panel',
@@ -1075,7 +1077,7 @@ function ReassignRequestsTab() {
         setLoading(true);
         setError(null);
         try {
-            const [reqsRes, usersRes] = await Promise.all([fetch(getApiUrl('/api/requests')), fetch(getApiUrl('/api/admin/users'))]);
+            const [reqsRes, usersRes] = await Promise.all([fetch(getApiUrl('/api/requests'), { credentials: 'include' }), fetch(getApiUrl('/api/admin/users'), { credentials: 'include' })]);
 
             if (!reqsRes.ok || !usersRes.ok) {
                 throw new Error('Failed to fetch data from server');
@@ -1110,8 +1112,8 @@ function ReassignRequestsTab() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-user-id': String(user.id),
                 },
+                credentials: 'include',
                 body: JSON.stringify({
                     assigneeId,
                     comment: 'Manually reassigned by admin',

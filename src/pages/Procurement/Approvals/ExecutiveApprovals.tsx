@@ -13,7 +13,6 @@ import IconPencil from '../../../components/Icon/IconPencil';
 import IconCircleCheck from '../../../components/Icon/IconCircleCheck';
 import IconSearch from '../../../components/Icon/IconSearch';
 import { getApiUrl } from '../../../config/api';
-import { getToken } from '../../../utils/auth';
 import Swal from 'sweetalert2';
 
 const ExecutiveApprovals = () => {
@@ -34,14 +33,13 @@ const ExecutiveApprovals = () => {
     // Fetch executive-level approvals from API
     const fetchApprovals = useCallback(async () => {
         try {
-            const token = getToken();
             const apiUrl = getApiUrl();
 
             const response = await fetch(`${apiUrl}/requests`, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
             });
 
             if (response.ok) {
@@ -99,14 +97,13 @@ const ExecutiveApprovals = () => {
 
         try {
             const apiUrl = getApiUrl();
-            const token = getToken();
 
             const response = await fetch(`${apiUrl}/requests/${selectedApproval?.id}/action`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
                 },
+                credentials: 'include',
                 body: JSON.stringify({
                     action: action === 'approve' ? 'APPROVE' : 'REJECT',
                     comments: digitalSignature,

@@ -89,12 +89,11 @@ const CombinedRequestDetail = () => {
         try {
             setIsLoading(true);
             setError(null);
-            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
             const response = await fetch(getApiUrl(`/api/requests/combinable/${id}`), {
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
             });
 
             if (!response.ok) {
@@ -124,12 +123,11 @@ const CombinedRequestDetail = () => {
     const fetchEligibleRequests = async () => {
         try {
             setAddError(null);
-            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
             const response = await fetch(getApiUrl('/api/requests/combinable?combinable=true'), {
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
             });
 
             if (!response.ok) throw new Error('Failed to fetch eligible requests');
@@ -160,13 +158,12 @@ const CombinedRequestDetail = () => {
         if (selectedToAdd.length === 0) return setAddError('Select at least one request to add');
         try {
             setAddLoading(true);
-            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
             const response = await fetch(getApiUrl(`/api/requests/combinable/${combinedRequest.id}/add`), {
                 method: 'POST',
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
                 body: JSON.stringify({ originalRequestIds: selectedToAdd }),
             });
 
@@ -195,13 +192,12 @@ const CombinedRequestDetail = () => {
             setRenameLoading(true);
             setRenameError(null);
             setRenameSuccess(null);
-            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
             const response = await fetch(getApiUrl(`/api/requests/combinable/${combinedRequest.id}`), {
                 method: 'PATCH',
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
                 body: JSON.stringify({ title: renameTitle.trim(), description: renameDescription.trim() }),
             });
 

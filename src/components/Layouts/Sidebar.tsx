@@ -230,11 +230,9 @@ const Sidebar = () => {
     useEffect(() => {
         const fetchPinnedModule = async () => {
             try {
-                const token = getToken();
-                if (!token) return;
-
                 const response = await fetch(getApiUrl('/api/auth/me'), {
-                    headers: { Authorization: `Bearer ${token}` },
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                 });
 
                 if (response.status === 401) {
@@ -269,15 +267,12 @@ const Sidebar = () => {
         if (pinnedModule) {
             const savePinnedModule = async () => {
                 try {
-                    const token = getToken();
-                    if (!token) return;
-
                     const response = await fetch(getApiUrl('/api/auth/me/pinned-module'), {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
-                            Authorization: `Bearer ${token}`,
                         },
+                        credentials: 'include',
                         body: JSON.stringify({ pinnedModule }),
                     });
 

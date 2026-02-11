@@ -9,7 +9,6 @@ import Swal from 'sweetalert2';
 import { useAutoSave, restoreAutoSave, clearAutoSave } from '../../../utils/useAutoSave';
 import { submitIdea, fetchTags, createTag, fetchChallenges } from '../../../utils/ideasApi';
 import { useDebounce } from '../../../utils/useDebounce';
-import { getUser, getToken } from '../../../utils/auth';
 import { getApiUrl } from '../../../config/api';
 
 const SubmitIdea = () => {
@@ -157,19 +156,14 @@ const SubmitIdea = () => {
             }
             setCheckingDuplicates(true);
             try {
-                const user = getUser();
-                const token = getToken();
                 const headers: Record<string, string> = {
                     'Content-Type': 'application/json',
                 };
 
-                // Add authentication headers (same as authHeaders() in ideasApi.ts)
-                if (user?.id) headers['x-user-id'] = user.id;
-                if (token) headers['Authorization'] = `Bearer ${token}`;
-
                 const res = await fetch(getApiUrl('/api/ideas/check-duplicates'), {
                     method: 'POST',
                     headers,
+                    credentials: 'include',
                     body: JSON.stringify({ title: debouncedTitle, description: debouncedDesc }),
                 });
                 if (res.ok) {

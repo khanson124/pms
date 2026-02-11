@@ -112,13 +112,45 @@ class AuthService {
             return mockAuthService.verifyToken(t);
         }
         try {
-            const response = await fetch(getApiUrl('/api/auth/me'), { credentials: 'include' });
-            if (!response.ok) {
+            const response = await fetch(getApiUrl('/api/auth/me'), {
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            // Only treat 401/403 as auth failure - other errors might be temporary
+            if (response.status === 401 || response.status === 403) {
                 return { success: false, message: 'Authentication required' };
             }
-            return { success: true, message: 'Token valid' };
-        } catch {
-            return { success: false, message: 'Network error' };
+
+            if (!response.ok) {
+                // Server error or network issue - don't clear auth state
+                return { success: true, message: 'Verification skipped due to server error' };
+            }
+
+            const data = await response.json().catch(() => ({}));
+
+            if (data.user) {
+                setAuth('', data.user, isRemembered());
+            }
+
+            const user = data.user
+                ? {
+                      id: data.user.id,
+                      email: data.user.email,
+                      full_name: data.user.name || data.user.email,
+                      status: 'active' as const,
+                      roles: data.user.roles || [],
+                      department_id: data.user.department?.id,
+                      department_name: data.user.department?.name,
+                  }
+                : undefined;
+
+            return { success: true, message: 'Token valid', user };
+        } catch (error) {
+            // Network error - don't clear auth state, user might be temporarily offline
+            return { success: true, message: 'Verification skipped due to network error' };
         }
     }
 

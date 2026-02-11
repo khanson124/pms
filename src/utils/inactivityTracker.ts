@@ -16,7 +16,6 @@ let warningShown = false;
  * Handle session logout
  */
 async function handleSessionExpired() {
-    // Stop all timers
     stopInactivityTracking();
 
     await Swal.fire({
@@ -58,21 +57,27 @@ function resetInactivityTimer() {
  * Check token expiration periodically
  */
 function startExpirationCheck() {
-    expirationCheckTimer = setInterval(async () => {
-        if (!getUser()) {
-            stopInactivityTracking();
-            return;
-        }
-
-        try {
-            const res = await fetch('/api/auth/me', { credentials: 'include' });
-            if (!res.ok) {
-                handleSessionExpired();
+    // Delay first check by 5 seconds to allow cookies to settle after login
+    setTimeout(() => {
+        expirationCheckTimer = setInterval(async () => {
+            if (!getUser()) {
+                stopInactivityTracking();
+                return;
             }
-        } catch {
-            // Ignore transient network errors
-        }
-    }, 60000); // Check every 60 seconds
+
+            try {
+                const res = await fetch('/api/auth/me', { credentials: 'include' });
+
+                // Only log out on explicit auth failure (401/403)
+                // Ignore other errors as they might be temporary network issues
+                if (res.status === 401 || res.status === 403) {
+                    handleSessionExpired();
+                }
+            } catch (error) {
+                // Ignore transient network errors
+            }
+        }, 60000); // Check every 60 seconds
+    }, 5000); // Wait 5 seconds before starting periodic checks
 }
 
 /**
