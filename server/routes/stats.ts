@@ -668,9 +668,24 @@ router.get('/finance-officer', async (req: Request, res: Response) => {
             },
         });
 
+        const financeQueue = await prisma.request.findMany({
+            where: { status: RequestStatus.FINANCE_REVIEW },
+            select: { totalEstimated: true },
+        });
+
+        const totalAmount = financeQueue.reduce((sum, request) => {
+            const amount = Number(request.totalEstimated || 0);
+            return sum + (Number.isFinite(amount) ? amount : 0);
+        }, 0);
+
         const avgProcessingTime = 2.5; // placeholder - could calculate from statusHistory
+        const approvalRate = pendingReview + approvedThisMonth > 0 ? (approvedThisMonth / (pendingReview + approvedThisMonth)) * 100 : 0;
 
         res.json({
+            paymentsToProcess: pendingReview,
+            totalAmount,
+            processingTime: Number(avgProcessingTime.toFixed(1)),
+            approvalRate: Number(approvalRate.toFixed(1)),
             pendingReview,
             approvedThisMonth,
             avgProcessingTime,
