@@ -112,8 +112,7 @@ const EDApprovalForm = () => {
         }));
     };
 
-    const isFieldRequired = (field: FormField, values: Record<string, string | boolean>) =>
-        typeof field.required === 'function' ? field.required(values) : field.required === true;
+    const isFieldRequired = (field: FormField, values: Record<string, string | boolean>) => (typeof field.required === 'function' ? field.required(values) : field.required === true);
 
     const validateRequiredFields = (values: Record<string, string | boolean>) => {
         const missing: string[] = [];
