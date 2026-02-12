@@ -6,6 +6,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuditAction as AuditActionEnum } from '@prisma/client';
 import { auditService } from '../services/auditService.js';
+import { prisma } from '../prismaClient.js';
 
 const AuditAction = AuditActionEnum;
 type AuditAction = AuditActionEnum;
@@ -37,6 +38,7 @@ function mapRouteToAuditAction(method: string, path: string): AuditAction {
     if (normalizedPath.includes('/api/requests') || normalizedPath.includes('/api/apps/requests')) {
         if (method === 'POST') return AuditAction.REQUEST_CREATED;
         if (method === 'PUT') return AuditAction.REQUEST_UPDATED;
+        if (method === 'PATCH') return AuditAction.REQUEST_UPDATED;
         if (method === 'DELETE') return AuditAction.REQUEST_DELETED;
     }
 
@@ -62,6 +64,7 @@ function mapRouteToAuditAction(method: string, path: string): AuditAction {
     if (normalizedPath.includes('/api/evaluations')) {
         if (method === 'POST') return AuditAction.WORKFLOW_STAGE_CHANGED;
         if (method === 'PUT') return AuditAction.WORKFLOW_STAGE_CHANGED;
+        if (method === 'PATCH') return AuditAction.WORKFLOW_STAGE_CHANGED;
     }
 
     // File routes
@@ -85,6 +88,107 @@ function mapRouteToAuditAction(method: string, path: string): AuditAction {
 
     // Default fallback - treat as a status change
     return AuditAction.REQUEST_STATUS_CHANGED;
+}
+
+function sanitizeUrl(url: string): string {
+    return String(url || '').split('?')[0] || '/';
+}
+
+function shouldSkipAudit(url: string): boolean {
+    const clean = sanitizeUrl(url).toLowerCase();
+    return clean === '/api/auth/logout';
+}
+
+function isTechnicalPath(url: string): boolean {
+    const clean = sanitizeUrl(url).toLowerCase();
+    return clean === '/api/stats/heartbeat' || clean === '/api/auth/me/pinned-module';
+}
+
+function inferResource(url: string): string {
+    const clean = sanitizeUrl(url);
+    const parts = clean.split('/').filter(Boolean);
+    if (parts.length >= 2 && parts[0] === 'api') return `/${parts[0]}/${parts[1]}`;
+    return 'api';
+}
+
+function getActorLabel(req: Request, userId: number): string {
+    const user = (req as any).user || {};
+    return user?.name || user?.email || `User #${userId}`;
+}
+
+function extractRequestReference(url: string): string | null {
+    const clean = sanitizeUrl(url);
+    const match = clean.match(/^\/api\/requests\/([^/]+)$/i) || clean.match(/^\/api\/requests\/([^/]+)\//i);
+    if (!match || !match[1]) return null;
+    const ref = match[1];
+    if (ref.toLowerCase() === 'activities') return null;
+    return ref;
+}
+
+async function buildDetailedMessage(req: Request, statusCode: number, durationMs: number, actorLabel: string): Promise<string> {
+    const method = req.method.toUpperCase();
+    const path = sanitizeUrl(req.originalUrl);
+    const lowerPath = path.toLowerCase();
+
+    if (!lowerPath.startsWith('/api/requests')) {
+        return `HTTP ${method} ${path} -> ${statusCode} (${durationMs}ms)`;
+    }
+
+    const ref = extractRequestReference(path);
+    const body = (req as any).body || {};
+
+    if (method === 'POST' && lowerPath === '/api/requests') {
+        const title = typeof body.title === 'string' && body.title.trim() ? ` "${body.title.trim()}"` : '';
+        return `${actorLabel} created request${title}.`;
+    }
+
+    if (method === 'PUT' && ref) {
+        const updatedFields = Object.keys(body).filter((k) => body[k] !== undefined);
+        const fieldsSnippet = updatedFields.length > 0 ? ` Updated fields: ${updatedFields.join(', ')}.` : '';
+        return `${actorLabel} updated request ${ref}.${fieldsSnippet}`;
+    }
+
+    if (method === 'DELETE' && ref) {
+        return `${actorLabel} deleted request ${ref}.`;
+    }
+
+    if (method === 'POST' && ref && lowerPath.endsWith('/submit')) {
+        const request = await prisma.request.findUnique({
+            where: { reference: ref },
+            select: {
+                reference: true,
+                currentAssignee: { select: { name: true, email: true } },
+            },
+        });
+        const assignee = request?.currentAssignee?.name || request?.currentAssignee?.email;
+        if (assignee) {
+            return `${actorLabel} submitted request ${ref}; assigned to ${assignee}.`;
+        }
+        return `${actorLabel} submitted request ${ref}.`;
+    }
+
+    if (method === 'POST' && ref && lowerPath.endsWith('/assign/self')) {
+        return `${actorLabel} self-assigned request ${ref}.`;
+    }
+
+    if (method === 'POST' && ref && lowerPath.endsWith('/assign')) {
+        const toUserId = Number(body?.userId);
+        let assignee = Number.isFinite(toUserId) ? `User #${toUserId}` : 'specified user';
+        if (Number.isFinite(toUserId)) {
+            const user = await prisma.user.findUnique({ where: { id: toUserId }, select: { name: true, email: true } });
+            assignee = user?.name || user?.email || assignee;
+        }
+        return `${actorLabel} assigned request ${ref} to ${assignee}.`;
+    }
+
+    if (method === 'POST' && ref && lowerPath.endsWith('/action')) {
+        const action = String(body?.action || '').toLowerCase();
+        const note = typeof body?.notes === 'string' && body.notes.trim() ? ` Notes: ${body.notes.trim()}` : '';
+        if (action === 'approve') return `${actorLabel} approved request ${ref}.${note}`;
+        if (action === 'reject') return `${actorLabel} rejected request ${ref}.${note}`;
+    }
+
+    return `HTTP ${method} ${path} -> ${statusCode} (${durationMs}ms)`;
 }
 
 /**
@@ -128,9 +232,10 @@ export function auditLogger(req: Request, res: Response, next: NextFunction): vo
     res.on('finish', async () => {
         const method = req.method.toUpperCase();
         const isMutating = method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE';
+        const path = sanitizeUrl(req.originalUrl);
 
         // Only log mutating calls and skip audit endpoints to prevent recursion
-        if (!isMutating || req.originalUrl.startsWith('/api/admin/audit') || req.originalUrl.startsWith('/api/audit')) {
+        if (!isMutating || shouldSkipAudit(path) || path.startsWith('/api/admin/audit') || path.startsWith('/api/audit')) {
             return;
         }
 
@@ -148,16 +253,22 @@ export function auditLogger(req: Request, res: Response, next: NextFunction): vo
             // Map the route to a valid AuditAction enum value
             const action = mapRouteToAuditAction(method, req.originalUrl);
 
+            const actorLabel = getActorLabel(req, userId);
+            const message = await buildDetailedMessage(req, res.statusCode, durationMs, actorLabel);
+
             await auditService.createAuditLog({
                 userId,
                 action,
-                entity: req.baseUrl || 'api',
-                message: `HTTP ${method} ${req.originalUrl} -> ${res.statusCode} (${durationMs}ms)`,
+                entity: inferResource(path),
+                message,
                 ipAddress: context.ipAddress,
                 userAgent: context.userAgent,
                 metadata: {
                     statusCode: res.statusCode,
                     durationMs,
+                    method,
+                    path,
+                    technical: isTechnicalPath(path),
                 },
             });
         } catch (error) {

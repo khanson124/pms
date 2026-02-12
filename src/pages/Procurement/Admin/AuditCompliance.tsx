@@ -19,6 +19,7 @@ interface AuditLog {
     details: string;
     status: 'success' | 'failure';
     ipAddress: string;
+    isTechnical?: boolean;
     changes?: Record<string, [any, any]>;
 }
 
@@ -29,6 +30,7 @@ const AuditCompliance = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterAction, setFilterAction] = useState('all');
     const [filterStatus, setFilterStatus] = useState('all');
+    const [showTechnicalLogs, setShowTechnicalLogs] = useState(false);
     const [dateRange, setDateRange] = useState({ from: '', to: '' });
     const [showFilters, setShowFilters] = useState(false);
     const [showExportOptions, setShowExportOptions] = useState(false);
@@ -112,6 +114,20 @@ const AuditCompliance = () => {
                     details,
                     status: log?.metadata?.status === 'failure' ? 'failure' : 'success',
                     ipAddress: (log?.ipAddress as string) || 'N/A',
+                    isTechnical:
+                        Boolean(log?.metadata?.technical) ||
+                        String(log?.metadata?.path || '')
+                            .toLowerCase()
+                            .includes('/api/stats/heartbeat') ||
+                        String(log?.metadata?.path || '')
+                            .toLowerCase()
+                            .includes('/api/auth/me/pinned-module') ||
+                        String(log?.message || '')
+                            .toLowerCase()
+                            .includes('/api/stats/heartbeat') ||
+                        String(log?.message || '')
+                            .toLowerCase()
+                            .includes('/api/auth/me/pinned-module'),
                     changes: log?.metadata?.changes,
                 };
             });
@@ -135,6 +151,7 @@ const AuditCompliance = () => {
 
             const matchesAction = filterAction === 'all' || log.action === filterAction;
             const matchesStatus = filterStatus === 'all' || log.status === filterStatus;
+            const matchesTechnical = showTechnicalLogs || !log.isTechnical;
 
             let matchesDate = true;
             if (dateRange.from) {
@@ -144,9 +161,9 @@ const AuditCompliance = () => {
                 matchesDate = matchesDate && new Date(log.timestamp) <= new Date(dateRange.to + 'T23:59:59');
             }
 
-            return matchesSearch && matchesAction && matchesStatus && matchesDate;
+            return matchesSearch && matchesAction && matchesStatus && matchesTechnical && matchesDate;
         });
-    }, [logs, searchTerm, filterAction, filterStatus, dateRange]);
+    }, [logs, searchTerm, filterAction, filterStatus, showTechnicalLogs, dateRange]);
 
     const handleExport = async (format: 'csv' | 'json' | 'pdf') => {
         setExporting(true);
@@ -246,6 +263,9 @@ const AuditCompliance = () => {
                         <IconFilter className="w-4 h-4 mr-2" />
                         Filters
                     </button>
+                    <button onClick={() => setShowTechnicalLogs((prev) => !prev)} className={`btn ${showTechnicalLogs ? 'btn-primary' : 'btn-outline-primary'}`}>
+                        {showTechnicalLogs ? 'Hide Technical Logs' : 'Show Technical Logs'}
+                    </button>
                     <div className="relative">
                         <button onClick={() => setShowExportOptions(!showExportOptions)} className="btn btn-outline-primary">
                             <IconDownload className="w-4 h-4 mr-2" />
@@ -331,7 +351,18 @@ const AuditCompliance = () => {
                                         <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">{log.userName}</td>
                                         <td className="px-4 py-3 text-sm font-semibold">{getActionLabel(log.action)}</td>
                                         <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{log.resource}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 truncate max-w-xs">{log.details}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 max-w-xs">
+                                            <div className="group relative">
+                                                <span className="block truncate cursor-help" title={log.details || '-'}>
+                                                    {log.details || '-'}
+                                                </span>
+                                                {log.details && (
+                                                    <div className="pointer-events-none absolute left-0 top-full z-20 mt-1 hidden w-[28rem] max-w-[70vw] rounded-md border border-gray-200 bg-white p-2 text-xs text-gray-700 shadow-lg group-hover:block dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
+                                                        <div className="whitespace-pre-wrap break-words">{log.details}</div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </td>
                                         <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 font-mono">{log.ipAddress}</td>
                                         <td className="px-4 py-3 text-sm">
                                             <span className={`badge ${log.status === 'success' ? 'badge-success' : 'badge-danger'}`}>
