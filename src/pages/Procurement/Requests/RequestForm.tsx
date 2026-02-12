@@ -74,6 +74,7 @@ const DEPARTMENT_CODES: readonly string[] = [
 
 /** Full month names used for header month selection. */
 const MONTHS: readonly string[] = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+const getCurrentHeaderMonth = (): string => MONTHS[new Date().getMonth()];
 
 /**
  * Header year range logic.
@@ -181,7 +182,7 @@ const RequestForm = () => {
     const [selectedFinanceOfficerId, setSelectedFinanceOfficerId] = useState<number | null>(null);
     const [isReassigningOfficer, setIsReassigningOfficer] = useState(false);
     const [headerDeptCode, setHeaderDeptCode] = useState('');
-    const [headerMonth, setHeaderMonth] = useState('');
+    const [headerMonth, setHeaderMonth] = useState(getCurrentHeaderMonth());
     const [headerYear, setHeaderYear] = useState<number | null>(new Date().getFullYear());
     const [headerSequence, setHeaderSequence] = useState<string>('000');
 
@@ -440,7 +441,7 @@ const RequestForm = () => {
                 })();
 
                 setHeaderDeptCode(request.headerDeptCode || derivedHeaderFromTitle.dept || request.department?.code || '');
-                setHeaderMonth(request.headerMonth || derivedHeaderFromTitle.month || '');
+                setHeaderMonth(request.headerMonth || derivedHeaderFromTitle.month || getCurrentHeaderMonth());
                 setHeaderYear(request.headerYear || derivedHeaderFromTitle.year || new Date().getFullYear());
 
                 const rawSequenceFromRequest = request.headerSequence !== null && request.headerSequence !== undefined ? String(request.headerSequence) : '';
