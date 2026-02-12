@@ -506,7 +506,7 @@ const NewEvaluation = () => {
             // Prepare the evaluation data matching the backend API structure
             const evaluationData: CreateEvaluationDTO = {
                 evalNumber,
-                rfqNumber: evalNumber,
+                rfqNumber: '',
                 rfqTitle: formData.evaluationTitle || 'BSJ Evaluation Report',
                 description: formData.background || undefined,
                 dateSubmissionConsidered: formData.dateSubmissionConsidered || null,

@@ -48,6 +48,9 @@ const EvaluationList = () => {
     const [isCommittee, setIsCommittee] = useState(false);
     const [isProcurement, setIsProcurement] = useState(false);
     const [isExecutive, setIsExecutive] = useState(false);
+    const [editingRfqId, setEditingRfqId] = useState<number | null>(null);
+    const [editingRfqValue, setEditingRfqValue] = useState('');
+    const [savingRfqId, setSavingRfqId] = useState<number | null>(null);
 
     const toast = (title: string, icon: 'success' | 'error' | 'info' | 'warning' = 'info') =>
         Swal.fire({
@@ -190,6 +193,38 @@ const EvaluationList = () => {
             toast(err.message || 'Failed to validate evaluation', 'error');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const startRfqEdit = (evaluation: Evaluation) => {
+        setEditingRfqId(evaluation.id);
+        setEditingRfqValue(evaluation.rfqNumber || '');
+    };
+
+    const cancelRfqEdit = () => {
+        setEditingRfqId(null);
+        setEditingRfqValue('');
+    };
+
+    const saveRfqNumber = async (evaluation: Evaluation) => {
+        const nextRfqNumber = editingRfqValue.trim();
+        const currentRfqNumber = (evaluation.rfqNumber || '').trim();
+
+        if (nextRfqNumber === currentRfqNumber) {
+            cancelRfqEdit();
+            return;
+        }
+
+        try {
+            setSavingRfqId(evaluation.id);
+            const updated = await evaluationService.updateEvaluation(evaluation.id, { rfqNumber: nextRfqNumber });
+            setEvaluations((prev) => prev.map((row) => (row.id === updated.id ? updated : row)));
+            toast('RFQ number updated', 'success');
+            cancelRfqEdit();
+        } catch (err: any) {
+            toast(err.message || 'Failed to update RFQ number', 'error');
+        } finally {
+            setSavingRfqId(null);
         }
     };
 
@@ -476,7 +511,47 @@ const EvaluationList = () => {
                                                     </button>
                                                 </td>
                                                 <td className="whitespace-nowrap">
-                                                    <span className="text-info">{evaluation.rfqNumber}</span>
+                                                    {editingRfqId === evaluation.id ? (
+                                                        <div className="flex items-center gap-1">
+                                                            <input
+                                                                type="text"
+                                                                className="form-input h-8 min-w-[150px]"
+                                                                value={editingRfqValue}
+                                                                onChange={(e) => setEditingRfqValue(e.target.value)}
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === 'Enter') {
+                                                                        e.preventDefault();
+                                                                        void saveRfqNumber(evaluation);
+                                                                    }
+                                                                    if (e.key === 'Escape') {
+                                                                        e.preventDefault();
+                                                                        cancelRfqEdit();
+                                                                    }
+                                                                }}
+                                                                autoFocus
+                                                            />
+                                                            <button
+                                                                className="btn btn-sm btn-outline-success"
+                                                                onClick={() => void saveRfqNumber(evaluation)}
+                                                                disabled={savingRfqId === evaluation.id}
+                                                                title="Save RFQ Number"
+                                                            >
+                                                                <IconChecks className="h-4 w-4" />
+                                                            </button>
+                                                            <button className="btn btn-sm btn-outline-danger" onClick={cancelRfqEdit} disabled={savingRfqId === evaluation.id} title="Cancel">
+                                                                <IconX className="h-4 w-4" />
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="text-info">{evaluation.rfqNumber || '-'}</span>
+                                                            {isProcurement && (
+                                                                <button className="btn btn-sm btn-outline-warning" onClick={() => startRfqEdit(evaluation)} title="Edit RFQ Number">
+                                                                    <IconEdit className="h-4 w-4" />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </td>
                                                 <td>
                                                     <div className="max-w-[300px]" title={evaluation.rfqTitle}>

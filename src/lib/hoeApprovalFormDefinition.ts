@@ -1,10 +1,10 @@
 export interface FormField {
     id: string;
     label: string;
-    type: 'text' | 'textarea' | 'select' | 'checkbox' | 'number' | 'date';
+    type: 'text' | 'textarea' | 'select' | 'checkbox' | 'number' | 'date' | 'searchable-select';
     placeholder?: string;
     options?: string[];
-    required?: boolean;
+    required?: boolean | ((values: Record<string, string | boolean>) => boolean);
     value?: string;
 }
 
@@ -26,6 +26,178 @@ export interface FormDetail {
     revisionDate?: string;
     sections: FormSection[];
 }
+
+export const PPC_GOODS_SERVICES_CATEGORIES: readonly string[] = [
+    'Advertising, Public Relations and Marketing Services',
+    'Aggregates and Pre-mix concrete',
+    'Agricultural Services',
+    'Agricultural Tools, Equipment Parts & Supplies',
+    'Analytical Laboratory Equipment, Parts & Supplies',
+    'Animals and Animal Products',
+    'Appraisal & Valuation Services',
+    'Auctioneer',
+    'Audio Visual Equipment Rental',
+    'Audio Visual Goods',
+    'Audio Visual Services',
+    'Awnings and Tents',
+    'Banking Equipment Parts & Supplies',
+    'Books',
+    'Books - Approved Textbooks',
+    'Building & Construction Extrusions, Aluminium Windows, Doors and Hurricane Shutters',
+    'Call Center Services',
+    'Canteen Concessionaire services',
+    'Car Rental Services',
+    'Carpentry & Joinery Supplies',
+    'Carpets, Blinds, Drapery, Soft Furnishings and related items',
+    'Catering',
+    'Cesspool Services',
+    'Chemicals (including Janitorial Chemicals)',
+    'Computers and Related Services',
+    'Computers, Computer Equipment, Parts & Supplies',
+    'Consulting Services - General',
+    'Courier Services',
+    'Customs Brokerage Services',
+    'Debt Collection & Recovery Services',
+    'Document Destruction, Incineration & Recycling Services',
+    'Educational - Toys and Equipment',
+    'Electrical & Energy Saving Products & Supplies',
+    'Electrical Appliances & Tools',
+    'Electrical Equipment, Parts & Supplies',
+    'Electronic Bill Payment & Settlement Services',
+    'Electronic Equipment, Parts & Supplies',
+    'Environmental & Occupational Health & Safety Services',
+    'Equipment Maintenance: Other',
+    'Equipment Maintenance: Repair & Maintenance of Computer & Electronic Equipment',
+    'Equipment Maintenance: Repair & Maintenance of Construction & Industrial Equipment & Tools',
+    'Equipment Rental: Other',
+    'Equipment Rental: Rental of Computer & Electronic Equipment',
+    'Equipment Rental: Rental of Construction & Industrial Equipment & Tools',
+    'Equipment Rental: Rental of Party & Event Supplies',
+    'Event Planning',
+    'Food & Grocery Items',
+    'Funeral Services',
+    'Furniture manufacture, repairs & supplies',
+    'Garage Services',
+    'General Services',
+    'General Supplies',
+    'Graphic Design',
+    'Hardware and Haberdashery',
+    'Heating, ventilation and air conditioning, equipment parts and supplies',
+    'Hotel Restaurant & Hospitality Equipment & Supplies',
+    'Hotel, Restaurant & Hospital Equipment & Supplies',
+    'Industrial Concrete Products',
+    'Industrial Pipes & Fittings',
+    'Industrial Plastic Products',
+    'Industrial Steel Products',
+    'Industrial, Construction Equipment, Machinery, Parts & Supplies',
+    'Information Technology Services',
+    'Insurance Services',
+    'Intrusion Detection Equipment, Parts and Supplies',
+    'Janitorial, Sanitation Services',
+    'Janitorial, Sanitation Services - Street sweeping, drain cleaning and bushing',
+    'Janitorial, Sanitation Supplies',
+    'Laundry & Dry Cleaning Services',
+    'Lithographic and Printing Services',
+    'Locksmith Services',
+    'Manufacture and Supply of Textile and Garment Products',
+    'Marine Services',
+    'Marine Services - other',
+    'Marine Services - Petroleum Cargo Inspection',
+    'Marine Services - Port Management Services',
+    'Marine Services - Repair and Maintenance of Marine Equipment',
+    'Marine Services - Repair and Maintenance of Marine Vessels',
+    'Marine Services - Tug Boat Rental',
+    'Marine Supplies',
+    'Medical, Equipment and Supplies',
+    'Merchandise',
+    'Motor Vehicle and Spares - New Car',
+    'Motor Vehicle and Spares - Used Car',
+    'Motor Vehicle Spares and Accessories',
+    'Motor Vehicle Valuation & Assessment Services',
+    'Musical Instrument',
+    'Office Equipment Supplies, Parts & Supplies',
+    'Packaging Products & Supplies',
+    'Pesticide Control Services',
+    'Pesticides',
+    'Petroleum Products',
+    'Pharmaceutical & Prescription Drugs',
+    'Photographic Equipment and Supplies',
+    'Photography Services',
+    'Photovoltaic and Wind Powered Systems - Installation, Maintenance and Repairs',
+    'Photovoltaic and Wind Powered Systems Design',
+    'Promotional Items',
+    'Real Estate Services',
+    'Renewable Energy Systems',
+    'Safes and Vaults',
+    'Safety & Security Services - Fire Safety Products and Equipment - Installation & Service',
+    'Safety & Security Services - Guard Services',
+    'Safety & Security Services - Other',
+    'Safety & Security Services - Private Investigation',
+    'Safety & Security Services - Safety Equipment Installation and Service',
+    'Safety Products',
+    'School Furniture',
+    'Security Access and ID Cards and related supplies',
+    'Signs & Banners (not including billboards & large outdoor signs)',
+    'Solar Water Heater Installation',
+    'Stationery Supplies',
+    'Telecommunication Services',
+    'Telecommunication Supplies',
+    'Towing and Wrecking',
+    'Transportation and Haulage - Aggregate and Construction Material',
+    'Transportation and Haulage - Delivery of School Furniture',
+    'Transportation and Haulage - Garbage Collection and Disposal',
+    'Transportation and Haulage - Liquid Caustic Soda',
+    'Transportation and Haulage - Mail Transportation',
+    'Transportation and Haulage - Nutrition Products',
+    'Transportation and Haulage - Other',
+    'Transportation and Haulage - Passenger Transport Services',
+    'Transportation and Haulage - Petroleum Products',
+    'Transportation and Haulage - Potable Water',
+    'Transportation and Haulage - Tour Operation Service',
+    'Transportation and Haulage - Water',
+    'Trophies, Medals & Insignias',
+];
+
+export const PPC_WORKS_CATEGORIES: readonly string[] = [
+    'Building Construction',
+    'Road Works & Civil Engineering',
+    'Electrical Works',
+    'Mechanical Works',
+    'Plumbing & Drainage Works',
+    'HVAC Installation & Maintenance',
+    'Carpentry & Joinery',
+    'Roofing & Waterproofing',
+    'Painting & Finishing',
+    'Masonry & Concrete Works',
+    'Landscaping & External Works',
+    'Structural Repairs & Rehabilitation',
+];
+
+const GOODS_SERVICES_CONTRACT_TYPES = new Set([
+    'goods',
+    'service',
+    'services',
+    'goods and services',
+    'goods/services',
+    'consulting service',
+    'consulting services',
+    'non consulting service',
+    'non consulting services',
+    'non-consulting service',
+    'non-consulting services',
+]);
+
+export const getPpcCategoriesForContractType = (contractType?: string | null): string[] => {
+    const normalized = String(contractType || '')
+        .trim()
+        .toLowerCase()
+        .replace(/_/g, ' ')
+        .replace(/\s+/g, ' ');
+    if (!normalized) return [];
+    if (normalized === 'works') return [...PPC_WORKS_CATEGORIES];
+    if (GOODS_SERVICES_CONTRACT_TYPES.has(normalized)) return [...PPC_GOODS_SERVICES_CATEGORIES];
+    return [];
+};
 
 export const HOE_FORM_DETAIL: FormDetail = {
     id: 'hoe-approval-form',
@@ -87,8 +259,12 @@ export const HOE_FORM_DETAIL: FormDetail = {
                 {
                     id: 'ppc_registration_category',
                     label: '7. Contractor/Supplier PPC Registration Category',
-                    type: 'text',
-                    placeholder: 'e.g., Electrical Equipment, Parts and Supplies',
+                    type: 'searchable-select',
+                    placeholder: 'Select PPC category',
+                    required: (values) => {
+                        const contractType = values.contract_type;
+                        return typeof contractType === 'string' && contractType.trim().length > 0;
+                    },
                 },
                 {
                     id: 'contractor_grade',

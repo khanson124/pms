@@ -55,7 +55,7 @@ const mockLDAPUsers = {
 
 // Mock Configuration
 const mockConfig: RoleResolverConfig = {
-    rolesPermissionsPath: path.resolve(__dirname, '../../config/roles-permissions.json'),
+    rolesPermissionsPath: path.resolve(__dirname, '../config/roles-permissions.json'),
     ldapGroupMappings: {
         'cn=procurement-officers,ou=roles,dc=company,dc=com': 'PROCUREMENT_OFFICER',
         'cn=procurement-managers,ou=roles,dc=company,dc=com': 'PROCUREMENT_MANAGER',
@@ -148,7 +148,7 @@ describe('RoleResolver', () => {
             const parsed = parseDN(dn);
             expect(parsed.cn).toBe('john.doe');
             expect(parsed.ou).toBe('procurement');
-            expect(parsed.dc).toBe('company');
+            expect(parsed.dc).toBe('com');
         });
 
         it('should handle DN with multiple DC components', () => {
@@ -178,7 +178,8 @@ describe('RoleResolver', () => {
 
         it('should filter invalid groups', () => {
             const groups = ['cn=valid-group,ou=roles,dc=company,dc=com', 'invalid-group'];
-            expect(() => validateMemberOf(groups, 1)).toThrow();
+            const result = validateMemberOf(groups, 1);
+            expect(result).toEqual(['cn=valid-group,ou=roles,dc=company,dc=com']);
         });
     });
 

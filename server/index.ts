@@ -6723,6 +6723,7 @@ app.post(
 
         // JWT payload uses 'sub' for user ID, fallback to 'id' for compatibility
         const userId = user?.sub || user?.id;
+        const normalizedRfqNumber = rfqNumber === undefined || rfqNumber === null ? '' : String(rfqNumber).trim();
 
         console.log('Creating evaluation with data:', {
             evalNumber,
@@ -6744,8 +6745,8 @@ app.post(
             throw new BadRequestError('User not authenticated. Please log in again.');
         }
 
-        if (!evalNumber || !rfqNumber || !rfqTitle) {
-            throw new BadRequestError('Missing required fields: evalNumber, rfqNumber, rfqTitle');
+        if (!evalNumber || !rfqTitle) {
+            throw new BadRequestError('Missing required fields: evalNumber, rfqTitle');
         }
 
         const formattedDueDate = formatDateTimeForSql(dueDate);
@@ -6798,7 +6799,7 @@ app.post(
                 const evaluation = await (prisma as any).evaluation.create({
                     data: {
                         evalNumber,
-                        rfqNumber,
+                        rfqNumber: normalizedRfqNumber,
                         rfqTitle,
                         description: description || null,
                         // persist combinedRequestId (int) when available
@@ -6859,7 +6860,7 @@ app.post(
 
         const values = [
             `'${evalNumber.replace(/'/g, "''")}'`,
-            `'${rfqNumber.replace(/'/g, "''")}'`,
+            `'${normalizedRfqNumber.replace(/'/g, "''")}'`,
             `'${rfqTitle.replace(/'/g, "''")}'`,
             `${description ? `'${description.replace(/'/g, "''")}'` : 'NULL'}`,
             `${sectionA ? `'${JSON.stringify(sectionA).replace(/'/g, "''")}'` : 'NULL'}`,
@@ -7426,7 +7427,7 @@ app.patch(
     authMiddleware,
     asyncHandler(async (req, res) => {
         const { id } = req.params;
-        const { status, sectionA, sectionB, sectionC, sectionD, sectionE, validationNotes, description, dateSubmissionConsidered, reportCompletionDate } = req.body;
+        const { status, rfqNumber, sectionA, sectionB, sectionC, sectionD, sectionE, validationNotes, description, dateSubmissionConsidered, reportCompletionDate } = req.body;
 
         const delegateSupportsDates = evaluationDelegateSupportsDateFields();
         const useDelegate = hasEvaluationDelegate() && delegateSupportsDates;
@@ -7445,6 +7446,7 @@ app.patch(
         const updateData: Prisma.EvaluationUpdateInput = {};
 
         if (status) updateData.status = status;
+        if (rfqNumber !== undefined) updateData.rfqNumber = String(rfqNumber).trim();
         if (sectionA) updateData.sectionA = sectionA;
         if (sectionB) updateData.sectionB = sectionB;
         if (sectionC) updateData.sectionC = sectionC;
@@ -7474,6 +7476,7 @@ app.patch(
             ['sectionE', sectionE],
         ];
         if (status) sets.push(`status='${String(status).replace(/'/g, "''")}'`);
+        if (rfqNumber !== undefined) sets.push(`rfqNumber='${String(rfqNumber).trim().replace(/'/g, "''")}'`);
         for (const [key, val] of jsonFields) {
             if (val !== undefined) sets.push(`${key}=${val === null ? 'NULL' : `'${JSON.stringify(val).replace(/'/g, "''")}'`}`);
         }

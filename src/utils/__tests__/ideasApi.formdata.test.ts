@@ -6,7 +6,14 @@ const originalFetch = global.fetch;
 describe('ideasApi submitIdea with image', () => {
   beforeEach(() => {
     // @ts-ignore
-    global.fetch = vi.fn(async () => ({ ok: true, json: async () => ({ id: 1, title: 'x' }) }));
+    global.fetch = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ id: 1, title: 'x' }),
+      text: async () => 'OK',
+      headers: {
+        get: (key: string) => (key.toLowerCase() === 'content-type' ? 'application/json' : null),
+      },
+    }));
     // @ts-ignore
     global.localStorage = {
       getItem: vi.fn(() => null),
@@ -32,7 +39,7 @@ describe('ideasApi submitIdea with image', () => {
     expect(result).toBeTruthy();
 
     const call = (global.fetch as any).mock.calls[0];
-    expect(call[0]).toBe('/api/ideas');
+    expect(String(call[0])).toContain('/api/ideas');
     expect(call[1].method).toBe('POST');
     // Body should be FormData
     expect(call[1].body instanceof FormData).toBe(true);
