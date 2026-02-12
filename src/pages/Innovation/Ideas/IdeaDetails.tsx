@@ -254,7 +254,7 @@ export default function IdeaDetails() {
                     {idea.descriptionHtml ? (
                         <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: idea.descriptionHtml }} />
                     ) : (
-                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{idea.description}</p>
+                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{idea.description}</p>
                     )}
 
                     {/* Attachments/Images */}

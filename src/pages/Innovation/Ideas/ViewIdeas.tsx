@@ -448,7 +448,7 @@ const ViewIdeas = () => {
 
                                 {/* Content */}
                                 <div className="p-5">
-                                    <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-3 mb-4">{idea.description}</p>
+                                    <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-3 mb-4 whitespace-pre-wrap">{idea.description}</p>
 
                                     {/* Tags */}
                                     <div className="flex flex-wrap gap-2 mb-4">
@@ -520,7 +520,7 @@ const ViewIdeas = () => {
                                                 {statusBadge.icon} {t(`innovation.view.status.${idea.status === 'UNDER_REVIEW' ? 'underReview' : idea.status.toLowerCase()}`)}
                                             </span>
                                         </div>
-                                        <p className="text-gray-600 dark:text-gray-400 mb-3">{idea.description}</p>
+                                        <p className="text-gray-600 dark:text-gray-400 mb-3 whitespace-pre-wrap">{idea.description}</p>
                                         <div className="flex items-center justify-between">
                                             <div className="flex flex-wrap gap-2">
                                                 {idea.tags.map((tag, idx) => (

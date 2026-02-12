@@ -690,7 +690,7 @@ export default function ReviewIdeas() {
                                                 <span className={`text-xs px-2 py-0.5 rounded ${statusBadge(idea.status)}`}>{idea.status.replaceAll('_', ' ')}</span>
                                             </div>
                                             <h3 className="text-lg font-bold mt-1">{idea.title}</h3>
-                                            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{idea.description}</p>
+                                            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 whitespace-pre-wrap">{idea.description}</p>
                                             <div className="mt-2 text-xs text-gray-500 flex flex-wrap items-center gap-3">
                                                 <span>
                                                     by {idea.submittedBy || 'Unknown'} on {new Date(idea.submittedAt).toLocaleDateString()}

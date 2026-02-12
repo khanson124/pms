@@ -108,7 +108,7 @@ const VoteOnIdeas = () => {
                 });
 
                 // Handle both paginated and legacy response formats
-                const apiIdeas = Array.isArray(response) ? (response as ApiIdea[]) : (response as { ideas?: ApiIdea[] })?.ideas ?? [];
+                const apiIdeas = Array.isArray(response) ? (response as ApiIdea[]) : ((response as { ideas?: ApiIdea[] })?.ideas ?? []);
 
                 setIdeas(apiIdeas.map((idea) => mapApiIdea(idea)));
             } catch (error: any) {
@@ -553,8 +553,8 @@ const VoteOnIdeas = () => {
                                                         idea.hasVoted === 'up'
                                                             ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg scale-110'
                                                             : upDisabled
-                                                            ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                                                            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gradient-to-br hover:from-green-500 hover:to-emerald-600 hover:text-white hover:scale-110 hover:shadow-lg'
+                                                              ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                                                              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gradient-to-br hover:from-green-500 hover:to-emerald-600 hover:text-white hover:scale-110 hover:shadow-lg'
                                                     }`}
                                                     aria-pressed={idea.hasVoted === 'up'}
                                                     aria-label={t('innovation.vote.actions.upvote')}
@@ -572,8 +572,8 @@ const VoteOnIdeas = () => {
                                                         idea.hasVoted === 'down'
                                                             ? 'bg-gradient-to-br from-red-500 to-rose-600 text-white shadow-lg scale-110'
                                                             : downDisabled
-                                                            ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                                                            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gradient-to-br hover:from-red-500 hover:to-rose-600 hover:text-white hover:scale-110 hover:shadow-lg'
+                                                              ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                                                              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gradient-to-br hover:from-red-500 hover:to-rose-600 hover:text-white hover:scale-110 hover:shadow-lg'
                                                     }`}
                                                     aria-pressed={idea.hasVoted === 'down'}
                                                     aria-label={t('innovation.vote.actions.downvote')}
@@ -660,7 +660,7 @@ const VoteOnIdeas = () => {
                                     </div>
                                 </div>
 
-                                <p className="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3">{idea.description}</p>
+                                <p className="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3 whitespace-pre-wrap">{idea.description}</p>
 
                                 <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
                                     <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">

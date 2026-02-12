@@ -295,7 +295,7 @@ const BrowseIdeas = () => {
                                             {t('innovation.browse.viewCount', { count: idea.viewCount })}
                                         </div>
                                     </div>
-                                    <p className="text-gray-700 dark:text-gray-300 mb-4">{idea.description}</p>
+                                    <p className="text-gray-700 dark:text-gray-300 mb-4 whitespace-pre-wrap">{idea.description}</p>
                                     <Link to={`/innovation/ideas/${idea.id}`} className="text-primary hover:underline font-semibold text-sm inline-flex items-center gap-1">
                                         {t('innovation.browse.viewDetails')}
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

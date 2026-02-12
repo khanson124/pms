@@ -566,9 +566,9 @@ const MyIdeas = () => {
                                                     </Link>
                                                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusConfig.bg} ${statusConfig.color}`}>{statusConfig.label}</span>
                                                 </div>
-                                                <p className="text-gray-700 dark:text-gray-300 mb-3">{idea.description}</p>
+                                                <p className="text-gray-700 dark:text-gray-300 mb-3 whitespace-pre-wrap">{idea.description}</p>
 
-                                                {/* Feedback Section */}
+                                                {/* Feedback Section */
                                                 {idea.feedback && (
                                                     <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-primary p-4 rounded-r-lg mb-3">
                                                         <div className="flex items-start gap-2">
