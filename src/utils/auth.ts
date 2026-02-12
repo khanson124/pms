@@ -37,6 +37,24 @@ export function clearAuth() {
     } catch {}
 }
 
+/**
+ * Logout user completely - clears backend cookies AND local auth state
+ * Use this instead of clearAuth() when logging out to ensure cookies are cleared
+ */
+export async function logout(): Promise<void> {
+    try {
+        // Call backend to clear HTTP-only cookies
+        await fetch('/api/auth/logout', {
+            method: 'POST',
+            credentials: 'include',
+        });
+    } catch {
+        // Ignore network errors during logout
+    }
+    // Clear local auth state
+    clearAuth();
+}
+
 export function getToken(): string | null {
     return null;
 }

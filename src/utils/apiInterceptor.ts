@@ -4,7 +4,7 @@
  */
 
 import { getApiUrl } from '../config/api';
-import { clearAuth, isRemembered, setAuth } from './auth';
+import { logout, isRemembered, setAuth } from './auth';
 import { startInactivityTracking, stopInactivityTracking } from './inactivityTracker';
 
 let isRefreshing = false;
@@ -39,7 +39,7 @@ async function performTokenRefresh(): Promise<string | null> {
 
         if (!response.ok) {
             // Refresh failed, clear tokens and redirect to login
-            clearAuth();
+            await logout();
             return null;
         }
 
@@ -58,7 +58,7 @@ async function performTokenRefresh(): Promise<string | null> {
         return null;
     } catch (error) {
         console.error('Token refresh failed:', error);
-        clearAuth();
+        await logout();
         return null;
     }
 }

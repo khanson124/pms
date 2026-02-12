@@ -3,7 +3,7 @@
  * Sends periodic heartbeat signals to track active user sessions per module
  */
 
-import { clearAuth } from '../utils/auth';
+import { logout } from '../utils/auth';
 import { getApiUrl } from '../config/api';
 
 type ModuleType = 'pms' | 'ih';
@@ -70,7 +70,7 @@ class HeartbeatService {
             // Only logout on auth failures (401/403), not server errors
             if (response.status === 401 || response.status === 403) {
                 this.stopHeartbeat();
-                clearAuth();
+                await logout();
                 window.location.href = '/auth/login';
                 return;
             }

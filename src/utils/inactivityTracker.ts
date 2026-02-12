@@ -4,7 +4,7 @@
  */
 
 import Swal from 'sweetalert2';
-import { clearAuth, getUser } from './auth';
+import { logout, getUser } from './auth';
 
 const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes (increased from 15 for procurement workflows)
 let inactivityTimer: NodeJS.Timeout | null = null;
@@ -27,7 +27,8 @@ async function handleSessionExpired() {
         confirmButtonText: 'Log In',
     });
 
-    clearAuth();
+    // Clear backend cookies and local auth state
+    await logout();
     window.location.href = '/auth/login';
 }
 

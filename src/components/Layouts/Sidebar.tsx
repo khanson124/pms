@@ -26,7 +26,7 @@ import IconThumbUp from '../Icon/IconThumbUp';
 import IconPlusCircle from '../Icon/IconPlusCircle';
 import IconUser from '../Icon/IconUser';
 import IconStar from '../Icon/IconStar';
-import { getUser, clearAuth } from '../../utils/auth';
+import { getUser, logout } from '../../utils/auth';
 import { detectUserRoles, getDashboardPath } from '../../utils/roleDetection';
 import { can, isDeptManagerFor } from '../../utils/permissions';
 import IconLock from '../Icon/IconLock';
@@ -236,7 +236,7 @@ const Sidebar = () => {
                 });
 
                 if (response.status === 401) {
-                    clearAuth();
+                    await logout();
                     window.location.href = '/auth/login';
                     return;
                 }
@@ -277,7 +277,7 @@ const Sidebar = () => {
                     });
 
                     if (response.status === 401) {
-                        clearAuth();
+                        await logout();
                         window.location.href = '/auth/login';
                     }
                 } catch (error) {

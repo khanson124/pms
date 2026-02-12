@@ -246,7 +246,7 @@ const Header = () => {
                                 credentials: 'include',
                             });
                             if (photoResponse.status === 401) {
-                                clearAuth();
+                                await logout();
                                 window.location.href = '/auth/login';
                                 return;
                             }
@@ -833,10 +833,10 @@ const Header = () => {
                                         <Link
                                             to="/auth/login"
                                             className="text-danger !py-3"
-                                            onClick={() => {
+                                            onClick={async () => {
                                                 try {
                                                     heartbeatService.stopHeartbeat();
-                                                    clearAuth();
+                                                    await logout();
                                                     dispatch(clearModule());
                                                 } catch {}
                                             }}

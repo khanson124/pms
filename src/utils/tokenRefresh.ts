@@ -3,7 +3,7 @@
  * Handles automatic token refresh using refresh tokens
  */
 import { getApiUrl } from '../config/api';
-import { clearAuth, isRemembered, setAuth } from './auth';
+import { logout, isRemembered, setAuth } from './auth';
 
 let refreshPromise: Promise<string> | null = null;
 
@@ -44,7 +44,7 @@ export async function refreshAccessToken(): Promise<string> {
 
             return data.token;
         } catch (error) {
-            clearAuth();
+            await logout();
             throw error;
         } finally {
             refreshPromise = null;
