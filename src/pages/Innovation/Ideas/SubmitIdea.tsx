@@ -264,7 +264,7 @@ const SubmitIdea = () => {
                     const ct = (res.headers.get('content-type') || '').toLowerCase();
                     if (!ct.includes('application/json')) {
                         // Likely served index.html (HTML) because the app called the wrong host/origin.
-                        const text = await res.text();
+                        await res.text();
                         if (active) setDuplicateMatches([]);
                     } else {
                         const data = await res.json();

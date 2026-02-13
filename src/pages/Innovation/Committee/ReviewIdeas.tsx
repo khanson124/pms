@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import { approveIdea, fetchIdeas, Idea, promoteIdea, rejectIdea } from '../../../utils/ideasApi';
@@ -7,22 +8,18 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import HolidayBanner from '../../../components/HolidayBanner';
 
-const tabs = [
-    { key: 'pending', label: 'Pending Review' },
-    { key: 'approved', label: 'Approved' },
-    { key: 'rejected', label: 'Rejected' },
-    { key: 'popular', label: 'Popular' },
-] as const;
+type ReviewTabKey = 'pending' | 'approved' | 'rejected' | 'popular';
 
 export default function ReviewIdeas() {
     const dispatch = useDispatch();
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const currentUser = getUser();
     const roles: string[] = Array.isArray(currentUser?.roles) ? currentUser.roles : currentUser?.role ? [currentUser.role] : [];
     const isCommittee = roles?.includes?.('INNOVATION_COMMITTEE');
 
-    const [active, setActive] = useState<(typeof tabs)[number]['key']>('pending');
+    const [active, setActive] = useState<ReviewTabKey>('pending');
     const [loading, setLoading] = useState(false);
     const [ideas, setIdeas] = useState<Idea[]>([]);
     const [error, setError] = useState<string | null>(null);
@@ -55,9 +52,19 @@ export default function ReviewIdeas() {
     const searchInputRef = useRef<HTMLInputElement>(null);
     const ideasListRef = useRef<HTMLDivElement>(null);
 
+    const tabs = useMemo(
+        () => [
+            { key: 'pending' as const, label: t('innovation.committee.tabs.pending', { defaultValue: 'Pending Review' }) },
+            { key: 'approved' as const, label: t('innovation.committee.tabs.approved', { defaultValue: 'Approved' }) },
+            { key: 'rejected' as const, label: t('innovation.committee.tabs.rejected', { defaultValue: 'Rejected' }) },
+            { key: 'popular' as const, label: t('innovation.committee.tabs.popular', { defaultValue: 'Popular' }) },
+        ],
+        [t],
+    );
+
     useEffect(() => {
-        dispatch(setPageTitle('Review Ideas'));
-    }, [dispatch]);
+        dispatch(setPageTitle(t('innovation.committee.reviewTitle', { defaultValue: 'Review Ideas' })));
+    }, [dispatch, t]);
 
     // Sync URL params with state
     useEffect(() => {
@@ -113,13 +120,17 @@ export default function ReviewIdeas() {
                     setIdeas(data);
                 }
             } catch (e) {
-                if (!cancelled) setError(e instanceof Error ? e.message : 'Unable to load ideas');
+                if (!cancelled) {
+                    setError(e instanceof Error ? e.message : t('innovation.committee.errors.loadFallback', { defaultValue: 'Unable to load ideas' }));
+                }
                 // Only show error on foreground loads, not background polling
                 if (showLoader) {
                     Swal.fire({
                         icon: 'error',
-                        title: 'Unable to Load Ideas',
-                        text: 'We encountered a problem loading ideas. Please check your connection and try again.',
+                        title: t('innovation.committee.errors.loadTitle', { defaultValue: 'Unable to Load Ideas' }),
+                        text: t('innovation.committee.errors.loadMessage', {
+                            defaultValue: 'We encountered a problem loading ideas. Please check your connection and try again.',
+                        }),
                         toast: true,
                         position: 'bottom-end',
                         timer: 3500,
@@ -141,7 +152,7 @@ export default function ReviewIdeas() {
             clearInterval(id);
             document.removeEventListener('visibilitychange', vis);
         };
-    }, [active]);
+    }, [active, t]);
 
     // Keyboard shortcuts
     useEffect(() => {
@@ -212,17 +223,39 @@ export default function ReviewIdeas() {
             if (noteAction === 'approve') {
                 const updated = await approveIdea(selectedIdea.id, notesText || undefined);
                 if (active === 'approved') setIdeas((prev) => [updated, ...prev]);
-                Swal.fire({ icon: 'success', title: 'Approved', toast: true, position: 'bottom-end', timer: 1800, showConfirmButton: false });
+                Swal.fire({
+                    icon: 'success',
+                    title: t('innovation.committee.toast.approved', { defaultValue: 'Approved' }),
+                    toast: true,
+                    position: 'bottom-end',
+                    timer: 1800,
+                    showConfirmButton: false,
+                });
             } else {
                 const updated = await rejectIdea(selectedIdea.id, notesText || undefined);
                 if (active === 'rejected') setIdeas((prev) => [updated, ...prev]);
-                Swal.fire({ icon: 'success', title: 'Rejected', toast: true, position: 'bottom-end', timer: 1800, showConfirmButton: false });
+                Swal.fire({
+                    icon: 'success',
+                    title: t('innovation.committee.toast.rejected', { defaultValue: 'Rejected' }),
+                    toast: true,
+                    position: 'bottom-end',
+                    timer: 1800,
+                    showConfirmButton: false,
+                });
             }
         } catch (e) {
             // Rollback on failure
             setIdeas(rollbackIdeas);
-            const errorMsg = e instanceof Error ? e.message : 'Please try again';
-            Swal.fire({ icon: 'error', title: 'Action failed', text: errorMsg, toast: true, position: 'bottom-end', timer: 2200, showConfirmButton: false });
+            const errorMsg = e instanceof Error ? e.message : t('innovation.committee.errors.tryAgain', { defaultValue: 'Please try again' });
+            Swal.fire({
+                icon: 'error',
+                title: t('innovation.committee.errors.actionFailed', { defaultValue: 'Action failed' }),
+                text: errorMsg,
+                toast: true,
+                position: 'bottom-end',
+                timer: 2200,
+                showConfirmButton: false,
+            });
         } finally {
             setShowNotes(false);
             setSelectedIdea(null);
@@ -254,7 +287,15 @@ export default function ReviewIdeas() {
 
     const openBulkNotes = (action: 'approve' | 'reject') => {
         if (selectedIds.size === 0) {
-            Swal.fire({ icon: 'warning', title: 'No selection', text: 'Select at least one idea first', toast: true, position: 'bottom-end', timer: 2000, showConfirmButton: false });
+            Swal.fire({
+                icon: 'warning',
+                title: t('innovation.committee.bulk.noSelectionTitle', { defaultValue: 'No selection' }),
+                text: t('innovation.committee.bulk.noSelectionMessage', { defaultValue: 'Select at least one idea first' }),
+                toast: true,
+                position: 'bottom-end',
+                timer: 2000,
+                showConfirmButton: false,
+            });
             return;
         }
         setBulkAction(action);
@@ -282,7 +323,10 @@ export default function ReviewIdeas() {
 
             Swal.fire({
                 icon: 'success',
-                title: `${bulkAction === 'approve' ? 'Approved' : 'Rejected'} ${selectedIds.size} idea(s)`,
+                title:
+                    bulkAction === 'approve'
+                        ? t('innovation.committee.bulk.approvedCount', { defaultValue: 'Approved {{count}} idea(s)', count: selectedIds.size })
+                        : t('innovation.committee.bulk.rejectedCount', { defaultValue: 'Rejected {{count}} idea(s)', count: selectedIds.size }),
                 toast: true,
                 position: 'bottom-end',
                 timer: 2000,
@@ -291,8 +335,16 @@ export default function ReviewIdeas() {
             setSelectedIds(new Set());
         } catch (e) {
             setIdeas(rollbackIdeas);
-            const errorMsg = e instanceof Error ? e.message : 'Some items may not have been processed';
-            Swal.fire({ icon: 'error', title: 'Bulk action failed', text: errorMsg, toast: true, position: 'bottom-end', timer: 2500, showConfirmButton: false });
+            const errorMsg = e instanceof Error ? e.message : t('innovation.committee.bulk.fallbackError', { defaultValue: 'Some items may not have been processed' });
+            Swal.fire({
+                icon: 'error',
+                title: t('innovation.committee.bulk.failedTitle', { defaultValue: 'Bulk action failed' }),
+                text: errorMsg,
+                toast: true,
+                position: 'bottom-end',
+                timer: 2500,
+                showConfirmButton: false,
+            });
         } finally {
             setShowBulkNotes(false);
             setBulkAction(null);
@@ -309,10 +361,12 @@ export default function ReviewIdeas() {
             if (idea.status !== 'APPROVED') {
                 const { isConfirmed } = await Swal.fire({
                     icon: 'question',
-                    title: 'Approve & Promote?',
-                    text: "This idea isn't approved yet. Approve and promote now?",
+                    title: t('innovation.committee.promote.confirmTitle', { defaultValue: 'Approve & Promote?' }),
+                    text: t('innovation.committee.promote.confirmMessage', {
+                        defaultValue: "This idea isn't approved yet. Approve and promote now?",
+                    }),
                     showCancelButton: true,
-                    confirmButtonText: 'Yes, continue',
+                    confirmButtonText: t('innovation.committee.promote.confirmAction', { defaultValue: 'Yes, continue' }),
                 });
                 if (!isConfirmed) return;
                 await approveIdea(idea.id);
@@ -324,11 +378,11 @@ export default function ReviewIdeas() {
             const defaultCode = `INNO-${year}-${randomPart}`;
 
             const { value: projectCode } = await Swal.fire({
-                title: 'Project Code',
+                title: t('innovation.committee.promote.projectCodeTitle', { defaultValue: 'Project Code' }),
                 input: 'text',
-                inputLabel: 'Enter project code or leave blank to auto-generate',
+                inputLabel: t('innovation.committee.promote.projectCodeLabel', { defaultValue: 'Enter project code or leave blank to auto-generate' }),
                 inputValue: defaultCode,
-                inputPlaceholder: 'e.g. INNO-2025-001',
+                inputPlaceholder: t('innovation.committee.promote.projectCodePlaceholder', { defaultValue: 'e.g. INNO-2025-001' }),
                 showCancelButton: true,
             });
 
@@ -339,33 +393,52 @@ export default function ReviewIdeas() {
 
             setIdeas(optimisticIdeas);
             const updated = await promoteIdea(idea.id, finalCode);
-            Swal.fire({ icon: 'success', title: `Promoted to ${updated.projectCode}`, toast: true, position: 'bottom-end', timer: 2000, showConfirmButton: false });
+            Swal.fire({
+                icon: 'success',
+                title: t('innovation.committee.promote.successTitle', { defaultValue: 'Promoted to {{code}}', code: updated.projectCode }),
+                toast: true,
+                position: 'bottom-end',
+                timer: 2000,
+                showConfirmButton: false,
+            });
         } catch (e) {
             setIdeas(rollbackIdeas);
-            const errorMsg = e instanceof Error ? e.message : 'Please try again';
-            Swal.fire({ icon: 'error', title: 'Promote failed', text: errorMsg, toast: true, position: 'bottom-end', timer: 2200, showConfirmButton: false });
+            const errorMsg = e instanceof Error ? e.message : t('innovation.committee.errors.tryAgain', { defaultValue: 'Please try again' });
+            Swal.fire({
+                icon: 'error',
+                title: t('innovation.committee.promote.failedTitle', { defaultValue: 'Promote failed' }),
+                text: errorMsg,
+                toast: true,
+                position: 'bottom-end',
+                timer: 2200,
+                showConfirmButton: false,
+            });
         }
     };
 
     const emptyMessage = useMemo(() => {
         switch (active) {
             case 'pending':
-                return 'No submissions are awaiting review.';
+                return t('innovation.committee.empty.pending', { defaultValue: 'No submissions are awaiting review.' });
             case 'approved':
-                return 'No approved ideas yet.';
+                return t('innovation.committee.empty.approved', { defaultValue: 'No approved ideas yet.' });
             case 'rejected':
-                return 'No rejected ideas.';
+                return t('innovation.committee.empty.rejected', { defaultValue: 'No rejected ideas.' });
             case 'popular':
-                return 'No popular ideas found.';
+                return t('innovation.committee.empty.popular', { defaultValue: 'No popular ideas found.' });
         }
-    }, [active]);
+    }, [active, t]);
 
     if (!isCommittee) {
         setTimeout(() => navigate('/innovation/committee/dashboard'), 2000);
         return (
             <div className="panel">
-                <h2 className="text-xl font-bold mb-2">Access restricted</h2>
-                <p className="text-gray-600 dark:text-gray-400">This page is for Innovation Committee members only. Redirecting…</p>
+                <h2 className="text-xl font-bold mb-2">{t('innovation.committee.access.title', { defaultValue: 'Access restricted' })}</h2>
+                <p className="text-gray-600 dark:text-gray-400">
+                    {t('innovation.committee.access.message', {
+                        defaultValue: 'This page is for Innovation Committee members only. Redirecting...',
+                    })}
+                </p>
             </div>
         );
     }

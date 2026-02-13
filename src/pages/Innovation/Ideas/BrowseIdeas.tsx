@@ -322,7 +322,7 @@ const BrowseIdeas = () => {
                                                 <span className="text-sm text-gray-500 dark:text-gray-400">{t('innovation.browse.submittedBy', { name: idea.submittedBy })}</span>
                                                 {(idea as any).isAnonymousSubmission && (
                                                     <span className="px-2 py-0.5 text-xs font-semibold bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 rounded-full">
-                                                        Anonymous
+                                                        {t('innovation.common.anonymous', { defaultValue: 'Anonymous' })}
                                                     </span>
                                                 )}
                                                 <span className="text-sm text-gray-500 dark:text-gray-400">• {new Date(idea.submittedAt).toLocaleDateString()}</span>

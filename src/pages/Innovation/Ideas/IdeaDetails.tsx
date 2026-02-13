@@ -171,12 +171,20 @@ export default function IdeaDetails() {
                         />
                     </svg>
                 </div>
-                <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">{is404 ? 'Idea Not Found' : error ? 'Unable to Load Idea' : t('innovation.view.empty.title')}</h2>
+                <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">
+                    {is404
+                        ? t('innovation.details.notFound.title', { defaultValue: 'Idea Not Found' })
+                        : error
+                          ? t('innovation.details.error.title', { defaultValue: 'Unable to Load Idea' })
+                          : t('innovation.view.empty.title')}
+                </h2>
                 <p className="mb-6 text-gray-600 dark:text-gray-400 max-w-md mx-auto">
                     {is404
-                        ? "This idea doesn't exist or may have been removed. It might have been deleted or you may not have permission to view it."
+                        ? t('innovation.details.notFound.message', {
+                              defaultValue: "This idea doesn't exist or may have been removed. It might have been deleted or you may not have permission to view it.",
+                          })
                         : error
-                          ? 'We encountered a problem loading this idea. Please check your connection and try again.'
+                          ? t('innovation.details.error.message', { defaultValue: 'We encountered a problem loading this idea. Please check your connection and try again.' })
                           : t('innovation.view.empty.message')}
                 </p>
                 <div className="flex items-center justify-center gap-3">
@@ -190,14 +198,14 @@ export default function IdeaDetails() {
                                     d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                                 />
                             </svg>
-                            Try Again
+                            {t('innovation.details.error.action', { defaultValue: 'Try Again' })}
                         </button>
                     )}
                     <Link to="/innovation/ideas/browse" className="btn btn-outline-primary">
                         <svg className="w-5 h-5 ltr:mr-2 rtl:ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                         </svg>
-                        Browse All Ideas
+                        {t('innovation.details.actions.browse', { defaultValue: 'Browse All Ideas' })}
                     </Link>
                 </div>
             </div>

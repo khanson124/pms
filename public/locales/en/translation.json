@@ -245,6 +245,35 @@
                 "action": "Submit New Idea"
             }
         },
+        "analytics": {
+            "title": "Innovation Analytics",
+            "subtitle": "Key metrics across ideas, categories, and engagement.",
+            "error": {
+                "title": "Unable to Load Analytics",
+                "message": "Unable to load analytics",
+                "body": "We encountered a problem loading analytics data. Please try again.",
+                "action": "Try Again"
+            },
+            "status": {
+                "submitted": "Submitted",
+                "underReview": "Under Review",
+                "approved": "Approved",
+                "rejected": "Rejected",
+                "promoted": "Promoted"
+            },
+            "series": {
+                "count": "Count",
+                "submissions": "Submissions",
+                "ideas": "Ideas"
+            },
+            "kpis": {
+                "totalIdeas": "Total Ideas",
+                "underReview": "Under Review",
+                "approved": "Approved",
+                "promoted": "Promoted",
+                "totalEngagement": "Total Engagement"
+            }
+        },
         "myIdeas": {
             "title": "My Innovation Portfolio",
             "subtitle": "Track your ideas from concept to implementation",
@@ -290,6 +319,15 @@
                     "message": "Try selecting a different status filter",
                     "action": "View All Ideas"
                 }
+            },
+            "errors": {
+                "connectionTitle": "Connection Problem",
+                "connectionMessage": "Please check your internet connection and try again.",
+                "loadTitle": "Unable to Load Ideas",
+                "loadMessage": "We encountered a problem loading your ideas. Please try again."
+            },
+            "fallback": {
+                "untitled": "Untitled"
             }
         },
         "submit": {
@@ -404,6 +442,9 @@
         "vote": {
             "title": "Vote on Ideas",
             "subtitle": "Help shape BSJ's future by voting on innovative proposals",
+            "common": {
+                "ok": "OK"
+            },
             "votingPower": {
                 "label": "Voting Power",
                 "remaining": "{{count}} votes remaining",
@@ -453,13 +494,97 @@
                 "noVotesLeft": {
                     "title": "Vote Limit Reached",
                     "message": "You've used all 10 of your votes! To vote for new ideas, remove votes from existing ones."
+                },
+                "alreadyVoted": {
+                    "title": "Already Voted",
+                    "message": "You have already voted for this idea"
                 }
+            },
+            "errors": {
+                "connectionTitle": "Connection Problem",
+                "connectionMessage": "Please check your internet connection and try again.",
+                "loadTitle": "Unable to Load Ideas",
+                "loadMessage": "We encountered a problem loading voting options. Please try refreshing the page.",
+                "voteFailedTitle": "Vote Failed",
+                "voteFailedMessage": "We were unable to process your vote. Please try again."
+            }
+        },
+        "details": {
+            "notFound": {
+                "title": "Idea Not Found",
+                "message": "This idea doesn't exist or may have been removed. It might have been deleted or you may not have permission to view it."
+            },
+            "error": {
+                "title": "Unable to Load Idea",
+                "message": "We encountered a problem loading this idea. Please check your connection and try again.",
+                "action": "Try Again"
+            },
+            "actions": {
+                "browse": "Browse All Ideas"
+            }
+        },
+        "committee": {
+            "title": "Innovation Committee",
+            "reviewTitle": "Review Ideas",
+            "tabs": {
+                "pending": "Pending Review",
+                "approved": "Approved",
+                "rejected": "Rejected",
+                "popular": "Popular"
+            },
+            "errors": {
+                "loadFallback": "Unable to load ideas",
+                "loadTitle": "Unable to Load Ideas",
+                "loadMessage": "We encountered a problem loading ideas. Please check your connection and try again.",
+                "tryAgain": "Please try again",
+                "actionFailed": "Action failed"
+            },
+            "toast": {
+                "approved": "Approved",
+                "rejected": "Rejected"
+            },
+            "bulk": {
+                "noSelectionTitle": "No selection",
+                "noSelectionMessage": "Select at least one idea first",
+                "approvedCount": "Approved {{count}} idea(s)",
+                "rejectedCount": "Rejected {{count}} idea(s)",
+                "fallbackError": "Some items may not have been processed",
+                "failedTitle": "Bulk action failed"
+            },
+            "promote": {
+                "confirmTitle": "Approve & Promote?",
+                "confirmMessage": "This idea isn't approved yet. Approve and promote now?",
+                "confirmAction": "Yes, continue",
+                "projectCodeTitle": "Project Code",
+                "projectCodeLabel": "Enter project code or leave blank to auto-generate",
+                "projectCodePlaceholder": "e.g. INNO-2025-001",
+                "successTitle": "Promoted to {{code}}",
+                "failedTitle": "Promote failed"
+            },
+            "empty": {
+                "pending": "No submissions are awaiting review.",
+                "approved": "No approved ideas yet.",
+                "rejected": "No rejected ideas.",
+                "popular": "No popular ideas found."
+            },
+            "access": {
+                "title": "Access restricted",
+                "message": "This page is for Innovation Committee members only. Redirecting..."
             }
         },
         "leaderboard": {
             "title": "Innovation Leaderboard",
             "breadcrumb": "Leaderboard",
             "heading": "Top contributors",
+            "badge": "Recognition",
+            "subtitle": "Celebrating the people driving the most impactful ideas.",
+            "description": "Ranked by ideas submitted and community votes.",
+            "summary": {
+                "contributors": "Contributors",
+                "ideas": "Ideas",
+                "upvotes": "Upvotes",
+                "points": "Points"
+            },
             "empty": "No data yet.",
             "error": {
                 "title": "Unable to Load Leaderboard",
@@ -477,7 +602,49 @@
             }
         },
         "projects": {
-            "title": "BSJ Projects"
+            "title": "BSJ Projects",
+            "badge": "Official BSJ Projects",
+            "subtitle": "Innovation ideas that have been approved and promoted to official BSJ projects",
+            "stats": {
+                "active": "Active Projects",
+                "total": "Total Projects",
+                "topCategory": "Top Category",
+                "avgVotes": "Avg. Votes",
+                "latest": "Latest Project"
+            },
+            "searchPlaceholder": "Search by project code, title, or description...",
+            "filters": {
+                "allCategories": "All Categories"
+            },
+            "sort": {
+                "newest": "Newest First",
+                "oldest": "Oldest First",
+                "mostVoted": "Most Voted",
+                "alphabetical": "A-Z"
+            },
+            "actions": {
+                "exportCsv": "Export CSV",
+                "submitIdea": "Submit an Idea",
+                "browseIdeas": "Browse Ideas",
+                "copyCode": "Copy project code"
+            },
+            "empty": {
+                "title": "No BSJ Projects Yet",
+                "message": "Projects appear here when the Innovation Committee approves and promotes community ideas to official BSJ initiatives."
+            },
+            "meta": {
+                "by": "by",
+                "promoted": "Promoted",
+                "score": "Score"
+            },
+            "error": {
+                "title": "Unable to Load Projects",
+                "message": "We encountered a problem loading BSJ projects. Please try again."
+            },
+            "copy": {
+                "title": "Copied!",
+                "message": "Project code {{code}} copied to clipboard"
+            }
         },
         "notFound": {
             "title": "Page Not Found",
@@ -493,6 +660,11 @@
                 "mine": "My Ideas",
                 "projects": "BSJ Projects"
             }
+        },
+        "common": {
+            "anonymous": "Anonymous",
+            "tryAgain": "Try Again",
+            "na": "N/A"
         },
         "categories": {
             "TECHNOLOGY": "Technology",

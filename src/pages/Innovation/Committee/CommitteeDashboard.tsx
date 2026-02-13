@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import Swal from 'sweetalert2';
 import { approveIdea, fetchIdeas, fetchIdeaCounts, Idea, promoteIdea as promoteIdeaApi, rejectIdea } from '../../../utils/ideasApi';
@@ -10,6 +11,7 @@ import HolidayCountdown from '../../../components/HolidayCountdown';
 
 const CommitteeDashboard = () => {
     const dispatch = useDispatch();
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const currentUser = getUser();
     const roles: string[] = Array.isArray(currentUser?.roles) ? currentUser.roles : currentUser?.role ? [currentUser.role] : [];
@@ -56,8 +58,8 @@ const CommitteeDashboard = () => {
     const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
 
     useEffect(() => {
-        dispatch(setPageTitle('Innovation Committee'));
-    }, [dispatch]);
+        dispatch(setPageTitle(t('innovation.committee.title', { defaultValue: 'Innovation Committee' })));
+    }, [dispatch, t]);
 
     useEffect(() => {
         if (!isCommittee) {

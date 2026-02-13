@@ -7,7 +7,6 @@ import { getApiUrl } from '../../../config/api';
 import { computeRoleContext, AccountSettingsVisibility } from '../../../utils/roleVisibilityHelper';
 import Swal from 'sweetalert2';
 import IconHome from '../../../components/Icon/IconHome';
-import IconUser from '../../../components/Icon/IconUser';
 
 const AccountSetting = () => {
     const dispatch = useDispatch();
@@ -239,7 +238,7 @@ const AccountSetting = () => {
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-                        // Ignore errors saving profile
+        // Ignore errors saving profile
         // Validate file type
         if (!file.type.startsWith('image/')) {
             Swal.fire({
@@ -393,13 +392,13 @@ const AccountSetting = () => {
             <ul className="flex space-x-2 rtl:space-x-reverse">
                 <li>
                     <Link to="/profile" state={{ module: moduleState }} className="text-primary hover:underline">
-                                                                            // Ignore photo fallback errors
+                        Profile
                     </Link>
                 </li>
                 <li className="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
                     <span>Account Settings</span>
                 </li>
-                                                                // Ignore errors refetching profile
+            </ul>
             <div className="pt-5">
                 <div className="flex items-center justify-between mb-5">
                     <h5 className="font-semibold text-lg dark:text-white-light">Settings</h5>
@@ -426,7 +425,6 @@ const AccountSetting = () => {
                                         onClick={() => setTabs('preferences')}
                                         className={`flex gap-2 border-b border-transparent p-4 hover:border-primary hover:text-primary ${tabs === 'preferences' ? '!border-primary text-primary' : ''}`}
                                     >
-                                                    // Ignore errors uploading image
                                         Preferences
                                     </button>
                                 </li>

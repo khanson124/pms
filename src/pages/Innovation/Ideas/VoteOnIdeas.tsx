@@ -119,8 +119,14 @@ const VoteOnIdeas = () => {
 
                     Swal.fire({
                         icon: 'error',
-                        title: isNetworkError ? 'Connection Problem' : 'Unable to Load Ideas',
-                        text: isNetworkError ? 'Please check your internet connection and try again.' : 'We encountered a problem loading voting options. Please try refreshing the page.',
+                        title: isNetworkError
+                            ? t('innovation.vote.errors.connectionTitle', { defaultValue: 'Connection Problem' })
+                            : t('innovation.vote.errors.loadTitle', { defaultValue: 'Unable to Load Ideas' }),
+                        text: isNetworkError
+                            ? t('innovation.vote.errors.connectionMessage', { defaultValue: 'Please check your internet connection and try again.' })
+                            : t('innovation.vote.errors.loadMessage', {
+                                  defaultValue: 'We encountered a problem loading voting options. Please try refreshing the page.',
+                              }),
                         toast: true,
                         position: 'bottom-end',
                         showConfirmButton: false,
@@ -207,7 +213,7 @@ const VoteOnIdeas = () => {
                     icon: 'warning',
                     title: t('innovation.vote.warning.noVotesLeft.title'),
                     text: t('innovation.vote.warning.noVotesLeft.message'),
-                    confirmButtonText: 'OK',
+                    confirmButtonText: t('innovation.vote.common.ok', { defaultValue: 'OK' }),
                 });
                 return;
             }
@@ -216,8 +222,8 @@ const VoteOnIdeas = () => {
             if (error instanceof Error && error.message.includes('already voted')) {
                 void Swal.fire({
                     icon: 'warning',
-                    title: 'Already Voted',
-                    text: 'You have already voted for this idea',
+                    title: t('innovation.vote.warning.alreadyVoted.title', { defaultValue: 'Already Voted' }),
+                    text: t('innovation.vote.warning.alreadyVoted.message', { defaultValue: 'You have already voted for this idea' }),
                     toast: true,
                     position: 'top-end',
                     timer: 4000,
@@ -234,8 +240,8 @@ const VoteOnIdeas = () => {
                 // Generic error
                 void Swal.fire({
                     icon: 'error',
-                    title: 'Vote Failed',
-                    text: 'We were unable to process your vote. Please try again.',
+                    title: t('innovation.vote.errors.voteFailedTitle', { defaultValue: 'Vote Failed' }),
+                    text: t('innovation.vote.errors.voteFailedMessage', { defaultValue: 'We were unable to process your vote. Please try again.' }),
                     toast: true,
                     position: 'bottom-end',
                     showConfirmButton: false,

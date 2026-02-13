@@ -72,7 +72,7 @@ const MyIdeas = () => {
                     if (prev.some((i) => i.id === String(detail.id))) return prev;
                     const optimistic: MyIdea = {
                         id: String(detail.id),
-                        title: detail.title || 'Untitled',
+                        title: detail.title || t('innovation.myIdeas.fallback.untitled', { defaultValue: 'Untitled' }),
                         description: detail.description || '',
                         category: detail.category || 'OTHER',
                         submittedAt: new Date().toISOString(),
@@ -143,8 +143,12 @@ const MyIdeas = () => {
 
                 Swal.fire({
                     icon: 'error',
-                    title: isNetworkError ? 'Connection Problem' : 'Unable to Load Ideas',
-                    text: isNetworkError ? 'Please check your internet connection and try again.' : 'We encountered a problem loading your ideas. Please try again.',
+                    title: isNetworkError
+                        ? t('innovation.myIdeas.errors.connectionTitle', { defaultValue: 'Connection Problem' })
+                        : t('innovation.myIdeas.errors.loadTitle', { defaultValue: 'Unable to Load Ideas' }),
+                    text: isNetworkError
+                        ? t('innovation.myIdeas.errors.connectionMessage', { defaultValue: 'Please check your internet connection and try again.' })
+                        : t('innovation.myIdeas.errors.loadMessage', { defaultValue: 'We encountered a problem loading your ideas. Please try again.' }),
                     toast: true,
                     position: 'bottom-end',
                     timer: 4000,
