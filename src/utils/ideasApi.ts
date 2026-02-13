@@ -404,6 +404,13 @@ export async function fetchTags(): Promise<Array<{ id: number; name: string }>> 
     if (!res.ok) throw new Error(await res.text());
     return await res.json();
 }
+
+export async function fetchTagUsage(limit = 20): Promise<Array<{ id: number; name: string; count: number }>> {
+    const qs = new URLSearchParams({ limit: String(limit), t: Date.now().toString() });
+    const res = await fetchWithCredentials(getApiUrl(`/api/tags/usage?${qs.toString()}`), { headers: authHeaders(), cache: 'no-store' });
+    if (!res.ok) throw new Error(await res.text());
+    return await res.json();
+}
 export async function createTag(name: string) {
     const res = await fetchWithCredentials(getApiUrl('/api/tags'), { method: 'POST', headers: authHeaders(), body: JSON.stringify({ name }) });
     if (!res.ok) throw new Error(await res.text());

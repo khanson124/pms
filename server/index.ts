@@ -43,7 +43,6 @@ import { requireCommittee as requireCommitteeRole, requireEvaluationCommittee, r
 import { validate, createIdeaSchema, voteSchema, approveRejectIdeaSchema, promoteIdeaSchema, sanitizeInput as sanitize } from './middleware/validation.js';
 import { errorHandler, notFoundHandler, asyncHandler, NotFoundError, BadRequestError } from './middleware/errorHandler.js';
 import { auditMiddleware, auditLogger } from './middleware/auditMiddleware.js';
-import { authMiddleware } from './middleware/auth.js';
 import statsRouter from './routes/stats.js';
 import combineRouter from './routes/combine.js';
 import approvalsRouter from './routes/approvals.js';
@@ -1837,6 +1836,8 @@ app.post('/api/ideas/:id/promote', authMiddleware, requireCommittee, async (req,
             return res.status(400).json({ message: 'Idea must be approved before promotion' });
         }
 
+        const decryptedIdea = decryptIdeaFields(idea);
+
         // Update to promoted status
         const result = await prisma.idea.updateMany({
             where: {
@@ -2178,9 +2179,11 @@ app.post('/api/ideas/:id/vote', authMiddleware, voteLimiter, async (req, res) =>
         updateIdeaTrendingScore(ideaId).catch((err) => console.error('Failed to update trending score:', err));
 
         // Emit WebSocket event
-        if (updated) {
-            emitVoteUpdated(ideaId, updated.voteCount, updated.trendingScore);
+        if (!updated) {
+            return res.status(404).json({ message: 'Idea not found' });
         }
+
+        emitVoteUpdated(ideaId, updated.voteCount, updated.trendingScore);
 
         return res.json({ ...decryptIdeaFields(updated), hasVoted });
     } catch (e: any) {
@@ -5376,6 +5379,34 @@ app.post('/api/admin/load-balancing-settings', requireAdmin, async (req, res) =>
 app.post('/api/procurement/load_balancing-settings', async (req, res) => {
     // Delegate to the canonical handler
     (app as any)._router.handle({ ...req, url: '/procurement/load-balancing-settings' }, res, () => {});
+});
+
+// GET /api/tags - list all tags
+app.get('/api/tags/usage', async (req, res) => {
+    try {
+        const rawLimit = typeof req.query.limit === 'string' ? parseInt(req.query.limit, 10) : 20;
+        const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 100) : 20;
+
+        const grouped = await prisma.ideaTag.groupBy({
+            by: ['tagId'],
+            _count: { tagId: true },
+            orderBy: { _count: { tagId: 'desc' } },
+            take: limit,
+        });
+
+        if (!grouped.length) return res.json([]);
+
+        const tagIds = grouped.map((g) => g.tagId);
+        const tags = await prisma.tag.findMany({ where: { id: { in: tagIds } }, select: { id: true, name: true } });
+        const tagMap = new Map(tags.map((tag) => [tag.id, tag.name]));
+
+        const payload = grouped.map((g) => ({ id: g.tagId, name: tagMap.get(g.tagId) || '', count: g._count.tagId || 0 })).filter((item) => item.name);
+
+        return res.json(payload);
+    } catch (e: any) {
+        console.error('GET /api/tags/usage error:', e);
+        return res.status(500).json({ message: 'Failed to fetch tag usage' });
+    }
 });
 
 // GET /api/tags - list all tags

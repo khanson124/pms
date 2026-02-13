@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { setPageTitle } from '../../../store/themeConfigSlice';
-import { fetchIdeas, voteForIdea, removeVote } from '../../../utils/ideasApi';
+import { fetchIdeas, fetchTags, voteForIdea, removeVote } from '../../../utils/ideasApi';
 import Swal from 'sweetalert2';
 
 interface Idea {
@@ -24,9 +24,11 @@ const BrowseIdeas = () => {
     const { t } = useTranslation();
     const [ideas, setIdeas] = useState<Idea[]>([]);
     const [filter, setFilter] = useState('all');
+    const [tagFilter, setTagFilter] = useState('');
     const [sortBy, setSortBy] = useState('popular');
     const [isLoading, setIsLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
+    const [allTags, setAllTags] = useState<Array<{ id: number; name: string }>>([]);
     const itemsPerPage = 10;
 
     useEffect(() => {
@@ -37,13 +39,22 @@ const BrowseIdeas = () => {
             loadIdeas();
         }, 60000);
         return () => clearInterval(intervalId);
-    }, [dispatch, t, sortBy]);
+    }, [dispatch, t, sortBy, tagFilter]);
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const tags = await fetchTags();
+                setAllTags(tags);
+            } catch {}
+        })();
+    }, []);
 
     const loadIdeas = async () => {
         setIsLoading(true);
         try {
             const sort = sortBy === 'popular' ? 'popularity' : 'recent';
-            const response = await fetchIdeas({ sort, limit: 50 });
+            const response = await fetchIdeas({ sort, limit: 50, tag: tagFilter || undefined });
             // Handle both paginated and legacy response formats
             const data = Array.isArray(response) ? response : (response as any).ideas || response;
             setIdeas(
@@ -157,9 +168,19 @@ const BrowseIdeas = () => {
         return t(`innovation.categories.${category}`);
     };
 
+    const normalizeTag = (value: string) => value.trim().toLowerCase();
+
+    const handleTagClick = (tag: string) => {
+        setTagFilter(tag);
+    };
+
     // CRITICAL FIX: Apply filter and sort to ideas
     const filteredAndSortedIdeas = ideas
-        .filter((idea) => filter === 'all' || idea.category === filter)
+        .filter((idea) => {
+            const matchesCategory = filter === 'all' || idea.category === filter;
+            const matchesTag = !tagFilter || idea.tags.some((tag) => normalizeTag(tag) === normalizeTag(tagFilter));
+            return matchesCategory && matchesTag;
+        })
         .sort((a, b) => {
             if (sortBy === 'popular') return b.voteCount - a.voteCount;
             if (sortBy === 'recent') return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
@@ -174,7 +195,7 @@ const BrowseIdeas = () => {
     // Reset to page 1 when filter/sort changes
     useEffect(() => {
         setCurrentPage(1);
-    }, [filter, sortBy]);
+    }, [filter, sortBy, tagFilter]);
 
     return (
         <div className="space-y-6">
@@ -192,7 +213,7 @@ const BrowseIdeas = () => {
             {/* Filters */}
             <div className="panel">
                 <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 flex-wrap">
                         <label htmlFor="category-filter" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                             {t('innovation.browse.filters.category')}
                         </label>
@@ -206,6 +227,28 @@ const BrowseIdeas = () => {
                             <option value="PRODUCT_INNOVATION">{t('innovation.categories.PRODUCT_INNOVATION')}</option>
                             <option value="OTHER">{t('innovation.categories.OTHER')}</option>
                         </select>
+                        <label htmlFor="tag-filter" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            {t('innovation.browse.filters.tag', { defaultValue: 'Tag' })}
+                        </label>
+                        <select
+                            id="tag-filter"
+                            value={tagFilter}
+                            onChange={(e) => setTagFilter(e.target.value)}
+                            className="form-select w-auto"
+                            aria-label={t('innovation.browse.filters.tag', { defaultValue: 'Tag' })}
+                        >
+                            <option value="">{t('innovation.browse.filters.allTags', { defaultValue: 'All tags' })}</option>
+                            {allTags.map((tag) => (
+                                <option key={tag.id} value={tag.name}>
+                                    #{tag.name}
+                                </option>
+                            ))}
+                        </select>
+                        {tagFilter && (
+                            <button type="button" className="btn btn-outline-primary" onClick={() => setTagFilter('')}>
+                                {t('innovation.browse.filters.clearTag', { defaultValue: 'Clear tag' })}
+                            </button>
+                        )}
                     </div>
                     <div className="flex items-center gap-4">
                         <label htmlFor="sort-filter" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -297,11 +340,23 @@ const BrowseIdeas = () => {
                                     <p className="text-gray-700 dark:text-gray-300 mb-4 whitespace-pre-wrap">{idea.description}</p>
                                     {idea.tags.length > 0 && (
                                         <div className="flex flex-wrap gap-2 mb-3">
-                                            {idea.tags.map((tag, idx) => (
-                                                <span key={idx} className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-xs">
-                                                    #{tag}
-                                                </span>
-                                            ))}
+                                            {idea.tags.map((tag, idx) => {
+                                                const isActive = normalizeTag(tag) === normalizeTag(tagFilter);
+                                                return (
+                                                    <button
+                                                        key={idx}
+                                                        type="button"
+                                                        onClick={() => handleTagClick(tag)}
+                                                        className={`px-2 py-1 rounded text-xs border transition-colors ${
+                                                            isActive
+                                                                ? 'bg-primary/10 border-primary text-primary'
+                                                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-transparent hover:bg-gray-200 dark:hover:bg-gray-600'
+                                                        }`}
+                                                    >
+                                                        #{tag}
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
                                     )}
                                     <Link to={`/innovation/ideas/${idea.id}`} className="text-primary hover:underline font-semibold text-sm inline-flex items-center gap-1">

@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import Swal from 'sweetalert2';
 import { useAutoSave, restoreAutoSave, clearAutoSave } from '../../../utils/useAutoSave';
-import { submitIdea, fetchTags, createTag, fetchChallenges, fetchIdeas } from '../../../utils/ideasApi';
+import { submitIdea, fetchTags, createTag, fetchChallenges, fetchTagUsage } from '../../../utils/ideasApi';
 import { useDebounce } from '../../../utils/useDebounce';
 import { getApiUrl } from '../../../config/api';
 
@@ -133,17 +133,12 @@ const SubmitIdea = () => {
         let active = true;
         (async () => {
             try {
-                const response = await fetchIdeas({ limit: 100, sort: 'popular' });
-                const data = Array.isArray(response) ? response : ((response as { ideas?: unknown }).ideas ?? response);
-                const list = Array.isArray(data) ? (data as Array<{ tags?: unknown }>) : [];
+                const usage = await fetchTagUsage(50);
                 const counts: Record<string, number> = {};
-                list.forEach((idea) => {
-                    const tags = Array.isArray(idea.tags) ? idea.tags : [];
-                    tags.forEach((tag) => {
-                        const key = normalizeTag(String(tag));
-                        if (!key) return;
-                        counts[key] = (counts[key] || 0) + 1;
-                    });
+                usage.forEach((tag) => {
+                    const key = normalizeTag(tag.name);
+                    if (!key) return;
+                    counts[key] = tag.count;
                 });
                 if (active) setTagUsage(counts);
             } catch {}
