@@ -212,12 +212,12 @@ const BrowseIdeas = () => {
 
             {/* Filters */}
             <div className="panel">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex items-center gap-4 flex-wrap">
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                    <div className="space-y-2">
                         <label htmlFor="category-filter" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                             {t('innovation.browse.filters.category')}
                         </label>
-                        <select id="category-filter" value={filter} onChange={(e) => setFilter(e.target.value)} className="form-select w-auto" aria-label={t('innovation.browse.filters.category')}>
+                        <select id="category-filter" value={filter} onChange={(e) => setFilter(e.target.value)} className="form-select w-full" aria-label={t('innovation.browse.filters.category')}>
                             <option value="all">{t('innovation.browse.filters.allCategories')}</option>
                             <option value="TECHNOLOGY">{t('innovation.categories.TECHNOLOGY')}</option>
                             <option value="SUSTAINABILITY">{t('innovation.categories.SUSTAINABILITY')}</option>
@@ -227,34 +227,38 @@ const BrowseIdeas = () => {
                             <option value="PRODUCT_INNOVATION">{t('innovation.categories.PRODUCT_INNOVATION')}</option>
                             <option value="OTHER">{t('innovation.categories.OTHER')}</option>
                         </select>
+                    </div>
+                    <div className="space-y-2">
                         <label htmlFor="tag-filter" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                             {t('innovation.browse.filters.tag', { defaultValue: 'Tag' })}
                         </label>
-                        <select
-                            id="tag-filter"
-                            value={tagFilter}
-                            onChange={(e) => setTagFilter(e.target.value)}
-                            className="form-select w-auto"
-                            aria-label={t('innovation.browse.filters.tag', { defaultValue: 'Tag' })}
-                        >
-                            <option value="">{t('innovation.browse.filters.allTags', { defaultValue: 'All tags' })}</option>
-                            {allTags.map((tag) => (
-                                <option key={tag.id} value={tag.name}>
-                                    #{tag.name}
-                                </option>
-                            ))}
-                        </select>
-                        {tagFilter && (
-                            <button type="button" className="btn btn-outline-primary" onClick={() => setTagFilter('')}>
-                                {t('innovation.browse.filters.clearTag', { defaultValue: 'Clear tag' })}
-                            </button>
-                        )}
+                        <div className="flex flex-wrap gap-2">
+                            <select
+                                id="tag-filter"
+                                value={tagFilter}
+                                onChange={(e) => setTagFilter(e.target.value)}
+                                className="form-select min-w-[220px] flex-1"
+                                aria-label={t('innovation.browse.filters.tag', { defaultValue: 'Tag' })}
+                            >
+                                <option value="">{t('innovation.browse.filters.allTags', { defaultValue: 'All tags' })}</option>
+                                {allTags.map((tag) => (
+                                    <option key={tag.id} value={tag.name}>
+                                        #{tag.name}
+                                    </option>
+                                ))}
+                            </select>
+                            {tagFilter && (
+                                <button type="button" className="btn btn-outline-primary" onClick={() => setTagFilter('')}>
+                                    {t('innovation.browse.filters.clearTag', { defaultValue: 'Clear tag' })}
+                                </button>
+                            )}
+                        </div>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="space-y-2">
                         <label htmlFor="sort-filter" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                             {t('innovation.browse.filters.sortBy')}
                         </label>
-                        <select id="sort-filter" value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="form-select w-auto" aria-label={t('innovation.browse.filters.sortBy')}>
+                        <select id="sort-filter" value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="form-select w-full" aria-label={t('innovation.browse.filters.sortBy')}>
                             <option value="popular">{t('innovation.browse.filters.mostPopular')}</option>
                             <option value="recent">{t('innovation.browse.filters.mostRecent')}</option>
                             <option value="views">{t('innovation.browse.filters.mostViewed')}</option>

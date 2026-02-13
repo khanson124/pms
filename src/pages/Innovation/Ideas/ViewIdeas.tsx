@@ -294,113 +294,121 @@ const ViewIdeas = () => {
 
             {/* Search and Filters */}
             <div className="panel">
-                <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex-1 min-w-[300px]">
-                        <div className="relative">
-                            <input
-                                type="text"
-                                placeholder={t('innovation.view.search.placeholder')}
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="form-input pl-10 pr-4"
-                            />
-                            <svg className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
+                <div className="space-y-4">
+                    <div className="grid gap-4 lg:grid-cols-[minmax(280px,1fr)_2fr] items-start">
+                        <div className="min-w-[260px]">
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    placeholder={t('innovation.view.search.placeholder')}
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="form-input pl-10 pr-4"
+                                />
+                                <svg className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('innovation.view.filters.category')}</span>
+                            <div className="flex flex-wrap gap-2">
+                                {['PROCESS_IMPROVEMENT', 'TECHNOLOGY', 'CUSTOMER_SERVICE', 'SUSTAINABILITY', 'COST_REDUCTION', 'PRODUCT_INNOVATION', 'OTHER'].map((cat) => {
+                                    const active = categoryFilters.includes(cat);
+                                    return (
+                                        <button
+                                            key={cat}
+                                            onClick={() => setCategoryFilters(active ? categoryFilters.filter((c) => c !== cat) : [...categoryFilters, cat])}
+                                            className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+                                                active ? 'bg-primary text-white shadow' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                            }`}
+                                            aria-pressed={active}
+                                        >
+                                            {t(`innovation.categories.${cat}`)}
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
-                    <div className="flex flex-col gap-2">
-                        <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('innovation.view.filters.category')}</span>
-                        <div className="flex flex-wrap gap-2">
-                            {['PROCESS_IMPROVEMENT', 'TECHNOLOGY', 'CUSTOMER_SERVICE', 'SUSTAINABILITY', 'COST_REDUCTION', 'PRODUCT_INNOVATION', 'OTHER'].map((cat) => {
-                                const active = categoryFilters.includes(cat);
-                                return (
-                                    <button
-                                        key={cat}
-                                        onClick={() => setCategoryFilters(active ? categoryFilters.filter((c) => c !== cat) : [...categoryFilters, cat])}
-                                        className={`px-3 py-1 rounded-full text-xs font-medium transition ${
-                                            active ? 'bg-primary text-white shadow' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                                        }`}
-                                        aria-pressed={active}
-                                    >
-                                        {t(`innovation.categories.${cat}`)}
-                                    </button>
-                                );
-                            })}
+                    <div className="grid gap-4 lg:grid-cols-[1fr_auto] items-end">
+                        <div className="flex flex-wrap gap-6">
+                            <div className="flex flex-col gap-2">
+                                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('innovation.view.filters.status')}</span>
+                                <div className="flex flex-wrap gap-2">
+                                    {['PENDING_REVIEW', 'APPROVED', 'REJECTED', 'PROMOTED_TO_PROJECT', 'DRAFT'].map((s) => {
+                                        const active = statusFilters.includes(s);
+                                        return (
+                                            <button
+                                                key={s}
+                                                onClick={() => setStatusFilters(active ? statusFilters.filter((x) => x !== s) : [...statusFilters, s])}
+                                                className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+                                                    active ? 'bg-secondary text-white shadow' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                                }`}
+                                                aria-pressed={active}
+                                            >
+                                                {t(`innovation.view.statusFilter.${s}`, { defaultValue: s })}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('innovation.view.filters.sort')}</span>
+                                <div className="flex flex-wrap gap-2">
+                                    {(['recent', 'popular', 'trending'] as const).map((srt) => (
+                                        <button
+                                            key={srt}
+                                            onClick={() => setSortBy(srt)}
+                                            className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+                                                sortBy === srt
+                                                    ? 'bg-primary/80 text-white shadow'
+                                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                            }`}
+                                            aria-pressed={sortBy === srt}
+                                        >
+                                            <span className="inline-flex items-center gap-1.5">
+                                                {srt === 'recent' && (
+                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                )}
+                                                {srt === 'popular' && (
+                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                                                        />
+                                                    </svg>
+                                                )}
+                                                {srt === 'trending' && (
+                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                                    </svg>
+                                                )}
+                                                {t(`innovation.view.sort.${srt}`, { defaultValue: srt })}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('innovation.view.filters.status')}</span>
-                        <div className="flex flex-wrap gap-2">
-                            {['PENDING_REVIEW', 'APPROVED', 'REJECTED', 'PROMOTED_TO_PROJECT', 'DRAFT'].map((s) => {
-                                const active = statusFilters.includes(s);
-                                return (
-                                    <button
-                                        key={s}
-                                        onClick={() => setStatusFilters(active ? statusFilters.filter((x) => x !== s) : [...statusFilters, s])}
-                                        className={`px-3 py-1 rounded-full text-xs font-medium transition ${
-                                            active ? 'bg-secondary text-white shadow' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                                        }`}
-                                        aria-pressed={active}
-                                    >
-                                        {t(`innovation.view.statusFilter.${s}`, { defaultValue: s })}
-                                    </button>
-                                );
-                            })}
+                        <div className="flex items-end justify-start lg:justify-end">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setCategoryFilters([]);
+                                    setStatusFilters([]);
+                                    setSortBy('recent');
+                                    setFilter('all');
+                                }}
+                                className="btn btn-outline-danger btn-sm"
+                            >
+                                {t('innovation.view.filters.clearAll', { defaultValue: 'Clear Filters' })}
+                            </button>
                         </div>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('innovation.view.filters.sort')}</span>
-                        <div className="flex gap-2">
-                            {(['recent', 'popular', 'trending'] as const).map((srt) => (
-                                <button
-                                    key={srt}
-                                    onClick={() => setSortBy(srt)}
-                                    className={`px-3 py-1 rounded-full text-xs font-medium transition ${
-                                        sortBy === srt ? 'bg-primary/80 text-white shadow' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                                    }`}
-                                    aria-pressed={sortBy === srt}
-                                >
-                                    <span className="inline-flex items-center gap-1.5">
-                                        {srt === 'recent' && (
-                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                        )}
-                                        {srt === 'popular' && (
-                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-                                                />
-                                            </svg>
-                                        )}
-                                        {srt === 'trending' && (
-                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                                            </svg>
-                                        )}
-                                        {t(`innovation.view.sort.${srt}`, { defaultValue: srt })}
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setCategoryFilters([]);
-                                setStatusFilters([]);
-                                setSortBy('recent');
-                                setFilter('all');
-                            }}
-                            className="btn btn-outline-danger btn-sm"
-                        >
-                            {t('innovation.view.filters.clearAll', { defaultValue: 'Clear Filters' })}
-                        </button>
                     </div>
                 </div>
             </div>
