@@ -252,7 +252,7 @@ export async function fetchRelatedIdeas(id: number | string): Promise<RelatedIde
 
 export type LeaderboardRow = { userId: number; name: string; email: string; ideaCount: number; upvotes: number; comments: number; points: number; badge: string | null };
 export async function fetchLeaderboard(): Promise<LeaderboardRow[]> {
-    const res = await fetchWithCredentials(getApiUrl(`/api/leaderboard?t=${Date.now()}`), { headers: authHeaders(), cache: 'no-store' });
+    const res = await fetchWithCredentials(getApiUrl(`/api/innovation/leaderboard?t=${Date.now()}`), { headers: authHeaders(), cache: 'no-store' });
     if (!res.ok) throw new Error(await res.text());
     const data = await res.json();
     return data.leaderboard as LeaderboardRow[];

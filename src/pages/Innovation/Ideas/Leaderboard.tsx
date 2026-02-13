@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { setPageTitle } from '../../../store/themeConfigSlice';
@@ -22,6 +21,18 @@ export default function Leaderboard() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    const totals = useMemo(() => {
+        const totalIdeas = rows.reduce((sum, row) => sum + (row.ideaCount || 0), 0);
+        const totalUpvotes = rows.reduce((sum, row) => sum + (row.upvotes || 0), 0);
+        const totalPoints = rows.reduce((sum, row) => sum + (row.points || 0), 0);
+        return {
+            contributors: rows.length,
+            totalIdeas,
+            totalUpvotes,
+            totalPoints,
+        };
+    }, [rows]);
+
     useEffect(() => {
         dispatch(setPageTitle(t('innovation.leaderboard.title', { defaultValue: 'Innovation Leaderboard' })));
     }, [dispatch, t]);
@@ -43,19 +54,55 @@ export default function Leaderboard() {
 
     return (
         <div className="space-y-6">
-            <ul className="flex space-x-2 rtl:space-x-reverse text-sm">
-                <li>
-                    <Link to="/innovation/dashboard" className="text-primary hover:underline">
-                        {t('innovation.hub')}
-                    </Link>
-                </li>
-                <li className="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
-                    <span className="font-semibold">{t('innovation.leaderboard.breadcrumb', { defaultValue: 'Leaderboard' })}</span>
-                </li>
-            </ul>
+            <div className="panel bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white overflow-hidden relative">
+                <div className="absolute inset-0 opacity-10 pointer-events-none">
+                    <div className="absolute -top-16 -right-16 w-80 h-80 bg-white rounded-full" />
+                    <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-white rounded-full" />
+                </div>
+                <div className="relative z-10 p-6 sm:p-8">
+                    <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-md text-xs font-semibold mb-3">
+                        <span className="w-2 h-2 rounded-full bg-amber-300 animate-pulse" />
+                        <span>{t('innovation.leaderboard.badge', { defaultValue: 'Recognition' })}</span>
+                    </div>
+                    <h1 className="text-3xl sm:text-4xl font-black flex items-center gap-3 mb-2">
+                        <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                            />
+                        </svg>
+                        {t('innovation.leaderboard.title', { defaultValue: 'Innovation Leaderboard' })}
+                    </h1>
+                    <p className="text-white/90 max-w-2xl">{t('innovation.leaderboard.subtitle', { defaultValue: 'Celebrating the people driving the most impactful ideas.' })}</p>
+                </div>
+            </div>
+
+            <div className="panel bg-gradient-to-r from-slate-50 to-indigo-50 dark:from-slate-900/20 dark:to-indigo-900/20 border border-indigo-200/60 dark:border-indigo-800/40">
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                        {t('innovation.leaderboard.summary.contributors', { defaultValue: 'Contributors' })}: {totals.contributors}
+                    </span>
+                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
+                        {t('innovation.leaderboard.summary.ideas', { defaultValue: 'Ideas' })}: {totals.totalIdeas}
+                    </span>
+                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                        {t('innovation.leaderboard.summary.upvotes', { defaultValue: 'Upvotes' })}: {totals.totalUpvotes}
+                    </span>
+                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-800 dark:bg-slate-800/60 dark:text-slate-300">
+                        {t('innovation.leaderboard.summary.points', { defaultValue: 'Points' })}: {totals.totalPoints}
+                    </span>
+                </div>
+            </div>
 
             <div className="panel">
-                <h1 className="text-xl font-bold mb-4">{t('innovation.leaderboard.heading', { defaultValue: 'Top contributors' })}</h1>
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <div>
+                        <h2 className="text-xl font-bold">{t('innovation.leaderboard.heading', { defaultValue: 'Top contributors' })}</h2>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{t('innovation.leaderboard.description', { defaultValue: 'Ranked by ideas submitted and community votes.' })}</p>
+                    </div>
+                </div>
                 {loading ? (
                     <div className="h-32 bg-gray-100 dark:bg-gray-800 animate-pulse rounded" />
                 ) : error ? (
