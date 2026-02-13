@@ -136,7 +136,6 @@ const MyIdeas = () => {
                 }),
             );
         } catch (error: any) {
-            console.error('[MyIdeas] Error loading ideas:', error);
             // Only show error on initial load, not silent background refreshes
             if (!silent && !ideas.length) {
                 const errorMessage = error?.message || 'Unknown error';
@@ -291,9 +290,7 @@ const MyIdeas = () => {
                     }),
                 );
             }
-        } catch (error) {
-            console.error('Failed to fetch comments:', error);
-        }
+        } catch (error) {}
     };
 
     const handleAddComment = async (ideaId: string) => {
@@ -359,7 +356,6 @@ const MyIdeas = () => {
                 throw new Error('Failed to post comment');
             }
         } catch (error) {
-            console.error('Error posting comment:', error);
             void Swal.fire({
                 icon: 'error',
                 title: t('innovation.myIdeas.comments.error', { defaultValue: 'Failed to post comment' }),

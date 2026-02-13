@@ -18,6 +18,7 @@ import { updateIdeaTrendingScore } from '../services/trendingService.js';
 import { searchIdeas, getSearchSuggestions } from '../services/searchService.js';
 import { findPotentialDuplicates } from '../services/duplicateDetectionService.js';
 import { emitIdeaCreated, emitIdeaStatusChanged, emitVoteUpdated } from '../services/websocketService.js';
+import { decryptIdeaFields, encryptText, isIdeaEncryptionEnabled } from '../utils/ideaEncryption.js';
 
 const router = Router();
 
@@ -243,15 +244,18 @@ router.get(
 
         const voteMap = new Map(userVotes.map((v) => [v.ideaId, v.voteType]));
 
-        const ideasWithVotes = ideas.slice(0, take).map((idea: any) => ({
-            ...idea,
-            commentCount: idea._count?.comments || 0,
-            hasVoted: voteMap.has(idea.id) ? (voteMap.get(idea.id) === 'UPVOTE' ? 'up' : 'down') : null,
-            submittedBy: idea.isAnonymous && !isAdmin ? 'Anonymous' : idea.submitter?.name || idea.submitter?.email || 'Unknown',
-            isAnonymousSubmission: idea.isAnonymous && isAdmin ? true : undefined,
-            tags: Array.isArray(idea.tags) ? idea.tags.map((it: any) => it.tag?.name).filter(Boolean) : [],
-            tagObjects: Array.isArray(idea.tags) ? idea.tags.map((it: any) => ({ id: it.tagId, name: it.tag?.name })).filter((t: any) => t.name) : [],
-        }));
+        const ideasWithVotes = ideas.slice(0, take).map((idea: any) => {
+            const decryptedIdea = decryptIdeaFields(idea);
+            return {
+                ...decryptedIdea,
+                commentCount: idea._count?.comments || 0,
+                hasVoted: voteMap.has(idea.id) ? (voteMap.get(idea.id) === 'UPVOTE' ? 'up' : 'down') : null,
+                submittedBy: idea.isAnonymous && !isAdmin ? 'Anonymous' : idea.submitter?.name || idea.submitter?.email || 'Unknown',
+                isAnonymousSubmission: idea.isAnonymous && isAdmin ? true : undefined,
+                tags: Array.isArray(idea.tags) ? idea.tags.map((it: any) => it.tag?.name).filter(Boolean) : [],
+                tagObjects: Array.isArray(idea.tags) ? idea.tags.map((it: any) => ({ id: it.tagId, name: it.tag?.name })).filter((t: any) => t.name) : [],
+            };
+        });
 
         const hasMore = ideas.length > take;
         const nextCursor = hasMore ? ideas[take - 1]?.id : null;
@@ -337,8 +341,10 @@ router.get(
             }
         }
 
+        const decryptedIdea = decryptIdeaFields(idea);
+
         res.json({
-            ...idea,
+            ...decryptedIdea,
             commentCount: idea._count?.comments || 0,
             hasVoted,
             submittedBy: idea.isAnonymous && !isAdmin ? 'Anonymous' : idea.submitter?.name || idea.submitter?.email || 'Unknown',
@@ -357,7 +363,7 @@ router.post(
     validate(createIdeaSchema),
     asyncHandler(async (req, res) => {
         const user = (req as any).user as { sub: number };
-        const { title, description, category, isAnonymous } = req.body;
+        const { title, description, category, isAnonymous, descriptionHtml } = req.body;
         const tagIdsRaw = req.body?.tagIds || '';
 
         // Parse isAnonymous - handle both boolean and string values
@@ -365,8 +371,9 @@ router.post(
 
         const idea = await prisma.idea.create({
             data: {
-                title,
-                description,
+                title: encryptText(title) || title,
+                description: encryptText(description) || description,
+                descriptionHtml: descriptionHtml ? encryptText(descriptionHtml) : undefined,
                 category,
                 status: 'PENDING_REVIEW',
                 submittedBy: user.sub,
@@ -409,13 +416,16 @@ router.post(
                 tags: { include: { tag: true } },
             },
         });
+        const decryptedCreated = created ? decryptIdeaFields(created) : created;
 
-        emitIdeaCreated(created);
+        if (decryptedCreated) {
+            emitIdeaCreated(decryptedCreated);
+        }
         await cacheDeletePattern('ideas:*');
 
         logger.info('New idea created', { ideaId: idea.id, userId: user.sub });
 
-        res.status(201).json(created);
+        res.status(201).json(decryptedCreated);
     }),
 );
 
@@ -507,7 +517,7 @@ router.post(
 
         logger.info('Vote recorded', { ideaId, userId, voteType: type });
 
-        res.json({ ...result.idea, hasVoted: result.hasVoted });
+        res.json({ ...decryptIdeaFields(result.idea), hasVoted: result.hasVoted });
     }),
 );
 
@@ -578,7 +588,7 @@ router.delete(
 
         logger.info('Vote removed', { ideaId, userId });
 
-        res.json({ ...result.idea, hasVoted: result.hasVoted });
+        res.json({ ...decryptIdeaFields(result.idea), hasVoted: result.hasVoted });
     }),
 );
 
@@ -599,16 +609,18 @@ router.post(
                 status: 'APPROVED',
                 reviewedBy: user.sub,
                 reviewedAt: new Date(),
-                reviewNotes: notes || null,
+                reviewNotes: encryptText(notes || null),
             },
         });
+
+        const decryptedUpdated = decryptIdeaFields(updated);
 
         emitIdeaStatusChanged(updated.id, 'PENDING_REVIEW', 'APPROVED');
         await cacheDeletePattern('ideas:*');
 
         logger.info('Idea approved', { ideaId: updated.id, reviewerId: user.sub });
 
-        res.json(updated);
+        res.json(decryptedUpdated);
     }),
 );
 
@@ -629,16 +641,18 @@ router.post(
                 status: 'REJECTED',
                 reviewedBy: user.sub,
                 reviewedAt: new Date(),
-                reviewNotes: notes || null,
+                reviewNotes: encryptText(notes || null),
             },
         });
+
+        const decryptedUpdated = decryptIdeaFields(updated);
 
         emitIdeaStatusChanged(updated.id, 'PENDING_REVIEW', 'REJECTED');
         await cacheDeletePattern('ideas:*');
 
         logger.info('Idea rejected', { ideaId: updated.id, reviewerId: user.sub });
 
-        res.json(updated);
+        res.json(decryptedUpdated);
     }),
 );
 
@@ -667,7 +681,7 @@ router.post(
 
         logger.info('Idea promoted to project', { ideaId: updated.id, projectCode, promotedBy: user.sub });
 
-        res.json(updated);
+        res.json(decryptIdeaFields(updated));
     }),
 );
 
@@ -716,12 +730,16 @@ router.get(
             orderBy: { voteCount: 'desc' },
         });
 
-        const formatted = related.map((r) => ({
-            id: r.id,
-            title: r.title,
-            snippet: r.description.substring(0, 100) + (r.description.length > 100 ? '...' : ''),
-            score: r.voteCount,
-        }));
+        const formatted = related.map((r) => {
+            const decrypted = decryptIdeaFields(r);
+            const snippetBase = decrypted.description || '';
+            return {
+                id: r.id,
+                title: decrypted.title,
+                snippet: snippetBase.substring(0, 100) + (snippetBase.length > 100 ? '...' : ''),
+                score: r.voteCount,
+            };
+        });
 
         res.json({ related: formatted });
     }),
@@ -760,6 +778,35 @@ router.get(
 
         if (category) {
             where.category = category;
+        }
+
+        if (isIdeaEncryptionEnabled()) {
+            const candidates = await prisma.idea.findMany({
+                where: {
+                    ...where,
+                    OR: undefined,
+                },
+                select: {
+                    id: true,
+                    title: true,
+                    description: true,
+                    category: true,
+                    voteCount: true,
+                    viewCount: true,
+                    status: true,
+                    submittedAt: true,
+                },
+                take: 500,
+                orderBy: { voteCount: 'desc' },
+            });
+
+            const normalized = q.trim().toLowerCase();
+            const filtered = candidates
+                .map((idea) => decryptIdeaFields(idea))
+                .filter((idea) => idea.title.toLowerCase().includes(normalized) || idea.description.toLowerCase().includes(normalized))
+                .slice(0, 20);
+
+            return res.json(filtered);
         }
 
         const results = await prisma.idea.findMany({

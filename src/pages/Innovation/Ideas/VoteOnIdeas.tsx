@@ -112,7 +112,6 @@ const VoteOnIdeas = () => {
 
                 setIdeas(apiIdeas.map((idea) => mapApiIdea(idea)));
             } catch (error: any) {
-                console.error('[VoteOnIdeas] Error loading ideas:', error);
                 // Only show error on first load, not background polling
                 if (!ideas.length) {
                     const errorMessage = error?.message || 'Unknown error';
@@ -202,8 +201,6 @@ const VoteOnIdeas = () => {
                 });
             }
         } catch (error) {
-            console.error('[VoteOnIdeas] Error voting:', error);
-
             // Check if vote limit reached
             if (error instanceof Error && error.message === 'VOTE_LIMIT_REACHED') {
                 void Swal.fire({

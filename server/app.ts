@@ -44,6 +44,9 @@ import combineRoutes from './routes/combine.js';
 const app = express();
 const httpServer = http.createServer(app);
 
+// Trust proxy when behind a reverse proxy (needed for secure redirects)
+app.set('trust proxy', config.NODE_ENV === 'production' ? 1 : 'loopback');
+
 // Global rate limiting
 const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -61,8 +64,27 @@ const globalLimiter = rateLimit({
 
 // Security and performance middleware
 if (config.NODE_ENV === 'production') {
-    app.use(helmet());
+    app.use(
+        helmet({
+            hsts: {
+                maxAge: 31536000,
+                includeSubDomains: true,
+                preload: true,
+            },
+        }),
+    );
     app.use(compression());
+
+    app.use((req, res, next) => {
+        if (req.secure || req.headers['x-forwarded-proto'] === 'https') {
+            return next();
+        }
+        const host = req.headers.host;
+        if (!host) {
+            return next();
+        }
+        return res.redirect(308, `https://${host}${req.originalUrl}`);
+    });
 }
 
 // CORS configuration

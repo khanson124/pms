@@ -152,29 +152,17 @@
             "pms": {
                 "title": "Procurement",
                 "description": "Manage requests, RFQs, suppliers, purchase orders, and payments",
-                "features": [
-                    "Manage requests",
-                    "Send RFQs",
-                    "Track suppliers"
-                ]
+                "features": ["Manage requests", "Send RFQs", "Track suppliers"]
             },
             "ih": {
                 "title": "Innovation Hub",
                 "description": "Submit ideas, vote on innovations, and drive BSJ projects forward",
-                "features": [
-                    "Submit ideas",
-                    "Vote on innovations",
-                    "Promote projects"
-                ]
+                "features": ["Submit ideas", "Vote on innovations", "Promote projects"]
             },
             "committee": {
                 "title": "Committee Dashboard",
                 "description": "Review and approve innovation idea submissions",
-                "features": [
-                    "Review submissions",
-                    "Approve/Reject ideas",
-                    "View analytics"
-                ]
+                "features": ["Review submissions", "Approve/Reject ideas", "View analytics"]
             }
         }
     },
@@ -219,11 +207,11 @@
                 "ideaPromoted": "\"{{title}}\" was promoted to BSJ Project!",
                 "timeAgo": {
                     "hours": "{{count}} hours ago",
-                        "days": "{{count}} days ago",
-                        "minutes": "{{count}} minutes ago"
+                    "days": "{{count}} days ago",
+                    "minutes": "{{count}} minutes ago"
                 },
-                    "voteSingular": "{{count}} vote",
-                    "votePlural": "{{count}} votes",
+                "voteSingular": "{{count}} vote",
+                "votePlural": "{{count}} votes",
                 "empty": "No recent activity"
             },
             "proTip": {
@@ -344,6 +332,12 @@
                 "implementation": {
                     "label": "Implementation Notes (Optional)",
                     "placeholder": "Any thoughts on how this could be implemented? Resources needed? Timeline?"
+                },
+                "files": {
+                    "label": "Attach images (up to 5)",
+                    "hint": "You can select multiple images. Max size 5MB each.",
+                    "limit": "Max {{count}} files.",
+                    "previewAlt": "Attachment preview"
                 },
                 "required": "*",
                 "charactersRemaining": "{{count}} characters remaining"
@@ -473,4 +467,3 @@
         }
     }
 }
-

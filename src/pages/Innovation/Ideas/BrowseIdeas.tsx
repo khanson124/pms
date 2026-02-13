@@ -59,7 +59,6 @@ const BrowseIdeas = () => {
                 })),
             );
         } catch (error: any) {
-            console.error('[BrowseIdeas] Error loading ideas:', error);
             // Only show error on initial load, not background refreshes
             if (!ideas.length) {
                 const errorMessage = error?.message || 'Unknown error occurred';
@@ -105,8 +104,6 @@ const BrowseIdeas = () => {
                 setIdeas((prev) => prev.map((i) => (i.id === ideaId && fresh ? { ...i, voteCount: fresh.voteCount, hasVoted: true } : i)));
             }
         } catch (error) {
-            console.error('[BrowseIdeas] Vote error:', error);
-
             // Check if it's a duplicate vote error
             if (error instanceof Error && error.message === 'ALREADY_VOTED') {
                 Swal.fire({

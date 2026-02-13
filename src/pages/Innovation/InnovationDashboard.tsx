@@ -64,7 +64,6 @@ const InnovationDashboard = () => {
             // Get 3 most recent ideas for activity feed (already sorted by API)
             setRecentIdeas(ideas.slice(0, 3));
         } catch (error) {
-            console.error('[InnovationDashboard] Error loading data:', error);
             // Keep default zeros on error - silent fail for dashboard stats
             // User can still access all features, stats just show 0
         } finally {

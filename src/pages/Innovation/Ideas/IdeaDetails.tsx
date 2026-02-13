@@ -90,7 +90,6 @@ export default function IdeaDetails() {
                 });
             } catch (err) {
                 // Silently fail - view tracking is not critical
-                console.debug('View tracking failed:', err);
             }
         }, 10000); // 10 seconds
 
@@ -109,7 +108,6 @@ export default function IdeaDetails() {
                 .then(setRelated)
                 .catch(() => {});
         } catch (err) {
-            console.error('[IdeaDetails] Error loading idea:', err);
             setError(err instanceof Error ? err.message : 'Failed to load idea');
         } finally {
             setIsLoading(false);
@@ -137,7 +135,6 @@ export default function IdeaDetails() {
                 setIdea({ ...updated, hasVoted: true, userVoteType: voteType });
             }
         } catch (err) {
-            console.error('[IdeaDetails] Error voting:', err);
             alert(err instanceof Error ? err.message : 'Failed to vote');
         } finally {
             setIsVoting(false);

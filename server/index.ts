@@ -1,6 +1,11 @@
+import { config as dotenvConfig } from 'dotenv';
+
+dotenvConfig();
+
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import helmet from 'helmet';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import multer from 'multer';
@@ -32,6 +37,7 @@ import { checkSplintering } from './services/splinteringService.js';
 import { createThresholdNotifications } from './services/notificationService.js';
 import { getLoadBalancingSettings, updateLoadBalancingSettings, autoAssignRequest, autoAssignFinanceOfficer, shouldAutoAssign } from './services/loadBalancingService.js';
 import { emailService } from './utils/emailService.js';
+import { decryptIdeaFields, encryptText } from './utils/ideaEncryption.js';
 import type { Prisma, User } from '@prisma/client';
 import { requireCommittee as requireCommitteeRole, requireEvaluationCommittee, requireAdmin, requireExecutive, requireRole, requireProcurement } from './middleware/rbac.js';
 import { validate, createIdeaSchema, voteSchema, approveRejectIdeaSchema, promoteIdeaSchema, sanitizeInput as sanitize } from './middleware/validation.js';
@@ -148,6 +154,29 @@ const batchLimiter = rateLimit({
 // For production behind reverse proxy: set to 1 (trust first proxy)
 // For development: set to false or use loopback
 app.set('trust proxy', process.env.NODE_ENV === 'production' ? 1 : 'loopback');
+
+if (process.env.NODE_ENV === 'production') {
+    app.use(
+        helmet({
+            hsts: {
+                maxAge: 31536000,
+                includeSubDomains: true,
+                preload: true,
+            },
+        }),
+    );
+
+    app.use((req, res, next) => {
+        if (req.secure || req.headers['x-forwarded-proto'] === 'https') {
+            return next();
+        }
+        const host = req.headers.host;
+        if (!host) {
+            return next();
+        }
+        return res.redirect(308, `https://${host}${req.originalUrl}`);
+    });
+}
 
 // CORS configuration - required for cookie-based authentication
 // When credentials: 'include' is used, origin cannot be wildcard '*'
@@ -1043,14 +1072,17 @@ app.get('/api/ideas', authMiddleware, async (req, res) => {
         const voteMap = new Map(userVotes.map((v) => [v.ideaId, v.voteType]));
 
         // Map ideas with votes and comment count - now O(n) instead of O(n²)
-        const ideasWithVotes = ideas.map((idea: any) => ({
-            ...idea,
-            commentCount: idea._count?.comments || 0,
-            hasVoted: voteMap.has(idea.id) ? (voteMap.get(idea.id) === 'UPVOTE' ? 'up' : 'down') : null,
-            submittedBy: idea.isAnonymous ? 'Anonymous' : idea.submitter?.name || idea.submitter?.email || 'Unknown',
-            tags: Array.isArray(idea.tags) ? idea.tags.map((it: any) => it.tag?.name).filter(Boolean) : [],
-            tagObjects: Array.isArray(idea.tags) ? idea.tags.map((it: any) => ({ id: it.tagId, name: it.tag?.name })).filter((t: any) => t.name) : [],
-        }));
+        const ideasWithVotes = ideas.map((idea: any) => {
+            const decryptedIdea = decryptIdeaFields(idea);
+            return {
+                ...decryptedIdea,
+                commentCount: idea._count?.comments || 0,
+                hasVoted: voteMap.has(idea.id) ? (voteMap.get(idea.id) === 'UPVOTE' ? 'up' : 'down') : null,
+                submittedBy: idea.isAnonymous ? 'Anonymous' : idea.submitter?.name || idea.submitter?.email || 'Unknown',
+                tags: Array.isArray(idea.tags) ? idea.tags.map((it: any) => it.tag?.name).filter(Boolean) : [],
+                tagObjects: Array.isArray(idea.tags) ? idea.tags.map((it: any) => ({ id: it.tagId, name: it.tag?.name })).filter((t: any) => t.name) : [],
+            };
+        });
 
         // Generate ETag from response content
         const responseBody = JSON.stringify(ideasWithVotes);
@@ -1115,12 +1147,15 @@ app.get('/api/ideas', authMiddleware, async (req, res) => {
                     const userVotes =
                         userId && ideas.length > 0 ? await prisma.vote.findMany({ where: { userId, ideaId: { in: ideas.map((i) => i.id) } }, select: { ideaId: true, voteType: true } }) : [];
                     const voteMap = new Map(userVotes.map((v) => [v.ideaId, v.voteType]));
-                    const ideasWithVotes = ideas.map((idea: any) => ({
-                        ...idea,
-                        commentCount: idea._count?.comments || 0,
-                        hasVoted: voteMap.has(idea.id) ? (voteMap.get(idea.id) === 'UPVOTE' ? 'up' : 'down') : null,
-                        submittedBy: idea.isAnonymous ? 'Anonymous' : idea.submitter?.name || idea.submitter?.email || 'Unknown',
-                    }));
+                    const ideasWithVotes = ideas.map((idea: any) => {
+                        const decryptedIdea = decryptIdeaFields(idea);
+                        return {
+                            ...decryptedIdea,
+                            commentCount: idea._count?.comments || 0,
+                            hasVoted: voteMap.has(idea.id) ? (voteMap.get(idea.id) === 'UPVOTE' ? 'up' : 'down') : null,
+                            submittedBy: idea.isAnonymous ? 'Anonymous' : idea.submitter?.name || idea.submitter?.email || 'Unknown',
+                        };
+                    });
                     const responseBody = JSON.stringify(ideasWithVotes);
                     const etag = `"${crypto.createHash('md5').update(responseBody).digest('hex')}"`;
                     res.setHeader('ETag', etag);
@@ -1243,6 +1278,7 @@ app.get('/api/ideas/:id', authMiddleware, async (req, res) => {
         const hasVoted = userVote ? (userVote.voteType === 'UPVOTE' ? 'up' : 'down') : null;
         const submittedBy = idea.isAnonymous ? 'Anonymous' : idea.submitter?.name || idea.submitter?.email || 'Unknown';
         const commentCount = idea._count?.comments || 0;
+        const decryptedIdea = decryptIdeaFields(idea);
 
         // Session-based view tracking: increment view count only if viewer hasn't viewed recently (24h window)
         const ideaId = parseInt(id, 10);
@@ -1283,7 +1319,7 @@ app.get('/api/ideas/:id', authMiddleware, async (req, res) => {
         const tags = Array.isArray((idea as any).tags) ? (idea as any).tags.map((it: any) => it.tag?.name).filter(Boolean) : [];
         const tagObjects = Array.isArray((idea as any).tags) ? (idea as any).tags.map((it: any) => ({ id: it.tagId, name: it.tag?.name })).filter((t: any) => t.name) : [];
 
-        return res.json({ ...idea, hasVoted, submittedBy, commentCount, tags, tagObjects });
+        return res.json({ ...decryptedIdea, hasVoted, submittedBy, commentCount, tags, tagObjects });
     } catch (e: any) {
         console.error('GET /api/ideas/:id error:', e);
         return res.status(500).json({ error: 'Unable to load idea', message: 'Unable to load idea details. Please try again later.' });
@@ -1402,6 +1438,8 @@ app.post('/api/ideas/:id/comments', authMiddleware, async (req, res) => {
             return res.status(404).json({ message: 'Idea not found' });
         }
 
+        const decryptedIdea = decryptIdeaFields(idea);
+
         // Create comment
         const comment = await prisma.ideaComment.create({
             data: {
@@ -1486,13 +1524,16 @@ app.get('/api/ideas/:id/related', async (req, res) => {
             },
         });
 
-        const formatted = related.map((r) => ({
-            id: r.id,
-            title: r.title,
-            snippet: r.description.substring(0, 150) + '...',
-            score: Math.round((r.trendingScore || 0) * 100),
-            firstAttachmentUrl: r.attachments[0]?.fileUrl || null,
-        }));
+        const formatted = related.map((r) => {
+            const decrypted = decryptIdeaFields(r);
+            return {
+                id: r.id,
+                title: decrypted.title,
+                snippet: `${decrypted.description?.substring(0, 150) || ''}...`,
+                score: Math.round((r.trendingScore || 0) * 100),
+                firstAttachmentUrl: r.attachments[0]?.fileUrl || null,
+            };
+        });
 
         return res.json({ related: formatted });
     } catch (e: any) {
@@ -1537,7 +1578,7 @@ app.post('/api/ideas/check-duplicates', authMiddleware, async (req, res) => {
 app.post('/api/ideas', authMiddleware, ideaCreationLimiter, upload.single('image'), async (req, res) => {
     try {
         const user = (req as any).user as { sub: number | string };
-        const { title, description, category } = (req.body || {}) as Record<string, string>;
+        const { title, description, category, descriptionHtml } = (req.body || {}) as Record<string, string>;
         const tagIdsRaw = (req.body?.tagIds ?? '') as string;
         const isAnonymousRaw = req.body?.isAnonymous as string | boolean | undefined;
         const isAnonymous = typeof isAnonymousRaw === 'string' ? isAnonymousRaw.toLowerCase() === 'true' : Boolean(isAnonymousRaw);
@@ -1551,8 +1592,9 @@ app.post('/api/ideas', authMiddleware, ideaCreationLimiter, upload.single('image
 
         const idea = await prisma.idea.create({
             data: {
-                title: String(title),
-                description: String(description),
+                title: encryptText(String(title)) || String(title),
+                description: encryptText(String(description)) || String(description),
+                descriptionHtml: descriptionHtml ? encryptText(String(descriptionHtml)) : undefined,
                 category: category as any,
                 status: 'PENDING_REVIEW',
                 isAnonymous,
@@ -1593,13 +1635,17 @@ app.post('/api/ideas', authMiddleware, ideaCreationLimiter, upload.single('image
             include: { attachments: true, tags: { include: { tag: true } } },
         });
 
+        const decryptedCreated = created ? decryptIdeaFields(created) : created;
+
         // Emit WebSocket event
-        emitIdeaCreated(created);
+        if (decryptedCreated) {
+            emitIdeaCreated(decryptedCreated);
+        }
 
         // Invalidate cache
         await cacheDeletePattern('ideas:*');
 
-        return res.status(201).json(created);
+        return res.status(201).json(decryptedCreated);
     } catch (e: any) {
         console.error('POST /api/ideas error:', e);
         return res.status(500).json({ error: 'failed to create idea', details: e?.message });
@@ -1619,7 +1665,7 @@ app.post('/api/ideas/:id/approve', authMiddleware, requireCommittee, async (req,
                 status: 'APPROVED',
                 reviewedBy: user.sub,
                 reviewedAt: new Date(),
-                reviewNotes: notes || null,
+                reviewNotes: encryptText(notes || null),
             },
             include: {
                 submitter: {
@@ -1628,6 +1674,8 @@ app.post('/api/ideas/:id/approve', authMiddleware, requireCommittee, async (req,
             },
         });
 
+        const decryptedUpdated = decryptIdeaFields(updated);
+
         // Create notification for idea submitter
         if (updated.submittedBy) {
             await prisma.notification
@@ -1635,7 +1683,7 @@ app.post('/api/ideas/:id/approve', authMiddleware, requireCommittee, async (req,
                     data: {
                         userId: updated.submittedBy,
                         type: 'IDEA_APPROVED',
-                        message: `Your innovation idea "${updated.title}" has been approved by the committee!`,
+                        message: `Your innovation idea "${decryptedUpdated.title}" has been approved by the committee!`,
                         data: { ideaId: updated.id, reviewNotes: notes },
                     },
                 })
@@ -1647,8 +1695,8 @@ app.post('/api/ideas/:id/approve', authMiddleware, requireCommittee, async (req,
                     data: {
                         fromUserId: user.sub,
                         toUserId: updated.submittedBy,
-                        subject: `Innovation Idea Approved: ${updated.title}`,
-                        body: `Great news! Your innovation idea "${updated.title}" has been reviewed and approved by the Innovation Committee.${
+                        subject: `Innovation Idea Approved: ${decryptedUpdated.title}`,
+                        body: `Great news! Your innovation idea "${decryptedUpdated.title}" has been reviewed and approved by the Innovation Committee.${
                             notes ? `\n\nReviewer Notes: ${notes}` : ''
                         }\n\nYou can now track its progress in the Innovation Hub dashboard.`,
                     },
@@ -1660,9 +1708,9 @@ app.post('/api/ideas/:id/approve', authMiddleware, requireCommittee, async (req,
                 await emailService
                     .sendEmail(
                         updated.submitter.email,
-                        `Innovation Idea Approved: ${updated.title}`,
+                        `Innovation Idea Approved: ${decryptedUpdated.title}`,
                         `<p>Dear ${updated.submitter?.name || updated.submitter.email},</p>
-                        <p>Great news! Your innovation idea "<strong>${updated.title}</strong>" has been approved by the Innovation Committee.</p>
+                        <p>Great news! Your innovation idea "<strong>${decryptedUpdated.title}</strong>" has been approved by the Innovation Committee.</p>
                         ${notes ? `<p><strong>Reviewer Notes:</strong> ${notes}</p>` : ''}
                         <p>You can view the idea status in the Innovation Hub.</p>
                         <p style="font-size:12px;color:#666;">This is an automated message from the Procurement Management System.</p>`,
@@ -1677,7 +1725,7 @@ app.post('/api/ideas/:id/approve', authMiddleware, requireCommittee, async (req,
         // Invalidate ideas cache
         await cacheDeletePattern('ideas:*');
 
-        return res.json(updated);
+        return res.json(decryptedUpdated);
     } catch (e: any) {
         console.error('POST /api/ideas/:id/approve error:', e);
         return res.status(500).json({ message: e?.message || 'Failed to approve idea' });
@@ -1697,7 +1745,7 @@ app.post('/api/ideas/:id/reject', authMiddleware, requireCommittee, async (req, 
                 status: 'REJECTED',
                 reviewedBy: user.sub,
                 reviewedAt: new Date(),
-                reviewNotes: notes || null,
+                reviewNotes: encryptText(notes || null),
             },
             include: {
                 submitter: {
@@ -1706,6 +1754,8 @@ app.post('/api/ideas/:id/reject', authMiddleware, requireCommittee, async (req, 
             },
         });
 
+        const decryptedUpdated = decryptIdeaFields(updated);
+
         // Create notification for idea submitter
         if (updated.submittedBy) {
             await prisma.notification
@@ -1713,7 +1763,7 @@ app.post('/api/ideas/:id/reject', authMiddleware, requireCommittee, async (req, 
                     data: {
                         userId: updated.submittedBy,
                         type: 'STAGE_CHANGED',
-                        message: `Your innovation idea "${updated.title}" has been reviewed`,
+                        message: `Your innovation idea "${decryptedUpdated.title}" has been reviewed`,
                         data: { ideaId: updated.id, status: 'REJECTED', reviewNotes: notes },
                     },
                 })
@@ -1725,8 +1775,8 @@ app.post('/api/ideas/:id/reject', authMiddleware, requireCommittee, async (req, 
                     data: {
                         fromUserId: user.sub,
                         toUserId: updated.submittedBy,
-                        subject: `Innovation Idea Review: ${updated.title}`,
-                        body: `Thank you for submitting your innovation idea "${
+                        subject: `Innovation Idea Reviewed: ${decryptedUpdated.title}`,
+                        body: `Your innovation idea "${decryptedUpdated.title}" has been reviewed by the Innovation Committee.${
                             updated.title
                         }". After careful review by the Innovation Committee, we are unable to proceed with this idea at this time.${
                             notes ? `\n\nReviewer Feedback: ${notes}` : ''
@@ -1740,9 +1790,9 @@ app.post('/api/ideas/:id/reject', authMiddleware, requireCommittee, async (req, 
                 await emailService
                     .sendEmail(
                         updated.submitter.email,
-                        `Innovation Idea Review: ${updated.title}`,
+                        `Innovation Idea Reviewed: ${decryptedUpdated.title}`,
                         `<p>Dear ${updated.submitter?.name || updated.submitter.email},</p>
-                        <p>Thank you for submitting your innovation idea "<strong>${updated.title}</strong>". After review, the committee is unable to proceed with this idea at this time.</p>
+                        <p>Your innovation idea "<strong>${decryptedUpdated.title}</strong>" has been reviewed by the Innovation Committee.</p>
                         ${notes ? `<p><strong>Reviewer Feedback:</strong> ${notes}</p>` : ''}
                         <p>We encourage you to continue innovating and submitting new ideas.</p>
                         <p style="font-size:12px;color:#666;">This is an automated message from the Procurement Management System.</p>`,
@@ -1754,7 +1804,7 @@ app.post('/api/ideas/:id/reject', authMiddleware, requireCommittee, async (req, 
         // Invalidate ideas cache
         await cacheDeletePattern('ideas:*');
 
-        return res.json(updated);
+        return res.json(decryptedUpdated);
     } catch (e: any) {
         console.error('POST /api/ideas/:id/reject error:', e);
         return res.status(500).json({ message: e?.message || 'Failed to reject idea' });
@@ -1812,7 +1862,7 @@ app.post('/api/ideas/:id/promote', authMiddleware, requireCommittee, async (req,
                     data: {
                         userId: idea.submittedBy,
                         type: 'STAGE_CHANGED',
-                        message: `Your innovation idea "${idea.title}" has been promoted to a project!`,
+                        message: `Your innovation idea "${decryptedIdea.title}" has been promoted to a project!`,
                         data: { ideaId: idea.id, projectCode: code },
                     },
                 })
@@ -1824,8 +1874,8 @@ app.post('/api/ideas/:id/promote', authMiddleware, requireCommittee, async (req,
                     data: {
                         fromUserId: user.sub,
                         toUserId: idea.submittedBy,
-                        subject: `Innovation Idea Promoted: ${idea.title}`,
-                        body: `Congratulations! Your innovation idea "${idea.title}" has been promoted to an official project!\\n\\nProject Code: ${code}\\n\\nThis is a significant achievement and demonstrates the value of your innovative thinking. The project team will be in touch with next steps.`,
+                        subject: `Innovation Idea Promoted: ${decryptedIdea.title}`,
+                        body: `Congratulations! Your innovation idea "${decryptedIdea.title}" has been promoted to an official project!\\n\\nProject Code: ${code}\\n\\nThis is a significant achievement and demonstrates the value of your innovative thinking. The project team will be in touch with next steps.`,
                     },
                 })
                 .catch((err: any) => console.error('Failed to create promotion message:', err));
@@ -1835,9 +1885,9 @@ app.post('/api/ideas/:id/promote', authMiddleware, requireCommittee, async (req,
                 await emailService
                     .sendEmail(
                         idea.submitter.email,
-                        `Innovation Idea Promoted: ${idea.title}`,
+                        `Innovation Idea Promoted: ${decryptedIdea.title}`,
                         `<p>Dear ${idea.submitter?.name || idea.submitter.email},</p>
-                        <p>Congratulations! Your innovation idea "<strong>${idea.title}</strong>" has been promoted to an official project.</p>
+                        <p>Congratulations! Your innovation idea "<strong>${decryptedIdea.title}</strong>" has been promoted to an official project.</p>
                         <p><strong>Project Code:</strong> ${code}</p>
                         <p>The project team will be in touch with next steps.</p>
                         <p style="font-size:12px;color:#666;">This is an automated message from the Procurement Management System.</p>`,
@@ -1848,11 +1898,12 @@ app.post('/api/ideas/:id/promote', authMiddleware, requireCommittee, async (req,
 
         // Fetch updated idea to return full data
         const updated = await prisma.idea.findUnique({ where: { id: parseInt(id, 10) } });
+        const decryptedUpdated = updated ? decryptIdeaFields(updated) : updated;
 
         // Invalidate ideas cache
         await cacheDeletePattern('ideas:*');
 
-        return res.json(updated);
+        return res.json(decryptedUpdated);
     } catch (e: any) {
         console.error('POST /api/ideas/:id/promote error:', e);
         return res.status(500).json({ message: e?.message || 'Failed to promote idea' });
@@ -1888,11 +1939,12 @@ app.post('/api/ideas/batch/approve', authMiddleware, requireCommittee, batchLimi
             });
             for (const idea of approvedIdeas) {
                 if (!idea.submitter?.email) continue;
+                const decryptedIdea = decryptIdeaFields(idea);
                 await emailService.sendEmail(
                     idea.submitter.email,
-                    `Innovation Idea Approved: ${idea.title}`,
+                    `Innovation Idea Approved: ${decryptedIdea.title}`,
                     `<p>Dear ${idea.submitter?.name || idea.submitter.email},</p>
-                    <p>Your innovation idea "<strong>${idea.title}</strong>" has been approved by the Innovation Committee.</p>
+                    <p>Your innovation idea "<strong>${decryptedIdea.title}</strong>" has been approved by the Innovation Committee.</p>
                     ${notes ? `<p><strong>Reviewer Notes:</strong> ${notes}</p>` : ''}
                     <p>You can view the idea status in the Innovation Hub.</p>
                     <p style="font-size:12px;color:#666;">This is an automated message from the Procurement Management System.</p>`,
@@ -1942,11 +1994,12 @@ app.post('/api/ideas/batch/reject', authMiddleware, requireCommittee, batchLimit
             });
             for (const idea of rejectedIdeas) {
                 if (!idea.submitter?.email) continue;
+                const decryptedIdea = decryptIdeaFields(idea);
                 await emailService.sendEmail(
                     idea.submitter.email,
-                    `Innovation Idea Review: ${idea.title}`,
+                    `Innovation Idea Review: ${decryptedIdea.title}`,
                     `<p>Dear ${idea.submitter?.name || idea.submitter.email},</p>
-                    <p>Thank you for submitting your innovation idea "<strong>${idea.title}</strong>". After review, the committee is unable to proceed with this idea at this time.</p>
+                    <p>Thank you for submitting your innovation idea "<strong>${decryptedIdea.title}</strong>". After review, the committee is unable to proceed with this idea at this time.</p>
                     ${notes ? `<p><strong>Reviewer Feedback:</strong> ${notes}</p>` : ''}
                     <p>We encourage you to continue innovating and submitting new ideas.</p>
                     <p style="font-size:12px;color:#666;">This is an automated message from the Procurement Management System.</p>`,
@@ -2129,7 +2182,7 @@ app.post('/api/ideas/:id/vote', authMiddleware, voteLimiter, async (req, res) =>
             emitVoteUpdated(ideaId, updated.voteCount, updated.trendingScore);
         }
 
-        return res.json({ ...updated, hasVoted });
+        return res.json({ ...decryptIdeaFields(updated), hasVoted });
     } catch (e: any) {
         console.error('POST /api/ideas/:id/vote error:', e);
         return res.status(500).json({ message: e?.message || 'Failed to vote' });
@@ -2180,7 +2233,7 @@ app.delete('/api/ideas/:id/vote', authMiddleware, voteLimiter, async (req, res) 
         updateIdeaTrendingScore(ideaId).catch((err) => console.error('Failed to update trending score:', err));
 
         // After deletion, hasVoted should be null
-        return res.json({ ...idea, hasVoted: null });
+        return res.json({ ...decryptIdeaFields(idea), hasVoted: null });
     } catch (e: any) {
         console.error('DELETE /api/ideas/:id/vote error:', e);
         return res.status(500).json({ message: e?.message || 'Failed to remove vote' });

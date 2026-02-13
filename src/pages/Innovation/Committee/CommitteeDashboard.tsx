@@ -84,7 +84,6 @@ const CommitteeDashboard = () => {
                 promoted: counts.promoted || 0,
             });
         } catch (e: any) {
-            console.error('Failed to load counts:', e);
             // Silent fail for counts - don't disrupt user experience
             // Stats will show last known values or zeros
         }

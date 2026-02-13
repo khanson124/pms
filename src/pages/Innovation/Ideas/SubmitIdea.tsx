@@ -137,7 +137,6 @@ const SubmitIdea = () => {
             setFormData((prev) => ({ ...prev, tagIds: [...prev.tagIds, created.id] }));
             setTagSearch('');
         } catch (e) {
-            console.error('Failed to create tag', e);
         } finally {
             setCreatingTag(false);
         }
@@ -171,7 +170,6 @@ const SubmitIdea = () => {
                     if (!ct.includes('application/json')) {
                         // Likely served index.html (HTML) because the app called the wrong host/origin.
                         const text = await res.text();
-                        console.warn('[SubmitIdea] duplicate-check returned non-JSON response:', text.substring(0, 300));
                         if (active) setDuplicateMatches([]);
                     } else {
                         const data = await res.json();
@@ -190,7 +188,6 @@ const SubmitIdea = () => {
                     }
                 }
             } catch (err) {
-                console.warn('[SubmitIdea] duplicate check failed:', err);
             } finally {
                 if (active) setCheckingDuplicates(false);
             }
@@ -241,7 +238,6 @@ const SubmitIdea = () => {
             setPreviews([]);
             setFiles([]);
         } catch (error: any) {
-            console.error('Error submitting idea:', error);
             const errorMessage = error?.message || 'Unknown error occurred';
             const isNetworkError = errorMessage.toLowerCase().includes('network') || errorMessage.toLowerCase().includes('fetch');
             const isValidationError = errorMessage.toLowerCase().includes('validation') || errorMessage.toLowerCase().includes('invalid');
@@ -544,7 +540,8 @@ const SubmitIdea = () => {
                         </label>
                         <input id="idea-files" type="file" accept="image/*" multiple onChange={onFilesChange} className="form-input" aria-describedby="files-hint files-error" />
                         <p id="files-hint" className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {t('innovation.submit.form.files.hint', 'You can select multiple images. Max size 5MB each.')} {t('innovation.submit.form.files.limit', { count: MAX_FILES })}
+                            {t('innovation.submit.form.files.hint', 'You can select multiple images. Max size 5MB each.')}{' '}
+                            {t('innovation.submit.form.files.limit', { count: MAX_FILES, defaultValue: `Max ${MAX_FILES} files.` })}
                         </p>
                         {errors.files && (
                             <p id="files-error" role="alert" className="text-xs text-danger mt-1">

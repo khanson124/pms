@@ -1,5 +1,6 @@
 import { prisma } from '../prismaClient.js';
 import type { Prisma } from '@prisma/client';
+import { decryptIdeaFields } from '../utils/ideaEncryption.js';
 
 /**
  * Batch approve/reject ideas for committee efficiency
@@ -183,18 +184,21 @@ export async function getPendingIdeasForReview(options: { limit?: number; offset
 
         // Calculate waiting days and format
         const now = Date.now();
-        const formattedIdeas = ideas.map((idea) => ({
-            id: idea.id,
-            title: idea.title,
-            description: idea.description,
-            category: idea.category,
-            submittedBy: idea.submitter?.name || idea.submitter?.email || 'Unknown',
-            isAnonymousSubmission: idea.isAnonymous ? true : undefined,
-            submittedAt: idea.submittedAt,
-            voteCount: idea.voteCount,
-            viewCount: idea.viewCount,
-            waitingDays: Math.floor((now - idea.submittedAt.getTime()) / (1000 * 60 * 60 * 24)),
-        }));
+        const formattedIdeas = ideas.map((idea) => {
+            const decryptedIdea = decryptIdeaFields(idea);
+            return {
+                id: idea.id,
+                title: decryptedIdea.title,
+                description: decryptedIdea.description,
+                category: idea.category,
+                submittedBy: idea.submitter?.name || idea.submitter?.email || 'Unknown',
+                isAnonymousSubmission: idea.isAnonymous ? true : undefined,
+                submittedAt: idea.submittedAt,
+                voteCount: idea.voteCount,
+                viewCount: idea.viewCount,
+                waitingDays: Math.floor((now - idea.submittedAt.getTime()) / (1000 * 60 * 60 * 24)),
+            };
+        });
 
         return { ideas: formattedIdeas, total };
     } catch (error) {
