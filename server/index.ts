@@ -3465,13 +3465,26 @@ app.post('/api/requests/:id/submit', async (req, res) => {
                 const hasThresholdOverride = Number.isFinite(threshold) && threshold > 0;
 
                 if (!hasWindowOverride || !hasThresholdOverride) {
+                    const primaryRule = await prisma.splinteringRule.findUnique({
+                        where: { ruleId: 'vendor-threshold' },
+                        select: { thresholdAmount: true, timeWindowDays: true, enabled: true },
+                    });
+                    if (primaryRule?.enabled) {
+                        if (!hasWindowOverride) {
+                            windowDays = Number(primaryRule.timeWindowDays || 90);
+                        }
+                        if (!hasThresholdOverride) {
+                            threshold = Number(primaryRule.thresholdAmount || 25000);
+                        }
+                    }
+
                     const enabledRules = await prisma.splinteringRule.findMany({
                         where: { enabled: true },
                         orderBy: { thresholdAmount: 'asc' },
                         select: { thresholdAmount: true, timeWindowDays: true },
                     });
 
-                    if (enabledRules.length > 0) {
+                    if ((!Number.isFinite(windowDays) || windowDays <= 0 || !Number.isFinite(threshold) || threshold <= 0) && enabledRules.length > 0) {
                         const strictestRule = enabledRules[0];
                         if (!hasWindowOverride) {
                             windowDays = Number(strictestRule.timeWindowDays || 90);
@@ -5194,6 +5207,12 @@ app.get('/api/procurement/load-balancing-settings', async (req, res) => {
 
         // Fetch settings from database using service
         const settings = await getLoadBalancingSettings(prisma);
+        const primarySplinterRule = await prisma.splinteringRule.findUnique({
+            where: { ruleId: 'vendor-threshold' },
+            select: { thresholdAmount: true, timeWindowDays: true },
+        });
+        const splinteringThresholdAmount = primarySplinterRule ? Number(primarySplinterRule.thresholdAmount) : 25000;
+        const splinteringTimeWindowDays = primarySplinterRule?.timeWindowDays ?? 90;
 
         // Return default if no settings exist yet
         if (!settings) {
@@ -5203,10 +5222,16 @@ app.get('/api/procurement/load-balancing-settings', async (req, res) => {
                 autoAssignOnApproval: true,
                 roundRobinCounter: 0,
                 splinteringEnabled: false,
+                splinteringThresholdAmount,
+                splinteringTimeWindowDays,
             });
         }
 
-        return res.json(settings);
+        return res.json({
+            ...settings,
+            splinteringThresholdAmount,
+            splinteringTimeWindowDays,
+        });
     } catch (e: any) {
         console.error('GET /procurement/load-balancing-settings error:', e);
         return res.status(500).json({ message: e?.message || 'Failed to fetch settings' });
@@ -5249,17 +5274,31 @@ app.post('/api/procurement/load-balancing-settings', async (req, res) => {
             return res.status(403).json({ message: 'Only Admins or Procurement Managers can update settings', roles: roleNames });
         }
 
-        const { enabled, strategy, autoAssignOnApproval, splinteringEnabled } = req.body as {
+        const { enabled, strategy, autoAssignOnApproval, splinteringEnabled, splinteringThresholdAmount, splinteringTimeWindowDays } = req.body as {
             enabled?: boolean;
             strategy?: string;
             autoAssignOnApproval?: boolean;
             splinteringEnabled?: boolean;
+            splinteringThresholdAmount?: number;
+            splinteringTimeWindowDays?: number;
         };
 
         // Validate strategy
         const validStrategies = ['LEAST_LOADED', 'ROUND_ROBIN', 'RANDOM'];
         if (strategy && !validStrategies.includes(strategy)) {
             return res.status(400).json({ message: 'Invalid strategy. Must be LEAST_LOADED, ROUND_ROBIN, or RANDOM' });
+        }
+        if (splinteringThresholdAmount !== undefined) {
+            const thresholdNum = Number(splinteringThresholdAmount);
+            if (!Number.isFinite(thresholdNum) || thresholdNum <= 0) {
+                return res.status(400).json({ message: 'splinteringThresholdAmount must be a positive number' });
+            }
+        }
+        if (splinteringTimeWindowDays !== undefined) {
+            const windowNum = Number(splinteringTimeWindowDays);
+            if (!Number.isInteger(windowNum) || windowNum <= 0) {
+                return res.status(400).json({ message: 'splinteringTimeWindowDays must be a positive integer' });
+            }
         }
 
         // Update settings in database using service
@@ -5274,9 +5313,35 @@ app.post('/api/procurement/load-balancing-settings', async (req, res) => {
             parseInt(String(userId), 10),
         );
 
-        console.log('[LoadBalancing] Settings updated by user', userId, 'roles=', roleNames, 'dept=', user.department?.code, ':', settings);
+        if (splinteringThresholdAmount !== undefined || splinteringTimeWindowDays !== undefined) {
+            await prisma.splinteringRule.upsert({
+                where: { ruleId: 'vendor-threshold' },
+                update: {
+                    thresholdAmount: splinteringThresholdAmount !== undefined ? Number(splinteringThresholdAmount) : undefined,
+                    timeWindowDays: splinteringTimeWindowDays !== undefined ? Number(splinteringTimeWindowDays) : undefined,
+                },
+                create: {
+                    ruleId: 'vendor-threshold',
+                    name: 'Vendor Spending Threshold',
+                    description: 'Primary splintering settings controlled from Procurement Manager Settings',
+                    thresholdAmount: Number(splinteringThresholdAmount ?? 25000),
+                    timeWindowDays: Number(splinteringTimeWindowDays ?? 90),
+                    enabled: true,
+                },
+            });
+        }
 
-        return res.json(settings);
+        console.log('[LoadBalancing] Settings updated by user', userId, 'roles=', roleNames, 'dept=', user.department?.code, ':', settings);
+        const updatedPrimaryRule = await prisma.splinteringRule.findUnique({
+            where: { ruleId: 'vendor-threshold' },
+            select: { thresholdAmount: true, timeWindowDays: true },
+        });
+
+        return res.json({
+            ...settings,
+            splinteringThresholdAmount: updatedPrimaryRule ? Number(updatedPrimaryRule.thresholdAmount) : 25000,
+            splinteringTimeWindowDays: updatedPrimaryRule?.timeWindowDays ?? 90,
+        });
     } catch (e: any) {
         console.error('POST /procurement/load-balancing-settings error:', e);
         return res.status(500).json({ message: e?.message || 'Failed to update settings' });

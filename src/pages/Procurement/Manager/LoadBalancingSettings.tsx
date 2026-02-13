@@ -18,6 +18,8 @@ interface LoadBalancingSettings {
     strategy: 'ROUND_ROBIN' | 'LEAST_LOADED' | 'RANDOM';
     autoAssignOnApproval: boolean;
     splinteringEnabled: boolean;
+    splinteringThresholdAmount: number;
+    splinteringTimeWindowDays: number;
 }
 
 const LoadBalancingSettings = () => {
@@ -27,13 +29,15 @@ const LoadBalancingSettings = () => {
         strategy: 'LEAST_LOADED',
         autoAssignOnApproval: true,
         splinteringEnabled: false,
+        splinteringThresholdAmount: 25000,
+        splinteringTimeWindowDays: 90,
     });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        dispatch(setPageTitle('Load Balancing Settings'));
+        dispatch(setPageTitle('Settings'));
     }, [dispatch]);
 
     useEffect(() => {
@@ -75,7 +79,14 @@ const LoadBalancingSettings = () => {
                 }
 
                 const data = await res.json();
-                setSettings(data);
+                setSettings({
+                    enabled: Boolean(data?.enabled),
+                    strategy: (data?.strategy as LoadBalancingSettings['strategy']) || 'LEAST_LOADED',
+                    autoAssignOnApproval: data?.autoAssignOnApproval !== false,
+                    splinteringEnabled: Boolean(data?.splinteringEnabled),
+                    splinteringThresholdAmount: Number(data?.splinteringThresholdAmount ?? 25000),
+                    splinteringTimeWindowDays: Number(data?.splinteringTimeWindowDays ?? 90),
+                });
             } catch (err: any) {
                 console.error('[LoadBalancing] Error fetching settings:', err);
 
@@ -98,6 +109,24 @@ const LoadBalancingSettings = () => {
     }, []);
 
     const handleSave = async () => {
+        if (!Number.isFinite(settings.splinteringThresholdAmount) || settings.splinteringThresholdAmount <= 0) {
+            MySwal.fire({
+                icon: 'warning',
+                title: 'Invalid Splintering Threshold',
+                text: 'Splintering threshold must be a positive amount.',
+            });
+            return;
+        }
+
+        if (!Number.isInteger(settings.splinteringTimeWindowDays) || settings.splinteringTimeWindowDays <= 0) {
+            MySwal.fire({
+                icon: 'warning',
+                title: 'Invalid Time Window',
+                text: 'Time window must be a positive whole number of days.',
+            });
+            return;
+        }
+
         setSaving(true);
 
         try {
@@ -128,7 +157,7 @@ const LoadBalancingSettings = () => {
             MySwal.fire({
                 icon: 'success',
                 title: 'Settings Saved',
-                text: 'Load balancing settings have been updated successfully.',
+                text: 'Settings have been updated successfully.',
                 timer: 2000,
                 showConfirmButton: false,
             });
@@ -226,8 +255,8 @@ const LoadBalancingSettings = () => {
                             <IconSettings className="h-7 w-7" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold">Load Balancing Settings</h1>
-                            <p className="text-sm text-white/90 mt-1">Intelligent request distribution & workload optimization</p>
+                            <h1 className="text-3xl font-bold">Settings</h1>
+                            <p className="text-sm text-white/90 mt-1">Manage load balancing and splintering controls</p>
                         </div>
                     </div>
                     <button onClick={() => window.location.reload()} className="btn bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30 gap-2">
@@ -403,7 +432,7 @@ const LoadBalancingSettings = () => {
                     </div>
                 )}
 
-                {/* Auto-assign Option */}
+                {/* Load Balancing Automation */}
                 {settings.enabled && (
                     <div className="panel bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-l-4 border-amber-500">
                         <div className="flex items-center gap-3 mb-4">
@@ -413,7 +442,7 @@ const LoadBalancingSettings = () => {
                                 </svg>
                             </div>
                             <div>
-                                <h2 className="text-xl font-bold">Automation Settings</h2>
+                                <h2 className="text-xl font-bold">Load Balancing Automation</h2>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">Configure automatic assignment triggers</p>
                             </div>
                         </div>
@@ -435,28 +464,70 @@ const LoadBalancingSettings = () => {
                                 </p>
                             </div>
                         </label>
-
-                        <label className="flex items-start cursor-pointer p-4 bg-white dark:bg-slate-800 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-red-300 dark:hover:border-red-700 transition-all">
-                            <input
-                                type="checkbox"
-                                checked={settings.splinteringEnabled}
-                                onChange={(e) => setSettings({ ...settings, splinteringEnabled: e.target.checked })}
-                                className="mt-1 mr-4 w-5 h-5 text-red-600"
-                            />
-                            <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <p className="font-bold text-lg">Splintering Detection</p>
-                                    {settings.splinteringEnabled && <span className="badge bg-danger text-xs">Active</span>}
-                                </div>
-                                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                                    Detect potential purchase splitting attempts where multiple small requests circumvent approval thresholds. When enabled, similar requests within a time window are
-                                    flagged for manager review.
-                                </p>
-                                <p className="text-xs text-red-600 dark:text-red-400 mt-2">⚠️ Currently experimental. Disable if causing false positives that block legitimate submissions.</p>
-                            </div>
-                        </label>
                     </div>
                 )}
+
+                {/* Splintering Settings */}
+                <div className="panel bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 border-l-4 border-red-500">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/20">
+                            <svg className="h-6 w-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-.01-13C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold">Splintering Settings</h2>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Control request splitting detection independently of load balancing</p>
+                        </div>
+                    </div>
+
+                    <label className="flex items-start cursor-pointer p-4 bg-white dark:bg-slate-800 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-red-300 dark:hover:border-red-700 transition-all">
+                        <input
+                            type="checkbox"
+                            checked={settings.splinteringEnabled}
+                            onChange={(e) => setSettings({ ...settings, splinteringEnabled: e.target.checked })}
+                            className="mt-1 mr-4 w-5 h-5 text-red-600"
+                        />
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                                <p className="font-bold text-lg">Enable Splintering Detection</p>
+                                {settings.splinteringEnabled && <span className="badge bg-danger text-xs">Active</span>}
+                            </div>
+                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                Detect potential purchase splitting attempts where multiple small requests circumvent approval thresholds. When enabled, similar requests within a time window are
+                                flagged for manager review.
+                            </p>
+                            <p className="text-xs text-red-600 dark:text-red-400 mt-2">⚠️ Currently experimental. Disable if causing false positives that block legitimate submissions.</p>
+                        </div>
+                    </label>
+
+                    <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div className="rounded-lg border-2 border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-slate-800">
+                            <label className="mb-2 block text-sm font-semibold text-gray-800 dark:text-gray-200">Splintering Threshold (JMD)</label>
+                            <input
+                                type="number"
+                                min={1}
+                                step={1000}
+                                value={settings.splinteringThresholdAmount}
+                                onChange={(e) => setSettings({ ...settings, splinteringThresholdAmount: Number(e.target.value || 0) })}
+                                className="form-input"
+                            />
+                            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">Requests are flagged when combined value in the selected window exceeds this amount.</p>
+                        </div>
+                        <div className="rounded-lg border-2 border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-slate-800">
+                            <label className="mb-2 block text-sm font-semibold text-gray-800 dark:text-gray-200">Time Window (Days)</label>
+                            <input
+                                type="number"
+                                min={1}
+                                step={1}
+                                value={settings.splinteringTimeWindowDays}
+                                onChange={(e) => setSettings({ ...settings, splinteringTimeWindowDays: Number(e.target.value || 0) })}
+                                className="form-input"
+                            />
+                            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">Only related requests created in this lookback period are counted.</p>
+                        </div>
+                    </div>
+                </div>
 
                 {/* Information Panel */}
                 <div className="panel bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border-l-4 border-blue-500">
