@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
@@ -190,6 +190,12 @@ const ViewIdeas = () => {
             idea.tags.some((tag) => tag.toLowerCase().includes(debouncedSearch.toLowerCase()));
         return matchesCategoryUI && matchesMultiCategory && matchesMultiStatus && matchesSearch;
     });
+
+    const handleTagClick = (tag: string, event: MouseEvent<HTMLButtonElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setSearchTerm(tag);
+    };
 
     return (
         <div className="space-y-6">
@@ -452,9 +458,14 @@ const ViewIdeas = () => {
                                     {/* Tags */}
                                     <div className="flex flex-wrap gap-2 mb-4">
                                         {idea.tags.slice(0, 3).map((tag, idx) => (
-                                            <span key={idx} className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-xs font-medium">
+                                            <button
+                                                key={idx}
+                                                type="button"
+                                                onClick={(event) => handleTagClick(tag, event)}
+                                                className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-xs font-medium hover:bg-gray-200 dark:hover:bg-gray-600"
+                                            >
                                                 #{tag}
-                                            </span>
+                                            </button>
                                         ))}
                                     </div>
 
@@ -523,9 +534,14 @@ const ViewIdeas = () => {
                                         <div className="flex items-center justify-between">
                                             <div className="flex flex-wrap gap-2">
                                                 {idea.tags.map((tag, idx) => (
-                                                    <span key={idx} className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-xs">
+                                                    <button
+                                                        key={idx}
+                                                        type="button"
+                                                        onClick={(event) => handleTagClick(tag, event)}
+                                                        className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-xs hover:bg-gray-200 dark:hover:bg-gray-600"
+                                                    >
                                                         #{tag}
-                                                    </span>
+                                                    </button>
                                                 ))}
                                             </div>
                                             <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">

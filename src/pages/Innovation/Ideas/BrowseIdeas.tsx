@@ -16,6 +16,7 @@ interface Idea {
     voteCount: number;
     hasVoted: boolean;
     viewCount: number;
+    tags: string[];
 }
 
 const BrowseIdeas = () => {
@@ -56,6 +57,7 @@ const BrowseIdeas = () => {
                     voteCount: idea.voteCount,
                     hasVoted: idea.hasVoted || false,
                     viewCount: idea.viewCount,
+                    tags: Array.isArray(idea.tags) ? idea.tags : [],
                 })),
             );
         } catch (error: any) {
@@ -293,6 +295,15 @@ const BrowseIdeas = () => {
                                         </div>
                                     </div>
                                     <p className="text-gray-700 dark:text-gray-300 mb-4 whitespace-pre-wrap">{idea.description}</p>
+                                    {idea.tags.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mb-3">
+                                            {idea.tags.map((tag, idx) => (
+                                                <span key={idx} className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-xs">
+                                                    #{tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
                                     <Link to={`/innovation/ideas/${idea.id}`} className="text-primary hover:underline font-semibold text-sm inline-flex items-center gap-1">
                                         {t('innovation.browse.viewDetails')}
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

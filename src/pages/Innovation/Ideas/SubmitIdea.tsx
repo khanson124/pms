@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { useNavigate } from 'react-router-dom';
@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import Swal from 'sweetalert2';
 import { useAutoSave, restoreAutoSave, clearAutoSave } from '../../../utils/useAutoSave';
-import { submitIdea, fetchTags, createTag, fetchChallenges } from '../../../utils/ideasApi';
+import { submitIdea, fetchTags, createTag, fetchChallenges, fetchIdeas } from '../../../utils/ideasApi';
 import { useDebounce } from '../../../utils/useDebounce';
 import { getApiUrl } from '../../../config/api';
 
@@ -109,7 +109,15 @@ const SubmitIdea = () => {
     const [allTags, setAllTags] = useState<Array<{ id: number; name: string }>>([]);
     const [tagSearch, setTagSearch] = useState('');
     const [creatingTag, setCreatingTag] = useState(false);
+    const [tagUsage, setTagUsage] = useState<Record<string, number>>({});
+    const tagCreateInFlight = useRef<Set<string>>(new Set());
     const [challenges, setChallenges] = useState<Array<{ id: number; title: string }>>([]);
+
+    const normalizeTag = (value: string) => value.trim().toLowerCase();
+    const extractHashtags = (value: string) => {
+        const matches = value.match(/#([a-zA-Z0-9_-]{2,30})/g) || [];
+        return matches.map((match) => match.replace('#', '')).filter(Boolean);
+    };
 
     useEffect(() => {
         (async () => {
@@ -119,6 +127,30 @@ const SubmitIdea = () => {
                 setChallenges(chals);
             } catch {}
         })();
+    }, []);
+
+    useEffect(() => {
+        let active = true;
+        (async () => {
+            try {
+                const response = await fetchIdeas({ limit: 100, sort: 'popular' });
+                const data = Array.isArray(response) ? response : ((response as { ideas?: unknown }).ideas ?? response);
+                const list = Array.isArray(data) ? (data as Array<{ tags?: unknown }>) : [];
+                const counts: Record<string, number> = {};
+                list.forEach((idea) => {
+                    const tags = Array.isArray(idea.tags) ? idea.tags : [];
+                    tags.forEach((tag) => {
+                        const key = normalizeTag(String(tag));
+                        if (!key) return;
+                        counts[key] = (counts[key] || 0) + 1;
+                    });
+                });
+                if (active) setTagUsage(counts);
+            } catch {}
+        })();
+        return () => {
+            active = false;
+        };
     }, []);
 
     async function handleCreateTag() {
@@ -143,7 +175,75 @@ const SubmitIdea = () => {
     }
 
     const selectedTags = allTags.filter((t) => (formData.tagIds || []).includes(t.id));
-    const filteredTags = allTags.filter((t) => !(formData.tagIds || []).includes(t.id) && (!tagSearch || t.name.toLowerCase().includes(tagSearch.toLowerCase()))).slice(0, 10);
+    const popularTags = useMemo(() => {
+        const selected = new Set(formData.tagIds || []);
+        const ordered = allTags
+            .map((tag) => ({ ...tag, count: tagUsage[normalizeTag(tag.name)] || 0 }))
+            .filter((tag) => !selected.has(tag.id))
+            .sort((a, b) => (b.count !== a.count ? b.count - a.count : a.name.localeCompare(b.name)));
+        return ordered.slice(0, 8);
+    }, [allTags, formData.tagIds, tagUsage]);
+
+    const filteredTags = useMemo(() => {
+        const query = tagSearch.trim().toLowerCase();
+        if (!query) return [];
+        const selected = new Set(formData.tagIds || []);
+        return allTags
+            .filter((t) => !selected.has(t.id) && t.name.toLowerCase().includes(query))
+            .sort((a, b) => {
+                const aCount = tagUsage[normalizeTag(a.name)] || 0;
+                const bCount = tagUsage[normalizeTag(b.name)] || 0;
+                return bCount !== aCount ? bCount - aCount : a.name.localeCompare(b.name);
+            })
+            .slice(0, 10);
+    }, [allTags, formData.tagIds, tagSearch, tagUsage]);
+
+    useEffect(() => {
+        let active = true;
+        const run = async () => {
+            if (!debouncedDesc.trim()) return;
+            const hashtags = extractHashtags(debouncedDesc).map(normalizeTag).filter(Boolean);
+            if (!hashtags.length) return;
+
+            const existingByName = new Map(allTags.map((t) => [normalizeTag(t.name), t]));
+            const nextTagIds = new Set(formData.tagIds || []);
+            const toCreate: string[] = [];
+
+            hashtags.slice(0, 10).forEach((tag) => {
+                const existing = existingByName.get(tag);
+                if (existing) {
+                    nextTagIds.add(existing.id);
+                } else if (!tagCreateInFlight.current.has(tag)) {
+                    toCreate.push(tag);
+                }
+            });
+
+            if (active && nextTagIds.size !== (formData.tagIds || []).length) {
+                setFormData((prev) => ({ ...prev, tagIds: Array.from(nextTagIds) }));
+            }
+
+            for (const tag of toCreate.slice(0, 4)) {
+                try {
+                    tagCreateInFlight.current.add(tag);
+                    const created = await createTag(tag);
+                    if (!active) return;
+                    setAllTags((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+                    setFormData((prev) => {
+                        if (prev.tagIds.includes(created.id)) return prev;
+                        return { ...prev, tagIds: [...prev.tagIds, created.id] };
+                    });
+                } catch {
+                } finally {
+                    tagCreateInFlight.current.delete(tag);
+                }
+            }
+        };
+
+        run();
+        return () => {
+            active = false;
+        };
+    }, [debouncedDesc, allTags, formData.tagIds]);
 
     // Duplicate detection auto-trigger
     useEffect(() => {
@@ -642,18 +742,39 @@ const SubmitIdea = () => {
                                 {creatingTag ? 'Adding...' : 'Add'}
                             </button>
                         </div>
+                        {popularTags.length > 0 && (
+                            <div className="mt-3">
+                                <div className="text-xs font-semibold text-gray-500 dark:text-gray-400">{t('innovation.submit.tags.popular', { defaultValue: 'Popular tags' })}</div>
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                    {popularTags.map((tg) => (
+                                        <button
+                                            key={tg.id}
+                                            type="button"
+                                            onClick={() => setFormData((prev) => ({ ...prev, tagIds: [...prev.tagIds, tg.id] }))}
+                                            className="px-2 py-1 rounded border border-gray-300 dark:border-gray-600 text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
+                                        >
+                                            {tg.name}
+                                            {tg.count > 0 && <span className="ml-1 text-[10px] text-gray-500">({tg.count})</span>}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         {filteredTags.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-2">
-                                {filteredTags.map((tg) => (
-                                    <button
-                                        key={tg.id}
-                                        type="button"
-                                        onClick={() => setFormData((prev) => ({ ...prev, tagIds: [...prev.tagIds, tg.id] }))}
-                                        className="px-2 py-1 rounded border border-gray-300 dark:border-gray-600 text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
-                                    >
-                                        {tg.name}
-                                    </button>
-                                ))}
+                            <div className="mt-3">
+                                <div className="text-xs font-semibold text-gray-500 dark:text-gray-400">{t('innovation.submit.tags.suggested', { defaultValue: 'Suggested' })}</div>
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                    {filteredTags.map((tg) => (
+                                        <button
+                                            key={tg.id}
+                                            type="button"
+                                            onClick={() => setFormData((prev) => ({ ...prev, tagIds: [...prev.tagIds, tg.id] }))}
+                                            className="px-2 py-1 rounded border border-gray-300 dark:border-gray-600 text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
+                                        >
+                                            {tg.name}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         )}
                     </div>
