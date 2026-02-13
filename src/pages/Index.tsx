@@ -44,7 +44,9 @@ const Index = () => {
     useEffect(() => {
         const fetchDashboardStats = async () => {
             try {
-                const response = await fetch('/api/stats/dashboard');
+                const response = await fetch('/api/stats/dashboard', {
+                    credentials: 'include',
+                });
                 if (response.ok) {
                     const data = await response.json();
                     setDashboardStats({

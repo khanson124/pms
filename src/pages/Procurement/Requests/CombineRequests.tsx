@@ -24,7 +24,7 @@ import {
 const CombineRequests = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const { user, token: reduxToken } = useSelector((state: IRootState) => state.auth);
+    const { user } = useSelector((state: IRootState) => state.auth);
 
     useEffect(() => {
         dispatch(setPageTitle('Combine Requests'));
@@ -61,25 +61,8 @@ const CombineRequests = () => {
             setIsLoading(true);
             setError(null);
             try {
-                // Get token and userId from multiple sources
-                const token = reduxToken || sessionStorage.getItem('token') || localStorage.getItem('token') || sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token');
-
-                const userId = user?.id?.toString() || sessionStorage.getItem('userId') || localStorage.getItem('userId');
-
-                // Fetch combinable requests
-                const headers: Record<string, string> = {
-                    'Content-Type': 'application/json',
-                };
-
-                if (token && token !== 'null') {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-
-                if (userId && userId !== 'null') {
-                    headers['x-user-id'] = userId;
-                }
                 const response = await fetch(getApiUrl('/api/requests/combinable?combinable=true'), {
-                    headers,
+                    credentials: 'include',
                 });
 
                 if (!response.ok) {
@@ -102,11 +85,7 @@ const CombineRequests = () => {
 
                 // Also fetch existing combined requests
                 const combinedResponse = await fetch(getApiUrl('/api/requests/combinable'), {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'x-user-id': userId || '',
-                        'Content-Type': 'application/json',
-                    },
+                    credentials: 'include',
                 });
 
                 if (combinedResponse.ok) {
@@ -251,23 +230,14 @@ const CombineRequests = () => {
 
             console.log('[COMBINE] Sending request data:', combinedRequestData);
 
-            const token = reduxToken || localStorage.getItem('token');
-            const userId = user?.id ? String(user.id) : localStorage.getItem('userId');
-
-            if (!token && !userId) {
-                throw new Error('You are not authenticated. Please log in again.');
-            }
-
             const headers: Record<string, string> = {
                 'Content-Type': 'application/json',
             };
 
-            if (token) headers.Authorization = `Bearer ${token}`;
-            if (userId) headers['x-user-id'] = userId;
-
             const response = await fetch(getApiUrl('/api/requests/combine'), {
                 method: 'POST',
                 headers,
+                credentials: 'include',
                 body: JSON.stringify(combinedRequestData),
             });
 

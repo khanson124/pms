@@ -3,6 +3,7 @@
  * Handles automatic token refresh using refresh tokens
  */
 import { getApiUrl } from '../config/api';
+import { logout, isRemembered, setAuth } from './auth';
 
 let refreshPromise: Promise<string> | null = null;
 
@@ -18,19 +19,13 @@ export async function refreshAccessToken(): Promise<string> {
 
     refreshPromise = (async () => {
         try {
-            const refreshToken = localStorage.getItem('refreshToken') || sessionStorage.getItem('refreshToken');
-
-            if (!refreshToken) {
-                throw new Error('No refresh token available');
-            }
-
             const url = getApiUrl('/api/auth/refresh');
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ refreshToken }),
+                credentials: 'include',
             });
 
             if (!response.ok) {
@@ -39,35 +34,17 @@ export async function refreshAccessToken(): Promise<string> {
 
             const data = await response.json();
 
-            if (!data.token || !data.refreshToken) {
+            if (!data.token) {
                 throw new Error('Invalid refresh response');
             }
 
-            // Update stored tokens - use the same storage as the original refresh token
-            const useLocalStorage = !!localStorage.getItem('refreshToken');
-            if (useLocalStorage) {
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('refreshToken', data.refreshToken);
-                if (data.user) {
-                    localStorage.setItem('auth_user', JSON.stringify(data.user));
-                }
-            } else {
-                sessionStorage.setItem('token', data.token);
-                sessionStorage.setItem('refreshToken', data.refreshToken);
-                if (data.user) {
-                    sessionStorage.setItem('auth_user', JSON.stringify(data.user));
-                }
+            if (data.user) {
+                setAuth('', data.user, isRemembered());
             }
 
             return data.token;
         } catch (error) {
-            // Clear tokens on refresh failure from both storages
-            localStorage.removeItem('token');
-            localStorage.removeItem('refreshToken');
-            localStorage.removeItem('auth_user');
-            sessionStorage.removeItem('token');
-            sessionStorage.removeItem('refreshToken');
-            sessionStorage.removeItem('auth_user');
+            await logout();
             throw error;
         } finally {
             refreshPromise = null;
@@ -81,18 +58,7 @@ export async function refreshAccessToken(): Promise<string> {
  * Check if token is expired or about to expire (within 5 minutes)
  */
 export function isTokenExpiringSoon(): boolean {
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-    if (!token) return true;
-
-    try {
-        // Decode JWT (simple base64 decode, no verification)
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const exp = payload.exp * 1000; // Convert to milliseconds
-        const fiveMinutes = 5 * 60 * 1000;
-        return Date.now() >= exp - fiveMinutes;
-    } catch {
-        return true;
-    }
+    return false;
 }
 
 /**
@@ -100,13 +66,5 @@ export function isTokenExpiringSoon(): boolean {
  * Can be called before API requests to ensure valid token
  */
 export async function ensureValidToken(): Promise<string | null> {
-    if (isTokenExpiringSoon()) {
-        try {
-            return await refreshAccessToken();
-        } catch (error) {
-            console.error('Token refresh failed:', error);
-            return null;
-        }
-    }
-    return localStorage.getItem('token');
+    return null;
 }

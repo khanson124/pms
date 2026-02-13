@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import Swal from 'sweetalert2';
 import { approveIdea, fetchIdeas, fetchIdeaCounts, Idea, promoteIdea as promoteIdeaApi, rejectIdea } from '../../../utils/ideasApi';
@@ -10,6 +11,7 @@ import HolidayCountdown from '../../../components/HolidayCountdown';
 
 const CommitteeDashboard = () => {
     const dispatch = useDispatch();
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const currentUser = getUser();
     const roles: string[] = Array.isArray(currentUser?.roles) ? currentUser.roles : currentUser?.role ? [currentUser.role] : [];
@@ -56,8 +58,8 @@ const CommitteeDashboard = () => {
     const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
 
     useEffect(() => {
-        dispatch(setPageTitle('Innovation Committee'));
-    }, [dispatch]);
+        dispatch(setPageTitle(t('innovation.committee.title', { defaultValue: 'Innovation Committee' })));
+    }, [dispatch, t]);
 
     useEffect(() => {
         if (!isCommittee) {
@@ -84,7 +86,6 @@ const CommitteeDashboard = () => {
                 promoted: counts.promoted || 0,
             });
         } catch (e: any) {
-            console.error('Failed to load counts:', e);
             // Silent fail for counts - don't disrupt user experience
             // Stats will show last known values or zeros
         }
@@ -145,7 +146,7 @@ const CommitteeDashboard = () => {
                 if (showLoader) setLoadingList(false);
             }
         },
-        [selectedTab]
+        [selectedTab],
     );
 
     useEffect(() => {
@@ -202,7 +203,7 @@ const CommitteeDashboard = () => {
                             reviewer: currentUser?.name || 'Committee Member',
                         },
                         ...prev,
-                    ].slice(0, 10)
+                    ].slice(0, 10),
                 );
 
                 Swal.fire({
@@ -228,7 +229,7 @@ const CommitteeDashboard = () => {
                             reviewer: currentUser?.name || 'Committee Member',
                         },
                         ...prev,
-                    ].slice(0, 10)
+                    ].slice(0, 10),
                 );
 
                 Swal.fire({
@@ -297,7 +298,7 @@ const CommitteeDashboard = () => {
                         reviewer: currentUser?.name || 'Committee Member',
                     },
                     ...prev,
-                ].slice(0, 10)
+                ].slice(0, 10),
             );
 
             Swal.fire({
@@ -765,7 +766,7 @@ const CommitteeDashboard = () => {
                                                 )}
                                             </div>
                                             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{idea.title}</h3>
-                                            <p className="text-gray-700 dark:text-gray-300 mb-4 line-clamp-2">{idea.description}</p>
+                                            <p className="text-gray-700 dark:text-gray-300 mb-4 line-clamp-2 whitespace-pre-wrap">{idea.description}</p>
                                             <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-3">
                                                 <span className="flex items-center gap-1">
                                                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">

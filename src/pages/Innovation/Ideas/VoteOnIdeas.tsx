@@ -108,11 +108,10 @@ const VoteOnIdeas = () => {
                 });
 
                 // Handle both paginated and legacy response formats
-                const apiIdeas = Array.isArray(response) ? (response as ApiIdea[]) : (response as { ideas?: ApiIdea[] })?.ideas ?? [];
+                const apiIdeas = Array.isArray(response) ? (response as ApiIdea[]) : ((response as { ideas?: ApiIdea[] })?.ideas ?? []);
 
                 setIdeas(apiIdeas.map((idea) => mapApiIdea(idea)));
             } catch (error: any) {
-                console.error('[VoteOnIdeas] Error loading ideas:', error);
                 // Only show error on first load, not background polling
                 if (!ideas.length) {
                     const errorMessage = error?.message || 'Unknown error';
@@ -120,8 +119,14 @@ const VoteOnIdeas = () => {
 
                     Swal.fire({
                         icon: 'error',
-                        title: isNetworkError ? 'Connection Problem' : 'Unable to Load Ideas',
-                        text: isNetworkError ? 'Please check your internet connection and try again.' : 'We encountered a problem loading voting options. Please try refreshing the page.',
+                        title: isNetworkError
+                            ? t('innovation.vote.errors.connectionTitle', { defaultValue: 'Connection Problem' })
+                            : t('innovation.vote.errors.loadTitle', { defaultValue: 'Unable to Load Ideas' }),
+                        text: isNetworkError
+                            ? t('innovation.vote.errors.connectionMessage', { defaultValue: 'Please check your internet connection and try again.' })
+                            : t('innovation.vote.errors.loadMessage', {
+                                  defaultValue: 'We encountered a problem loading voting options. Please try refreshing the page.',
+                              }),
                         toast: true,
                         position: 'bottom-end',
                         showConfirmButton: false,
@@ -202,15 +207,13 @@ const VoteOnIdeas = () => {
                 });
             }
         } catch (error) {
-            console.error('[VoteOnIdeas] Error voting:', error);
-
             // Check if vote limit reached
             if (error instanceof Error && error.message === 'VOTE_LIMIT_REACHED') {
                 void Swal.fire({
                     icon: 'warning',
                     title: t('innovation.vote.warning.noVotesLeft.title'),
                     text: t('innovation.vote.warning.noVotesLeft.message'),
-                    confirmButtonText: 'OK',
+                    confirmButtonText: t('innovation.vote.common.ok', { defaultValue: 'OK' }),
                 });
                 return;
             }
@@ -219,8 +222,8 @@ const VoteOnIdeas = () => {
             if (error instanceof Error && error.message.includes('already voted')) {
                 void Swal.fire({
                     icon: 'warning',
-                    title: 'Already Voted',
-                    text: 'You have already voted for this idea',
+                    title: t('innovation.vote.warning.alreadyVoted.title', { defaultValue: 'Already Voted' }),
+                    text: t('innovation.vote.warning.alreadyVoted.message', { defaultValue: 'You have already voted for this idea' }),
                     toast: true,
                     position: 'top-end',
                     timer: 4000,
@@ -237,8 +240,8 @@ const VoteOnIdeas = () => {
                 // Generic error
                 void Swal.fire({
                     icon: 'error',
-                    title: 'Vote Failed',
-                    text: 'We were unable to process your vote. Please try again.',
+                    title: t('innovation.vote.errors.voteFailedTitle', { defaultValue: 'Vote Failed' }),
+                    text: t('innovation.vote.errors.voteFailedMessage', { defaultValue: 'We were unable to process your vote. Please try again.' }),
                     toast: true,
                     position: 'bottom-end',
                     showConfirmButton: false,
@@ -553,8 +556,8 @@ const VoteOnIdeas = () => {
                                                         idea.hasVoted === 'up'
                                                             ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg scale-110'
                                                             : upDisabled
-                                                            ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                                                            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gradient-to-br hover:from-green-500 hover:to-emerald-600 hover:text-white hover:scale-110 hover:shadow-lg'
+                                                              ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                                                              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gradient-to-br hover:from-green-500 hover:to-emerald-600 hover:text-white hover:scale-110 hover:shadow-lg'
                                                     }`}
                                                     aria-pressed={idea.hasVoted === 'up'}
                                                     aria-label={t('innovation.vote.actions.upvote')}
@@ -572,8 +575,8 @@ const VoteOnIdeas = () => {
                                                         idea.hasVoted === 'down'
                                                             ? 'bg-gradient-to-br from-red-500 to-rose-600 text-white shadow-lg scale-110'
                                                             : downDisabled
-                                                            ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                                                            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gradient-to-br hover:from-red-500 hover:to-rose-600 hover:text-white hover:scale-110 hover:shadow-lg'
+                                                              ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                                                              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gradient-to-br hover:from-red-500 hover:to-rose-600 hover:text-white hover:scale-110 hover:shadow-lg'
                                                     }`}
                                                     aria-pressed={idea.hasVoted === 'down'}
                                                     aria-label={t('innovation.vote.actions.downvote')}
@@ -660,7 +663,7 @@ const VoteOnIdeas = () => {
                                     </div>
                                 </div>
 
-                                <p className="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3">{idea.description}</p>
+                                <p className="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3 whitespace-pre-wrap">{idea.description}</p>
 
                                 <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
                                     <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">

@@ -2,12 +2,11 @@ import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import { useDispatch } from 'react-redux';
-import { getToken, getUser } from '../../../utils/auth';
+import { getUser } from '../../../utils/auth';
 import { getApiUrl } from '../../../config/api';
 import { computeRoleContext, AccountSettingsVisibility } from '../../../utils/roleVisibilityHelper';
 import Swal from 'sweetalert2';
 import IconHome from '../../../components/Icon/IconHome';
-import IconUser from '../../../components/Icon/IconUser';
 
 const AccountSetting = () => {
     const dispatch = useDispatch();
@@ -58,10 +57,8 @@ const AccountSetting = () => {
     useEffect(() => {
         const fetchProfileData = async () => {
             try {
-                const token = getToken();
                 const currentUser = getUser();
-
-                if (!token || !currentUser) {
+                if (!currentUser) {
                     setIsLoading(false);
                     return;
                 }
@@ -69,9 +66,9 @@ const AccountSetting = () => {
                 // Fetch user profile from API (uses /api/auth/me)
                 const response = await fetch(getApiUrl('/api/auth/me'), {
                     headers: {
-                        Authorization: `Bearer ${token}`,
                         'Content-Type': 'application/json',
                     },
+                    credentials: 'include',
                 });
 
                 if (response.ok) {
@@ -82,9 +79,9 @@ const AccountSetting = () => {
                         try {
                             const photoResponse = await fetch(getApiUrl('/api/auth/profile-photo'), {
                                 headers: {
-                                    Authorization: `Bearer ${token}`,
                                     'Content-Type': 'application/json',
                                 },
+                                credentials: 'include',
                             });
                             if (photoResponse.ok) {
                                 const photoData = await photoResponse.json();
@@ -174,8 +171,8 @@ const AccountSetting = () => {
     const handleSave = async () => {
         try {
             setIsSaving(true);
-            const token = getToken();
-            if (!token) {
+            const currentUser = getUser();
+            if (!currentUser) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Authentication Error',
@@ -189,9 +186,9 @@ const AccountSetting = () => {
             const response = await fetch(getApiUrl('/api/auth/profile'), {
                 method: 'PUT',
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
                 body: JSON.stringify({
                     // For LDAP users, only send editable fields
                     // LDAP-managed fields (name, email, jobTitle for LDAP users) are not sent
@@ -241,7 +238,7 @@ const AccountSetting = () => {
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-
+        // Ignore errors saving profile
         // Validate file type
         if (!file.type.startsWith('image/')) {
             Swal.fire({
@@ -266,8 +263,8 @@ const AccountSetting = () => {
 
         try {
             setIsUploadingImage(true);
-            const token = getToken();
-            if (!token) {
+            const currentUser = getUser();
+            if (!currentUser) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Authentication Error',
@@ -282,9 +279,7 @@ const AccountSetting = () => {
 
             const response = await fetch(getApiUrl('/api/auth/profile-image'), {
                 method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+                credentials: 'include',
                 body: formData,
             });
 
@@ -299,12 +294,11 @@ const AccountSetting = () => {
                 // Refetch full profile to ensure persistence
                 setTimeout(async () => {
                     try {
-                        const token = getToken();
                         const response = await fetch(getApiUrl('/api/auth/me'), {
                             headers: {
-                                Authorization: `Bearer ${token}`,
                                 'Content-Type': 'application/json',
                             },
+                            credentials: 'include',
                         });
                         if (response.ok) {
                             const updatedData = await response.json();
@@ -314,9 +308,9 @@ const AccountSetting = () => {
                                 try {
                                     const photoResponse = await fetch(getApiUrl('/api/auth/profile-photo'), {
                                         headers: {
-                                            Authorization: `Bearer ${token}`,
                                             'Content-Type': 'application/json',
                                         },
+                                        credentials: 'include',
                                     });
                                     if (photoResponse.ok) {
                                         const photoData = await photoResponse.json();
@@ -398,7 +392,7 @@ const AccountSetting = () => {
             <ul className="flex space-x-2 rtl:space-x-reverse">
                 <li>
                     <Link to="/profile" state={{ module: moduleState }} className="text-primary hover:underline">
-                        Users
+                        Profile
                     </Link>
                 </li>
                 <li className="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
@@ -431,7 +425,6 @@ const AccountSetting = () => {
                                         onClick={() => setTabs('preferences')}
                                         className={`flex gap-2 border-b border-transparent p-4 hover:border-primary hover:text-primary ${tabs === 'preferences' ? '!border-primary text-primary' : ''}`}
                                     >
-                                        <IconUser className="w-5 h-5" />
                                         Preferences
                                     </button>
                                 </li>

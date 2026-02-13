@@ -45,35 +45,16 @@ const SystemDashboard = () => {
 
     const loadMetrics = async () => {
         try {
-            // Get auth token
-            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
             const headers: HeadersInit = {
                 'Content-Type': 'application/json',
             };
 
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
-            }
-
-            // Get user ID for x-user-id header
-            const authUser = localStorage.getItem('auth_user') || sessionStorage.getItem('auth_user');
-            if (authUser) {
-                try {
-                    const user = JSON.parse(authUser);
-                    if (user.id) {
-                        headers['x-user-id'] = String(user.id);
-                    }
-                } catch (e) {
-                    // Auth header parsing failed, continue without userId
-                }
-            }
-
             // Fetch metrics from various endpoints
             const [usersRes, requestsRes, deptsRes, vendorsRes] = await Promise.all([
-                fetch(getApiUrl('/api/admin/users'), { headers }).catch(() => null),
-                fetch(getApiUrl('/api/requests'), { headers }).catch(() => null),
-                fetch(getApiUrl('/api/departments'), { headers }).catch(() => null),
-                fetch(getApiUrl('/api/suppliers'), { headers }).catch(() => null),
+                fetch(getApiUrl('/api/admin/users'), { headers, credentials: 'include' }).catch(() => null),
+                fetch(getApiUrl('/api/requests'), { headers, credentials: 'include' }).catch(() => null),
+                fetch(getApiUrl('/api/departments'), { headers, credentials: 'include' }).catch(() => null),
+                fetch(getApiUrl('/api/suppliers'), { headers, credentials: 'include' }).catch(() => null),
             ]);
 
             let totalUsers = 0;

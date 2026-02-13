@@ -1,5 +1,6 @@
 import { compareTwoStrings, findBestMatch } from 'string-similarity';
 import { prisma } from '../prismaClient.js';
+import { decryptIdeaFields } from '../utils/ideaEncryption.js';
 
 /**
  * Calculate similarity between two strings (0-1 scale)
@@ -28,7 +29,7 @@ export async function findPotentialDuplicates(
         thresholdDescription?: number;
         limit?: number;
         excludeRejected?: boolean;
-    } = {}
+    } = {},
 ): Promise<
     Array<{
         id: number;
@@ -71,7 +72,9 @@ export async function findPotentialDuplicates(
         }
 
         // Calculate similarities
-        const duplicates = existingIdeas
+        const decryptedIdeas = existingIdeas.map((idea) => decryptIdeaFields(idea));
+
+        const duplicates = decryptedIdeas
             .map((idea) => {
                 const titleSimilarity = calculateSimilarity(title, idea.title);
                 const descriptionSimilarity = calculateSimilarity(description, idea.description);

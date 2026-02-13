@@ -69,11 +69,9 @@ const Header = () => {
     useEffect(() => {
         const fetchPinnedModule = async () => {
             try {
-                const token = getToken();
-                if (!token) return;
-
                 const response = await fetch(getApiUrl('/api/auth/me'), {
-                    headers: { Authorization: `Bearer ${token}` },
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                 });
 
                 if (response.status === 401) {
@@ -200,10 +198,9 @@ const Header = () => {
     // Initial load and polling (60s interval, matching Innovation Hub pattern)
     useEffect(() => {
         // Get fresh auth data on every effect run
-        const token = getToken();
         const user = getUser();
 
-        if (!user || !token) {
+        if (!user) {
             return;
         }
 
@@ -225,8 +222,9 @@ const Header = () => {
             try {
                 const response = await fetch(getApiUrl('/api/auth/me'), {
                     headers: {
-                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
                     },
+                    credentials: 'include',
                 });
 
                 if (response.status === 401) {
@@ -243,11 +241,12 @@ const Header = () => {
                         try {
                             const photoResponse = await fetch(getApiUrl('/api/auth/profile-photo'), {
                                 headers: {
-                                    Authorization: `Bearer ${token}`,
+                                    'Content-Type': 'application/json',
                                 },
+                                credentials: 'include',
                             });
                             if (photoResponse.status === 401) {
-                                clearAuth();
+                                await logout();
                                 window.location.href = '/auth/login';
                                 return;
                             }
@@ -834,10 +833,10 @@ const Header = () => {
                                         <Link
                                             to="/auth/login"
                                             className="text-danger !py-3"
-                                            onClick={() => {
+                                            onClick={async () => {
                                                 try {
                                                     heartbeatService.stopHeartbeat();
-                                                    clearAuth();
+                                                    await logout();
                                                     dispatch(clearModule());
                                                 } catch {}
                                             }}

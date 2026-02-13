@@ -35,7 +35,11 @@
         "hodrouter",
         "innovationhub",
         "websocket",
-        "graphql"
+        "graphql",
+        "Swal",
+        "sweetalert",
+        "SweetAlert",
+        "sweetalert2"
     ],
     "ignoreWords": [],
     "import": []

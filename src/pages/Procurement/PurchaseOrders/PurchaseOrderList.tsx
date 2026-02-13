@@ -42,9 +42,6 @@ const PurchaseOrderList = () => {
             setLoading(true);
             setError(null);
 
-            const token = localStorage.getItem('token');
-            const userId = localStorage.getItem('userId');
-
             const params = new URLSearchParams();
             if (statusFilter !== 'all') {
                 params.append('status', statusFilter);
@@ -53,9 +50,8 @@ const PurchaseOrderList = () => {
             const response = await fetch(`${getApiUrl('/api/purchase-orders')}?${params}`, {
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                    'x-user-id': userId || '',
                 },
+                credentials: 'include',
             });
 
             if (!response.ok) {

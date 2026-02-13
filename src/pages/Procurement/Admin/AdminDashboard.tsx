@@ -58,7 +58,10 @@ const AdminDashboard = () => {
         }
         try {
             const [usersResponse, rolesData, deptsData] = await Promise.all([
-                fetch(getApiUrl('/api/admin/users?limit=1000'), { headers: getAuthHeadersSync() }),
+                fetch(getApiUrl('/api/admin/users?limit=1000'), {
+                    headers: getAuthHeadersSync(),
+                    credentials: 'include',
+                }),
                 adminService.getAllRoles(),
                 adminService.getDepartments(),
             ]);

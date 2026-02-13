@@ -26,7 +26,9 @@ const DepartmentHeadDashboardNew = () => {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const response = await fetch('/api/stats/department-head');
+                const response = await fetch('/api/stats/department-head', {
+                    credentials: 'include',
+                });
                 if (response.ok) {
                     const data = await response.json();
                     setStats(data);

@@ -1,4 +1,4 @@
-import { Router, Request, Response, type RequestHandler } from 'express';
+import { Router, type Request, type Response } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -39,8 +39,7 @@ const upload = multer({
     },
 });
 
-const normalizeBugReportBody: RequestHandler = (req, _res, next) => {
-    const authReq = req as AuthenticatedRequest;
+function normalizeBugReportBody(req: AuthenticatedRequest, _res: any, next: any) {
     const body = req.body || {};
     const trim = (val: unknown) => (typeof val === 'string' ? val.trim() : val);
     const optional = (val: unknown) => {
@@ -48,7 +47,7 @@ const normalizeBugReportBody: RequestHandler = (req, _res, next) => {
         return t === '' ? undefined : t;
     };
 
-    authReq.body = {
+    req.body = {
         title: trim(body.title),
         description: trim(body.description),
         stepsToReproduce: optional(body.stepsToReproduce),
@@ -61,7 +60,7 @@ const normalizeBugReportBody: RequestHandler = (req, _res, next) => {
     } as any;
 
     next();
-};
+}
 
 // POST /api/bug-reports - Submit a bug report
 router.post('/', authMiddleware, upload.single('screenshot'), normalizeBugReportBody, validate(createBugReportSchema), async (req: Request, res: Response) => {

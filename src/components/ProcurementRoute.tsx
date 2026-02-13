@@ -37,8 +37,8 @@ const ProcurementRoute: React.FC<ProcurementRouteProps> = ({ children }) => {
     }, []);
 
     // Storage fallbacks to avoid redirect loops before Redux hydration completes
-    const { hasToken, isProcurementFromStorage } = useMemo(() => {
-        const token = sessionStorage.getItem('token') || localStorage.getItem('token') || sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token');
+    const { hasCachedUser, isProcurementFromStorage } = useMemo(() => {
+        const hasUserSnapshot = !!(sessionStorage.getItem('auth_user') || localStorage.getItem('auth_user') || localStorage.getItem('userProfile'));
 
         // Read user snapshot written at login
         let rolesRaw: any[] = [];
@@ -63,7 +63,7 @@ const ProcurementRoute: React.FC<ProcurementRouteProps> = ({ children }) => {
             (role) => role.includes('PROCUREMENT') || role.includes('ADMIN') || role.includes('ADMINISTRATOR') || role.includes('EXECUTIVE_DIRECTOR') || role.includes('EXECUTIVE'),
         );
 
-        return { hasToken: !!token, isProcurementFromStorage: isProcurement };
+        return { hasCachedUser: hasUserSnapshot, isProcurementFromStorage: isProcurement };
     }, []);
 
     // Determine procurement access using Redux first, then storage fallback
@@ -72,9 +72,9 @@ const ProcurementRoute: React.FC<ProcurementRouteProps> = ({ children }) => {
         return roleStr.includes('PROCUREMENT') || roleStr.includes('ADMIN') || roleStr.includes('EXECUTIVE_DIRECTOR') || roleStr.includes('EXECUTIVE');
     });
 
-    const allow = (isAuthenticated || hasToken) && (reduxIsProcurement || isProcurementFromStorage);
+    const allow = (isAuthenticated || hasCachedUser) && (reduxIsProcurement || isProcurementFromStorage);
 
-    if (!isAuthenticated && !hasToken) {
+    if (!isAuthenticated && !hasCachedUser) {
         // No auth at all -> login
         return <Navigate to="/auth/login" replace />;
     }

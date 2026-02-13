@@ -17,7 +17,6 @@ import IconPencil from '@/components/Icon/IconPencil';
 import IconLock from '@/components/Icon/IconLock';
 import IconCircleCheck from '@/components/Icon/IconCircleCheck';
 import { getApiUrl } from '@/config/api';
-import { getToken } from '@/utils/auth';
 
 const ExecutiveDirectorDashboard = () => {
     const dispatch = useDispatch();
@@ -29,15 +28,14 @@ const ExecutiveDirectorDashboard = () => {
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
-                const token = getToken();
                 const apiUrl = getApiUrl();
 
                 // Fetch requests and derive pending executive approvals
                 const approvalsResponse = await fetch(`${apiUrl}/requests`, {
                     headers: {
-                        Authorization: `Bearer ${token}`,
                         'Content-Type': 'application/json',
                     },
+                    credentials: 'include',
                 });
 
                 if (approvalsResponse.ok) {
@@ -50,9 +48,9 @@ const ExecutiveDirectorDashboard = () => {
                 // Fetch all requests for statistics (reuse same endpoint)
                 const requestsResponse = await fetch(`${apiUrl}/requests`, {
                     headers: {
-                        Authorization: `Bearer ${token}`,
                         'Content-Type': 'application/json',
                     },
+                    credentials: 'include',
                 });
 
                 if (requestsResponse.ok) {
@@ -88,17 +86,31 @@ const ExecutiveDirectorDashboard = () => {
 
                     setRecentSignOffs(recent);
 
+                    const approvalDurations = allRequests
+                        .map((r: any) => {
+                            const execAt = r.statusHistory?.find((h: any) => h.status === 'EXECUTIVE_REVIEW')?.createdAt;
+                            const finAt = r.statusHistory?.find((h: any) => h.status === 'FINANCE_APPROVED')?.createdAt;
+                            if (!execAt || !finAt) return null;
+                            const diffMs = new Date(finAt).getTime() - new Date(execAt).getTime();
+                            if (!Number.isFinite(diffMs) || diffMs <= 0) return null;
+                            return diffMs / (1000 * 60 * 60);
+                        })
+                        .filter((v: number | null): v is number => v !== null);
+
+                    const avgProcessingTime = approvalDurations.length ? Number((approvalDurations.reduce((sum, v) => sum + v, 0) / approvalDurations.length).toFixed(1)) : 0;
+                    const complianceRate = pending + approved > 0 ? Number(((approved / (pending + approved)) * 100).toFixed(1)) : 0;
+
                     setStats({
                         pendingSignOffs: pending,
                         completedApprovals: approved,
                         totalBudgetValue: totalBudget,
                         thisQuarterApprovals: approved,
-                        avgProcessingTime: 1.2, // TODO: Calculate from actual data
-                        complianceRate: 98.5, // TODO: Calculate from actual data
+                        avgProcessingTime,
+                        complianceRate,
                     });
                 }
-            } catch (error) {
-                console.error('Error fetching executive dashboard data:', error);
+            } catch (_error) {
+                // Keep existing state on failure
             } finally {
                 // no-op
             }

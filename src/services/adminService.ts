@@ -64,7 +64,7 @@ function buildUrl(path: string) {
 async function apiGet<T = any>(path: string): Promise<T> {
     const url = buildUrl(path);
     const headers = getAuthHeadersSync();
-    const res = await fetch(url, { headers });
+    const res = await fetch(url, { headers, credentials: 'include' });
     if (!res.ok) {
         const text = await res.text();
         throw new Error(text || `GET ${url} failed: ${res.status}`);
@@ -78,6 +78,7 @@ async function apiPost<T = any>(path: string, body: any): Promise<T> {
     const res = await fetch(url, {
         method: 'POST',
         headers,
+        credentials: 'include',
         body: JSON.stringify(body ?? {}),
     });
     if (!res.ok) {
@@ -100,6 +101,7 @@ async function apiPut<T = any>(path: string, body: any): Promise<T> {
     const res = await fetch(url, {
         method: 'PUT',
         headers,
+        credentials: 'include',
         body: JSON.stringify(body ?? {}),
     });
     if (!res.ok) {
@@ -122,6 +124,7 @@ async function apiPatch<T = any>(path: string, body: any): Promise<T> {
     const res = await fetch(url, {
         method: 'PATCH',
         headers,
+        credentials: 'include',
         body: JSON.stringify(body ?? {}),
     });
     if (!res.ok) {
@@ -144,6 +147,7 @@ async function apiDelete<T = any>(path: string): Promise<T> {
     const res = await fetch(url, {
         method: 'DELETE',
         headers,
+        credentials: 'include',
     });
     if (!res.ok) {
         const text = await res.text();

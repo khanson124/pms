@@ -47,7 +47,10 @@ const HODUserManagement: React.FC = () => {
             const hodId = currentUser?.id;
 
             const url = getApiUrl(`/api/v1/users?department=${encodeURIComponent(String(userDepartment))}&excludeRole=HEAD_OF_DIVISION&hod=${encodeURIComponent(String(hodId || ''))}`);
-            const response = await fetch(url, { headers: getAuthHeadersSync() });
+            const response = await fetch(url, {
+                headers: getAuthHeadersSync(),
+                credentials: 'include',
+            });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);

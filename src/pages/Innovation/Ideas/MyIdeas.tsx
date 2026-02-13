@@ -72,7 +72,7 @@ const MyIdeas = () => {
                     if (prev.some((i) => i.id === String(detail.id))) return prev;
                     const optimistic: MyIdea = {
                         id: String(detail.id),
-                        title: detail.title || 'Untitled',
+                        title: detail.title || t('innovation.myIdeas.fallback.untitled', { defaultValue: 'Untitled' }),
                         description: detail.description || '',
                         category: detail.category || 'OTHER',
                         submittedAt: new Date().toISOString(),
@@ -136,7 +136,6 @@ const MyIdeas = () => {
                 }),
             );
         } catch (error: any) {
-            console.error('[MyIdeas] Error loading ideas:', error);
             // Only show error on initial load, not silent background refreshes
             if (!silent && !ideas.length) {
                 const errorMessage = error?.message || 'Unknown error';
@@ -144,8 +143,12 @@ const MyIdeas = () => {
 
                 Swal.fire({
                     icon: 'error',
-                    title: isNetworkError ? 'Connection Problem' : 'Unable to Load Ideas',
-                    text: isNetworkError ? 'Please check your internet connection and try again.' : 'We encountered a problem loading your ideas. Please try again.',
+                    title: isNetworkError
+                        ? t('innovation.myIdeas.errors.connectionTitle', { defaultValue: 'Connection Problem' })
+                        : t('innovation.myIdeas.errors.loadTitle', { defaultValue: 'Unable to Load Ideas' }),
+                    text: isNetworkError
+                        ? t('innovation.myIdeas.errors.connectionMessage', { defaultValue: 'Please check your internet connection and try again.' })
+                        : t('innovation.myIdeas.errors.loadMessage', { defaultValue: 'We encountered a problem loading your ideas. Please try again.' }),
                     toast: true,
                     position: 'bottom-end',
                     timer: 4000,
@@ -270,9 +273,7 @@ const MyIdeas = () => {
     const fetchCommentsForIdea = async (ideaId: string) => {
         try {
             const response = await fetch(getApiUrl(`/api/ideas/${ideaId}/comments`), {
-                headers: {
-                    'x-user-id': String(currentUser?.id || ''),
-                },
+                credentials: 'include',
             });
 
             if (response.ok) {
@@ -293,9 +294,7 @@ const MyIdeas = () => {
                     }),
                 );
             }
-        } catch (error) {
-            console.error('Failed to fetch comments:', error);
-        }
+        } catch (error) {}
     };
 
     const handleAddComment = async (ideaId: string) => {
@@ -328,9 +327,8 @@ const MyIdeas = () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-user-id': String(currentUser?.id || ''),
-                    Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
                 },
+                credentials: 'include',
                 body: JSON.stringify({ text }),
             });
 
@@ -362,7 +360,6 @@ const MyIdeas = () => {
                 throw new Error('Failed to post comment');
             }
         } catch (error) {
-            console.error('Error posting comment:', error);
             void Swal.fire({
                 icon: 'error',
                 title: t('innovation.myIdeas.comments.error', { defaultValue: 'Failed to post comment' }),
@@ -569,7 +566,7 @@ const MyIdeas = () => {
                                                     </Link>
                                                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusConfig.bg} ${statusConfig.color}`}>{statusConfig.label}</span>
                                                 </div>
-                                                <p className="text-gray-700 dark:text-gray-300 mb-3">{idea.description}</p>
+                                                <p className="text-gray-700 dark:text-gray-300 mb-3 whitespace-pre-wrap">{idea.description}</p>
 
                                                 {/* Feedback Section */}
                                                 {idea.feedback && (

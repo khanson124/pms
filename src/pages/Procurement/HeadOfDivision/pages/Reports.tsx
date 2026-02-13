@@ -52,7 +52,10 @@ const HODReports: React.FC = () => {
             const url = getApiUrl(
                 `/api/v1/reports?division=${encodeURIComponent(String(userDepartment))}&hod=${encodeURIComponent(String(hodId || ''))}&status=${encodeURIComponent('Completed,In Progress')}`,
             );
-            const response = await fetch(url, { headers: getAuthHeadersSync() });
+            const response = await fetch(url, {
+                headers: getAuthHeadersSync(),
+                credentials: 'include',
+            });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);

@@ -28,9 +28,51 @@ import { ldapService } from '../services/ldapService.js';
 import { computePermissionsForUser, computeDeptManagerForUser } from '../utils/permissionUtils.js';
 import { syncLDAPUserToDatabase, describeSyncResult } from '../services/ldapRoleSyncService.js';
 import { bulkSyncADUsers, getSyncStatistics } from '../services/ldapBulkSyncService.js';
-import { createRefreshToken as createTokenServiceRefreshToken } from '../services/tokenService.js';
+import { createRefreshToken as createTokenServiceRefreshToken, revokeRefreshToken as revokeTokenServiceRefreshToken } from '../services/tokenService.js';
 
 const router = Router();
+
+const ACCESS_TOKEN_COOKIE = 'pms_access_token';
+const REFRESH_TOKEN_COOKIE = 'pms_refresh_token';
+
+function getCookieValue(req: import('express').Request, name: string): string | null {
+    const raw = req.headers.cookie;
+    if (!raw) return null;
+    const parts = raw.split(';').map((part) => part.trim());
+    for (const part of parts) {
+        if (part.startsWith(`${name}=`)) {
+            return decodeURIComponent(part.substring(name.length + 1));
+        }
+    }
+    return null;
+}
+
+function buildCookieOptions(maxAgeMs: number, path: string) {
+    // In development, use 'lax' for same-site cookies (works with Vite proxy)
+    // In production, use 'strict' for better security
+    return {
+        httpOnly: true,
+        secure: config.NODE_ENV === 'production',
+        sameSite: 'lax' as const,
+        path,
+        maxAge: maxAgeMs,
+        // Don't set domain - let it default to the request origin
+    };
+}
+
+function setAuthCookies(res: import('express').Response, accessToken: string, refreshToken: string, refreshTtlDays: number) {
+    const accessMaxAge = 24 * 60 * 60 * 1000;
+    const refreshMaxAge = refreshTtlDays * 24 * 60 * 60 * 1000;
+
+    res.cookie(ACCESS_TOKEN_COOKIE, accessToken, buildCookieOptions(accessMaxAge, '/'));
+    res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, buildCookieOptions(refreshMaxAge, '/api/auth/refresh'));
+}
+
+function clearAuthCookies(res: import('express').Response) {
+    const baseOptions = { httpOnly: true, secure: config.NODE_ENV === 'production', sameSite: 'lax' as const };
+    res.clearCookie(ACCESS_TOKEN_COOKIE, { ...baseOptions, path: '/' });
+    res.clearCookie(REFRESH_TOKEN_COOKIE, { ...baseOptions, path: '/api/auth/refresh' });
+}
 
 // Multer storage for profile photos
 const profilePhotoStorage = multer.diskStorage({
@@ -218,6 +260,7 @@ router.post(
             const deptManagerFor = computeDeptManagerForUser(user);
             const token = jwt.sign({ sub: user.id, email: user.email, roles, name: user.name, permissions, deptManagerFor }, config.JWT_SECRET, { expiresIn: '24h' });
             const refreshToken = await createRefreshToken(user.id, rememberMe);
+            setAuthCookies(res, token, refreshToken, rememberMe ? 30 : 7);
 
             try {
                 await prisma.user.update({ where: { id: user.id }, data: { lastLogin: new Date(), failedLogins: 0, lastFailedLogin: null } });
@@ -362,6 +405,7 @@ router.post(
             const deptManagerFor = computeDeptManagerForUser(user);
             const token = jwt.sign({ sub: user.id, email: user.email, roles, name: user.name, permissions, deptManagerFor }, config.JWT_SECRET, { expiresIn: '24h' });
             const refreshToken = await createRefreshToken(user.id, rememberMe);
+            setAuthCookies(res, token, refreshToken, rememberMe ? 30 : 7);
 
             // Update last login and reset failed login counter (non-fatal)
             try {
@@ -524,6 +568,8 @@ router.post(
         const permissions = computePermissionsForUser(user);
         const deptManagerFor = computeDeptManagerForUser(user);
         const token = jwt.sign({ sub: user.id, email: user.email, roles, name: user.name, permissions, deptManagerFor }, config.JWT_SECRET, { expiresIn: '24h' });
+        const refreshToken = await createRefreshToken(user.id, rememberMe);
+        setAuthCookies(res, token, refreshToken, rememberMe ? 30 : 7);
 
         // Update last login and reset failed login counter on successful login
         try {
@@ -556,6 +602,7 @@ router.post(
 
         res.json({
             token,
+            refreshToken,
             user: {
                 id: user.id,
                 email: user.email,
@@ -572,7 +619,7 @@ router.post(
                     : null,
             },
         });
-    })
+    }),
 );
 
 // LDAP Login endpoint (explicit LDAP only, with hybrid role sync)
@@ -747,8 +794,10 @@ router.post(
                 deptManagerFor,
             },
             config.JWT_SECRET,
-            { expiresIn: '24h' }
+            { expiresIn: '24h' },
         );
+        const refreshToken = await createRefreshToken(user.id, false);
+        setAuthCookies(res, token, refreshToken, 7);
 
         logger.info('User logged in via LDAP with role sync', {
             userId: user.id,
@@ -787,6 +836,7 @@ router.post(
 
         res.json({
             token,
+            refreshToken,
             user: {
                 id: user.id,
                 email: user.email,
@@ -803,7 +853,7 @@ router.post(
                     : null,
             },
         });
-    })
+    }),
 );
 
 /**
@@ -844,7 +894,7 @@ async function createPasswordResetToken(userId: number): Promise<string> {
 router.post(
     '/refresh',
     asyncHandler(async (req, res) => {
-        const { refreshToken } = req.body;
+        const refreshToken = req.body?.refreshToken || getCookieValue(req, REFRESH_TOKEN_COOKIE);
 
         if (!refreshToken) {
             throw new BadRequestError('Refresh token is required');
@@ -888,7 +938,7 @@ router.post(
                 deptManagerFor,
             },
             config.JWT_SECRET,
-            { expiresIn: '24h' }
+            { expiresIn: '24h' },
         );
 
         // Rotate refresh token: revoke old, create new
@@ -898,6 +948,7 @@ router.post(
         });
 
         const newRefreshToken = await createRefreshToken(user.id);
+        setAuthCookies(res, accessToken, newRefreshToken, 7);
 
         logger.info('Access token refreshed', { userId: user.id });
 
@@ -920,7 +971,23 @@ router.post(
                     : null,
             },
         });
-    })
+    }),
+);
+
+/**
+ * POST /api/auth/logout
+ * Clear auth cookies and revoke refresh token when present
+ */
+router.post(
+    '/logout',
+    asyncHandler(async (req, res) => {
+        const refreshToken = getCookieValue(req, REFRESH_TOKEN_COOKIE);
+        if (refreshToken) {
+            await revokeTokenServiceRefreshToken(refreshToken);
+        }
+        clearAuthCookies(res);
+        res.json({ success: true });
+    }),
 );
 
 /**
@@ -960,23 +1027,19 @@ router.post(
             });
         }
 
-        const resetToken = await createPasswordResetToken(user.id);
+        await createPasswordResetToken(user.id);
 
-        // In production, send email here with resetToken
-        // For now, we'll just log it (in production, remove this log!)
+        // In production, send email here with reset token
         logger.info('Password reset token generated', {
             userId: user.id,
             email: user.email,
-            resetToken, // REMOVE IN PRODUCTION
         });
 
         res.json({
             success: true,
             message: 'If an account exists with this email, a password reset link has been sent.',
-            // REMOVE IN PRODUCTION - for development only:
-            resetToken,
         });
-    })
+    }),
 );
 
 /**
@@ -1048,7 +1111,7 @@ router.post(
             success: true,
             message: 'Password has been reset successfully. You can now log in with your new password.',
         });
-    })
+    }),
 );
 
 // Get current user profile
@@ -1180,7 +1243,7 @@ router.get(
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
         });
-    })
+    }),
 );
 
 // Update user's pinned module preference (for sidebar state persistence)
@@ -1214,7 +1277,7 @@ router.put(
             // Return success so UI can update locally; DB migration can be applied later
             res.json({ success: true, data: { pinnedModule } });
         }
-    })
+    }),
 );
 
 // Get user's Innovation Hub profile stats
@@ -1286,7 +1349,7 @@ router.get(
                 isCommittee: false,
             });
         }
-    })
+    }),
 );
 
 // LDAP test endpoint (development only)
@@ -1301,7 +1364,7 @@ if (process.env.NODE_ENV !== 'production') {
             } catch (err: any) {
                 return res.status(500).json({ enabled: ldapService.isEnabled(), connected: false, error: err?.message || String(err) });
             }
-        })
+        }),
     );
 }
 
@@ -1356,7 +1419,7 @@ router.post(
             success: true,
             profileImage: updatedUser.profileImage,
         });
-    })
+    }),
 );
 
 /**
@@ -1430,7 +1493,7 @@ router.post(
             profileImage: updatedUser.profileImage,
             message: 'Profile photo synced from Active Directory',
         });
-    })
+    }),
 );
 
 /**
@@ -1466,7 +1529,7 @@ router.get(
             success: true,
             statistics: stats,
         });
-    })
+    }),
 );
 
 /**
@@ -1530,7 +1593,7 @@ router.post(
                 errors: result.errors.length > 0 ? result.errors.slice(0, 10) : undefined, // Show max 10 errors
             },
         });
-    })
+    }),
 );
 
 /**
@@ -1635,7 +1698,7 @@ router.put(
             message: 'Profile updated successfully',
             user: updatedUser,
         });
-    })
+    }),
 );
 
 /**
@@ -1711,7 +1774,7 @@ router.post(
             message: 'Profile image uploaded successfully',
             profileImage: updatedUser.profileImage,
         });
-    })
+    }),
 );
 
 export { router as authRoutes };

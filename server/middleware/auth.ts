@@ -12,6 +12,20 @@ import { UnauthorizedError, ForbiddenError } from './errorHandler.js';
 import { getGlobalRoleResolver } from '../services/roleResolver.js';
 import { Permission } from '../types/rbac.js';
 
+const ACCESS_TOKEN_COOKIE = 'pms_access_token';
+
+function getCookieValue(req: Request, name: string): string | null {
+    const raw = req.headers.cookie;
+    if (!raw) return null;
+    const parts = raw.split(';').map((part) => part.trim());
+    for (const part of parts) {
+        if (part.startsWith(`${name}=`)) {
+            return decodeURIComponent(part.substring(name.length + 1));
+        }
+    }
+    return null;
+}
+
 export interface AuthenticatedRequest extends Request {
     user: {
         sub: number;
@@ -27,42 +41,26 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     try {
         const authHeader = req.headers.authorization;
         const userIdHeader = req.headers['x-user-id'];
+        const cookieToken = getCookieValue(req, ACCESS_TOKEN_COOKIE);
 
-        logger.debug('[Auth] Headers', {
-            hasAuth: !!authHeader,
-            authPrefix: authHeader?.substring(0, 10),
+        logger.debug('[Auth Middleware] Request received', {
+            path: req.path,
+            method: req.method,
+            hasAuthHeader: !!authHeader,
             hasUserId: !!userIdHeader,
+            hasCookieToken: !!cookieToken,
         });
 
-        // Prioritize x-user-id header when present (for development and testing)
-        if (userIdHeader) {
-            const userIdNum = parseInt(String(userIdHeader), 10);
-            if (Number.isFinite(userIdNum)) {
-                try {
-                    const user = await prisma.user.findUnique({
-                        where: { id: userIdNum },
-                        include: { roles: { include: { role: true } } },
-                    });
-
-                    if (user) {
-                        const userWithRoles = await enrichUserWithRoles(user.id, user.email, user.name || undefined, undefined);
-                        (req as AuthenticatedRequest).user = userWithRoles;
-                        logger.debug('[Auth] Using x-user-id header', { userId: userIdNum });
-                        return next();
-                    }
-                } catch (error) {
-                    logger.debug('[Auth] x-user-id lookup failed, trying JWT', { error });
-                }
-            }
-        }
-
-        // Try Bearer token first
-        if (authHeader?.startsWith('Bearer ')) {
-            const token = authHeader.substring(7);
-            logger.debug('[Auth] Attempting JWT verification', { tokenLength: token.length });
+        // Try Bearer token or HttpOnly cookie
+        const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : undefined;
+        const token = bearerToken || cookieToken || undefined;
+        if (token) {
+            logger.debug('[Auth Middleware] Token found, verifying...', {
+                tokenSource: bearerToken ? 'Bearer' : 'Cookie',
+            });
             try {
                 const payload = jwt.verify(token, config.JWT_SECRET) as any;
-                logger.debug('[Auth] JWT verified successfully', { sub: payload.sub, email: payload.email });
+                logger.debug('[Auth Middleware] JWT verified successfully', { sub: payload.sub, email: payload.email });
 
                 // Resolve roles and permissions using RoleResolver
                 const userWithRoles = await enrichUserWithRoles(payload.sub, payload.email, payload.name, payload.ldapData);
@@ -91,43 +89,41 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
             }
         }
 
-        // Fallback to x-user-id header (for development/legacy support)
-        if (userIdHeader) {
+        // Fallback to x-user-id header (development only)
+        if (userIdHeader && config.NODE_ENV !== 'production') {
             const userIdNum = parseInt(String(userIdHeader), 10);
             if (!Number.isFinite(userIdNum)) {
                 throw new UnauthorizedError('Invalid user ID');
             }
 
-            // In development, hydrate roles from database
-            if (config.NODE_ENV !== 'production') {
-                try {
-                    const user = await prisma.user.findUnique({
-                        where: { id: userIdNum },
-                        select: {
-                            id: true,
-                            email: true,
-                            name: true,
-                            roles: { select: { role: { select: { name: true } } } },
-                        },
-                    });
+            try {
+                const user = await prisma.user.findUnique({
+                    where: { id: userIdNum },
+                    select: {
+                        id: true,
+                        email: true,
+                        name: true,
+                        roles: { select: { role: { select: { name: true } } } },
+                    },
+                });
 
-                    if (!user) {
-                        throw new UnauthorizedError('User not found');
-                    }
-
-                    // Resolve roles and permissions using RoleResolver
-                    const userWithRoles = await enrichUserWithRoles(user.id, user.email, user.name || undefined, undefined);
-
-                    (req as AuthenticatedRequest).user = userWithRoles;
-                    return next();
-                } catch (error) {
-                    logger.error('Failed to hydrate user from database', { userId: userIdNum, error });
-                    throw new UnauthorizedError('Authentication failed');
+                if (!user) {
+                    throw new UnauthorizedError('User not found');
                 }
-            } else {
-                // Production: require proper JWT tokens
-                throw new UnauthorizedError('Bearer token required in production');
+
+                // Resolve roles and permissions using RoleResolver
+                const userWithRoles = await enrichUserWithRoles(user.id, user.email, user.name || undefined, undefined);
+
+                (req as AuthenticatedRequest).user = userWithRoles;
+                return next();
+            } catch (error) {
+                logger.error('Failed to hydrate user from database', { userId: userIdNum, error });
+                throw new UnauthorizedError('Authentication failed');
             }
+        }
+
+        if (userIdHeader && config.NODE_ENV === 'production') {
+            throw new UnauthorizedError('Bearer token required in production');
         }
 
         throw new UnauthorizedError('No valid authentication provided');

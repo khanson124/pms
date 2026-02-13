@@ -40,7 +40,7 @@ const ModuleRoute: React.FC<ModuleRouteProps> = ({ children, module, requiredRol
     }, [module]);
 
     // Check auth from storage as fallback
-    const hasToken = !!(sessionStorage.getItem('token') || localStorage.getItem('token') || sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token'));
+    const hasCachedUser = !!(sessionStorage.getItem('auth_user') || localStorage.getItem('auth_user') || localStorage.getItem('userProfile'));
 
     // Check roles if required
     let hasRequiredRole = true;
@@ -62,7 +62,7 @@ const ModuleRoute: React.FC<ModuleRouteProps> = ({ children, module, requiredRol
         }
     }
 
-    if (!isAuthenticated && !hasToken) {
+    if (!isAuthenticated && !hasCachedUser) {
         return <Navigate to="/auth/login" replace />;
     }
 

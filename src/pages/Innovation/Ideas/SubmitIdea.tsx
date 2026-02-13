@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { useNavigate } from 'react-router-dom';
@@ -7,9 +7,8 @@ import { useTranslation } from 'react-i18next';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import Swal from 'sweetalert2';
 import { useAutoSave, restoreAutoSave, clearAutoSave } from '../../../utils/useAutoSave';
-import { submitIdea, fetchTags, createTag, fetchChallenges } from '../../../utils/ideasApi';
+import { submitIdea, fetchTags, createTag, fetchChallenges, fetchTagUsage } from '../../../utils/ideasApi';
 import { useDebounce } from '../../../utils/useDebounce';
-import { getUser, getToken } from '../../../utils/auth';
 import { getApiUrl } from '../../../config/api';
 
 const SubmitIdea = () => {
@@ -110,7 +109,15 @@ const SubmitIdea = () => {
     const [allTags, setAllTags] = useState<Array<{ id: number; name: string }>>([]);
     const [tagSearch, setTagSearch] = useState('');
     const [creatingTag, setCreatingTag] = useState(false);
+    const [tagUsage, setTagUsage] = useState<Record<string, number>>({});
+    const tagCreateInFlight = useRef<Set<string>>(new Set());
     const [challenges, setChallenges] = useState<Array<{ id: number; title: string }>>([]);
+
+    const normalizeTag = (value: string) => value.trim().toLowerCase();
+    const extractHashtags = (value: string) => {
+        const matches = value.match(/#([a-zA-Z0-9_-]{2,30})/g) || [];
+        return matches.map((match) => match.replace('#', '')).filter(Boolean);
+    };
 
     useEffect(() => {
         (async () => {
@@ -120,6 +127,25 @@ const SubmitIdea = () => {
                 setChallenges(chals);
             } catch {}
         })();
+    }, []);
+
+    useEffect(() => {
+        let active = true;
+        (async () => {
+            try {
+                const usage = await fetchTagUsage(50);
+                const counts: Record<string, number> = {};
+                usage.forEach((tag) => {
+                    const key = normalizeTag(tag.name);
+                    if (!key) return;
+                    counts[key] = tag.count;
+                });
+                if (active) setTagUsage(counts);
+            } catch {}
+        })();
+        return () => {
+            active = false;
+        };
     }, []);
 
     async function handleCreateTag() {
@@ -138,14 +164,81 @@ const SubmitIdea = () => {
             setFormData((prev) => ({ ...prev, tagIds: [...prev.tagIds, created.id] }));
             setTagSearch('');
         } catch (e) {
-            console.error('Failed to create tag', e);
         } finally {
             setCreatingTag(false);
         }
     }
 
     const selectedTags = allTags.filter((t) => (formData.tagIds || []).includes(t.id));
-    const filteredTags = allTags.filter((t) => !(formData.tagIds || []).includes(t.id) && (!tagSearch || t.name.toLowerCase().includes(tagSearch.toLowerCase()))).slice(0, 10);
+    const popularTags = useMemo(() => {
+        const selected = new Set(formData.tagIds || []);
+        const ordered = allTags
+            .map((tag) => ({ ...tag, count: tagUsage[normalizeTag(tag.name)] || 0 }))
+            .filter((tag) => !selected.has(tag.id))
+            .sort((a, b) => (b.count !== a.count ? b.count - a.count : a.name.localeCompare(b.name)));
+        return ordered.slice(0, 8);
+    }, [allTags, formData.tagIds, tagUsage]);
+
+    const filteredTags = useMemo(() => {
+        const query = tagSearch.trim().toLowerCase();
+        if (!query) return [];
+        const selected = new Set(formData.tagIds || []);
+        return allTags
+            .filter((t) => !selected.has(t.id) && t.name.toLowerCase().includes(query))
+            .sort((a, b) => {
+                const aCount = tagUsage[normalizeTag(a.name)] || 0;
+                const bCount = tagUsage[normalizeTag(b.name)] || 0;
+                return bCount !== aCount ? bCount - aCount : a.name.localeCompare(b.name);
+            })
+            .slice(0, 10);
+    }, [allTags, formData.tagIds, tagSearch, tagUsage]);
+
+    useEffect(() => {
+        let active = true;
+        const run = async () => {
+            if (!debouncedDesc.trim()) return;
+            const hashtags = extractHashtags(debouncedDesc).map(normalizeTag).filter(Boolean);
+            if (!hashtags.length) return;
+
+            const existingByName = new Map(allTags.map((t) => [normalizeTag(t.name), t]));
+            const nextTagIds = new Set(formData.tagIds || []);
+            const toCreate: string[] = [];
+
+            hashtags.slice(0, 10).forEach((tag) => {
+                const existing = existingByName.get(tag);
+                if (existing) {
+                    nextTagIds.add(existing.id);
+                } else if (!tagCreateInFlight.current.has(tag)) {
+                    toCreate.push(tag);
+                }
+            });
+
+            if (active && nextTagIds.size !== (formData.tagIds || []).length) {
+                setFormData((prev) => ({ ...prev, tagIds: Array.from(nextTagIds) }));
+            }
+
+            for (const tag of toCreate.slice(0, 4)) {
+                try {
+                    tagCreateInFlight.current.add(tag);
+                    const created = await createTag(tag);
+                    if (!active) return;
+                    setAllTags((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+                    setFormData((prev) => {
+                        if (prev.tagIds.includes(created.id)) return prev;
+                        return { ...prev, tagIds: [...prev.tagIds, created.id] };
+                    });
+                } catch {
+                } finally {
+                    tagCreateInFlight.current.delete(tag);
+                }
+            }
+        };
+
+        run();
+        return () => {
+            active = false;
+        };
+    }, [debouncedDesc, allTags, formData.tagIds]);
 
     // Duplicate detection auto-trigger
     useEffect(() => {
@@ -157,27 +250,21 @@ const SubmitIdea = () => {
             }
             setCheckingDuplicates(true);
             try {
-                const user = getUser();
-                const token = getToken();
                 const headers: Record<string, string> = {
                     'Content-Type': 'application/json',
                 };
 
-                // Add authentication headers (same as authHeaders() in ideasApi.ts)
-                if (user?.id) headers['x-user-id'] = user.id;
-                if (token) headers['Authorization'] = `Bearer ${token}`;
-
                 const res = await fetch(getApiUrl('/api/ideas/check-duplicates'), {
                     method: 'POST',
                     headers,
+                    credentials: 'include',
                     body: JSON.stringify({ title: debouncedTitle, description: debouncedDesc }),
                 });
                 if (res.ok) {
                     const ct = (res.headers.get('content-type') || '').toLowerCase();
                     if (!ct.includes('application/json')) {
                         // Likely served index.html (HTML) because the app called the wrong host/origin.
-                        const text = await res.text();
-                        console.warn('[SubmitIdea] duplicate-check returned non-JSON response:', text.substring(0, 300));
+                        await res.text();
                         if (active) setDuplicateMatches([]);
                     } else {
                         const data = await res.json();
@@ -196,7 +283,6 @@ const SubmitIdea = () => {
                     }
                 }
             } catch (err) {
-                console.warn('[SubmitIdea] duplicate check failed:', err);
             } finally {
                 if (active) setCheckingDuplicates(false);
             }
@@ -247,7 +333,6 @@ const SubmitIdea = () => {
             setPreviews([]);
             setFiles([]);
         } catch (error: any) {
-            console.error('Error submitting idea:', error);
             const errorMessage = error?.message || 'Unknown error occurred';
             const isNetworkError = errorMessage.toLowerCase().includes('network') || errorMessage.toLowerCase().includes('fetch');
             const isValidationError = errorMessage.toLowerCase().includes('validation') || errorMessage.toLowerCase().includes('invalid');
@@ -550,7 +635,8 @@ const SubmitIdea = () => {
                         </label>
                         <input id="idea-files" type="file" accept="image/*" multiple onChange={onFilesChange} className="form-input" aria-describedby="files-hint files-error" />
                         <p id="files-hint" className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {t('innovation.submit.form.files.hint', 'You can select multiple images. Max size 5MB each.')} {t('innovation.submit.form.files.limit', { count: MAX_FILES })}
+                            {t('innovation.submit.form.files.hint', 'You can select multiple images. Max size 5MB each.')}{' '}
+                            {t('innovation.submit.form.files.limit', { count: MAX_FILES, defaultValue: `Max ${MAX_FILES} files.` })}
                         </p>
                         {errors.files && (
                             <p id="files-error" role="alert" className="text-xs text-danger mt-1">
@@ -651,18 +737,39 @@ const SubmitIdea = () => {
                                 {creatingTag ? 'Adding...' : 'Add'}
                             </button>
                         </div>
+                        {popularTags.length > 0 && (
+                            <div className="mt-3">
+                                <div className="text-xs font-semibold text-gray-500 dark:text-gray-400">{t('innovation.submit.tags.popular', { defaultValue: 'Popular tags' })}</div>
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                    {popularTags.map((tg) => (
+                                        <button
+                                            key={tg.id}
+                                            type="button"
+                                            onClick={() => setFormData((prev) => ({ ...prev, tagIds: [...prev.tagIds, tg.id] }))}
+                                            className="px-2 py-1 rounded border border-gray-300 dark:border-gray-600 text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
+                                        >
+                                            {tg.name}
+                                            {tg.count > 0 && <span className="ml-1 text-[10px] text-gray-500">({tg.count})</span>}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         {filteredTags.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-2">
-                                {filteredTags.map((tg) => (
-                                    <button
-                                        key={tg.id}
-                                        type="button"
-                                        onClick={() => setFormData((prev) => ({ ...prev, tagIds: [...prev.tagIds, tg.id] }))}
-                                        className="px-2 py-1 rounded border border-gray-300 dark:border-gray-600 text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
-                                    >
-                                        {tg.name}
-                                    </button>
-                                ))}
+                            <div className="mt-3">
+                                <div className="text-xs font-semibold text-gray-500 dark:text-gray-400">{t('innovation.submit.tags.suggested', { defaultValue: 'Suggested' })}</div>
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                    {filteredTags.map((tg) => (
+                                        <button
+                                            key={tg.id}
+                                            type="button"
+                                            onClick={() => setFormData((prev) => ({ ...prev, tagIds: [...prev.tagIds, tg.id] }))}
+                                            className="px-2 py-1 rounded border border-gray-300 dark:border-gray-600 text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
+                                        >
+                                            {tg.name}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         )}
                     </div>

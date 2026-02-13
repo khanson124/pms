@@ -47,14 +47,13 @@ const ExecutiveDashboard = () => {
     const loadData = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            const headers = {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            };
-
             // Fetch pending high-value requests requiring executive approval
-            const response = await fetch(getApiUrl('/api/requests?status=EXECUTIVE_PENDING&sortBy=estimatedValue&sortOrder=desc'), { headers });
+            const response = await fetch(getApiUrl('/api/requests?status=EXECUTIVE_PENDING&sortBy=estimatedValue&sortOrder=desc'), {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+            });
             const data = await response.json();
 
             setRequests(data.requests || []);
@@ -78,13 +77,12 @@ const ExecutiveDashboard = () => {
 
     const handleApprove = async (requestId: number) => {
         try {
-            const token = localStorage.getItem('token');
             await fetch(getApiUrl(`/api/requests/${requestId}/approve`), {
                 method: 'POST',
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
                 body: JSON.stringify({ notes: 'Approved by Executive Director' }),
             });
             loadData();
@@ -95,13 +93,12 @@ const ExecutiveDashboard = () => {
 
     const handleReject = async (requestId: number) => {
         try {
-            const token = localStorage.getItem('token');
             await fetch(getApiUrl(`/api/requests/${requestId}/reject`), {
                 method: 'POST',
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
                 body: JSON.stringify({ notes: 'Rejected by Executive Director' }),
             });
             loadData();

@@ -27,10 +27,12 @@ export function AppInitializer() {
         dispatch(toggleSemidark(localStorage.getItem('semidark') || themeConfig.semidark));
         dispatch(toggleAccent(localStorage.getItem('accent') || (themeConfig as any).accent || 'blue'));
 
-        // Verify existing token on app load
-        const token = localStorage.getItem('token');
-        if (token) {
-            dispatch(verifyToken() as any);
+        // Verify existing session on app load - but delay slightly to allow cookies to settle
+        if (isAuthenticated()) {
+            // Delay verification by 500ms to ensure all initialization is complete
+            setTimeout(() => {
+                dispatch(verifyToken() as any);
+            }, 500);
         }
 
         // Start inactivity + role change monitoring for authenticated users
@@ -43,9 +45,12 @@ export function AppInitializer() {
         applyHolidayTheme();
 
         // Check for theme changes daily
-        const holidayInterval = setInterval(() => {
-            applyHolidayTheme();
-        }, 1000 * 60 * 60 * 24); // Check daily
+        const holidayInterval = setInterval(
+            () => {
+                applyHolidayTheme();
+            },
+            1000 * 60 * 60 * 24,
+        ); // Check daily
 
         return () => {
             clearInterval(holidayInterval);

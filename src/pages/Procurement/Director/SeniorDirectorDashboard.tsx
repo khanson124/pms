@@ -48,14 +48,13 @@ const SeniorDirectorDashboard = () => {
     const loadData = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            const headers = {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            };
-
             // Fetch all high-priority requests requiring senior director approval
-            const response = await fetch(getApiUrl('/api/requests?status=DIRECTOR_PENDING&sortBy=estimatedValue&sortOrder=desc'), { headers });
+            const response = await fetch(getApiUrl('/api/requests?status=DIRECTOR_PENDING&sortBy=estimatedValue&sortOrder=desc'), {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+            });
             const data = await response.json();
 
             setRequests(data.requests || []);
@@ -79,13 +78,12 @@ const SeniorDirectorDashboard = () => {
 
     const handleApprove = async (requestId: number) => {
         try {
-            const token = localStorage.getItem('token');
             await fetch(getApiUrl(`/api/requests/${requestId}/approve`), {
                 method: 'POST',
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
                 body: JSON.stringify({ notes: 'Approved by Senior Director' }),
             });
             loadData();
@@ -96,13 +94,12 @@ const SeniorDirectorDashboard = () => {
 
     const handleReject = async (requestId: number) => {
         try {
-            const token = localStorage.getItem('token');
             await fetch(getApiUrl(`/api/requests/${requestId}/reject`), {
                 method: 'POST',
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
                 body: JSON.stringify({ notes: 'Rejected by Senior Director' }),
             });
             loadData();

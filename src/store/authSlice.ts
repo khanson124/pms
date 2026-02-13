@@ -43,14 +43,11 @@ try {
     hydratedUser = null;
 }
 
-// Support both legacy 'token' and new 'auth_token' keys (session or local storage)
-const cachedToken = sessionStorage.getItem('token') || localStorage.getItem('token') || sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token');
-
 const initialState: AuthState = {
     user: hydratedUser,
-    token: cachedToken || null,
-    // Consider user authenticated if any cached token exists
-    isAuthenticated: !!cachedToken,
+    token: null,
+    // Consider user authenticated if a user snapshot is cached
+    isAuthenticated: !!hydratedUser,
     isLoading: false,
     error: null,
 };
@@ -59,8 +56,7 @@ const initialState: AuthState = {
 export const loginUser = createAsyncThunk('auth/login', async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
         const response = await authService.login(credentials);
-        if (response.success && response.user && response.token) {
-            localStorage.setItem('token', response.token);
+        if (response.success && response.user) {
             return response;
         } else {
             return rejectWithValue(response.message || 'Login failed');
@@ -72,20 +68,17 @@ export const loginUser = createAsyncThunk('auth/login', async (credentials: Logi
 
 export const logoutUser = createAsyncThunk('auth/logout', async (_, { dispatch }) => {
     stopInactivityTracking();
-    localStorage.removeItem('token');
     return null;
 });
 
 export const verifyToken = createAsyncThunk('auth/verifyToken', async (_, { rejectWithValue }) => {
     try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            return rejectWithValue('No token found');
+        const response = await authService.verifyToken();
+        if (!response.success) {
+            return rejectWithValue(response.message || 'Authentication required');
         }
-        const response = await authService.verifyToken(token);
         return response;
     } catch (error: any) {
-        localStorage.removeItem('token');
         return rejectWithValue(error.message || 'Token verification failed');
     }
 });
@@ -112,7 +105,7 @@ const authSlice = createSlice({
             .addCase(loginUser.fulfilled, (state, action) => {
                 state.isLoading = false;
                 state.user = action.payload.user!;
-                state.token = action.payload.token!;
+                state.token = action.payload.token ?? null;
                 state.isAuthenticated = true;
                 state.error = null;
             })
@@ -138,12 +131,14 @@ const authSlice = createSlice({
                     state.user = action.payload.user;
                     state.isAuthenticated = true;
                 }
+                // If verification succeeds with no user, maintain existing state
+                // (This handles graceful degradation for network errors)
             })
             .addCase(verifyToken.rejected, (state) => {
                 state.isLoading = false;
-                state.user = null;
-                state.token = null;
-                state.isAuthenticated = false;
+                // Don't immediately clear auth state on rejection
+                // Let the component logic handle when to actually log out
+                // This prevents premature logout on temporary network issues
             });
     },
 });
@@ -152,9 +147,10 @@ export const { clearError, setUser } = authSlice.actions;
 export default authSlice.reducer;
 
 // Selectors
+const EMPTY_ROLES: User['roles'] = [];
 export const selectAuth = (state: { auth: AuthState }) => state.auth;
 export const selectUser = (state: { auth: AuthState }) => state.auth.user;
-export const selectUserRoles = (state: { auth: AuthState }) => state.auth.user?.roles || [];
+export const selectUserRoles = (state: { auth: AuthState }) => state.auth.user?.roles ?? EMPTY_ROLES;
 export const selectPrimaryUserRole = (state: { auth: AuthState }) => state.auth.user?.roles?.[0];
 export const selectIsAuthenticated = (state: { auth: AuthState }) => state.auth.isAuthenticated;
 export const selectAuthLoading = (state: { auth: AuthState }) => state.auth.isLoading;

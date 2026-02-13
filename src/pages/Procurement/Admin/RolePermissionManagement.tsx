@@ -60,8 +60,8 @@ const RolePermissionManagement = () => {
             const authHeaders = getAuthHeadersSync();
 
             const [rolesRes, permsRes] = await Promise.all([
-                fetch(getApiUrl('/api/admin/roles'), { headers: authHeaders }).catch(() => null),
-                fetch(getApiUrl('/api/admin/permissions'), { headers: authHeaders }).catch(() => null),
+                fetch(getApiUrl('/api/admin/roles'), { headers: authHeaders, credentials: 'include' }).catch(() => null),
+                fetch(getApiUrl('/api/admin/permissions'), { headers: authHeaders, credentials: 'include' }).catch(() => null),
             ]);
 
             let loadedRoles: Role[] = [];
@@ -98,7 +98,7 @@ const RolePermissionManagement = () => {
                         // Error handled in component state
                     }
                     return role;
-                })
+                }),
             );
 
             setRoles(rolesWithPermissions);
@@ -188,8 +188,8 @@ const RolePermissionManagement = () => {
                                   name: updated.name,
                                   description: updated.description,
                               }
-                            : r
-                    )
+                            : r,
+                    ),
                 );
                 setSuccess('Role updated successfully');
             } else {

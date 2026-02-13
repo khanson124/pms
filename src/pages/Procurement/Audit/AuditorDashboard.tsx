@@ -26,7 +26,9 @@ const AuditorDashboard = () => {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const response = await fetch('/api/stats/auditor');
+                const response = await fetch('/api/stats/auditor', {
+                    credentials: 'include',
+                });
                 if (response.ok) {
                     const data = await response.json();
                     setStats(data);

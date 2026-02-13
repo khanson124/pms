@@ -3,7 +3,7 @@
  * Sends periodic heartbeat signals to track active user sessions per module
  */
 
-import { getToken, clearAuth } from '../utils/auth';
+import { logout } from '../utils/auth';
 import { getApiUrl } from '../config/api';
 
 type ModuleType = 'pms' | 'ih';
@@ -22,13 +22,16 @@ class HeartbeatService {
 
         this.currentModule = module;
 
-        // Send initial heartbeat immediately
-        this.sendHeartbeat(module);
-
-        // Set up periodic heartbeat
-        this.intervalId = setInterval(() => {
+        // Delay first heartbeat by 10 seconds to ensure cookies are settled
+        setTimeout(() => {
+            // Send initial heartbeat
             this.sendHeartbeat(module);
-        }, this.HEARTBEAT_INTERVAL);
+
+            // Set up periodic heartbeat
+            this.intervalId = setInterval(() => {
+                this.sendHeartbeat(module);
+            }, this.HEARTBEAT_INTERVAL);
+        }, 10000);
     }
 
     /**
@@ -55,29 +58,29 @@ class HeartbeatService {
         try {
             const apiUrl = getApiUrl('/api/stats/heartbeat');
 
-            const token = getToken();
-
-            if (!token) {
-                return;
-            }
-
             const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
                 },
+                credentials: 'include',
                 body: JSON.stringify({ module }),
             });
 
-            if (response.status === 401) {
+            // Only logout on auth failures (401/403), not server errors
+            if (response.status === 401 || response.status === 403) {
                 this.stopHeartbeat();
-                clearAuth();
+                await logout();
                 window.location.href = '/auth/login';
                 return;
             }
+
+            if (!response.ok) {
+                // Don't logout on server errors - keep heartbeat running
+                return;
+            }
         } catch (error) {
-            // Silent fail
+            // Network errors should not trigger logout
         }
     }
 
@@ -95,14 +98,12 @@ class HeartbeatService {
         try {
             const apiUrl = getApiUrl('/api/stats/heartbeat');
 
-            const token = getToken();
-
             await fetch(apiUrl, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: token ? `Bearer ${token}` : '',
                 },
+                credentials: 'include',
             });
         } catch (error) {
             // Silent fail

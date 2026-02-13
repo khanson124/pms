@@ -49,7 +49,7 @@ const HODDepartments: React.FC = () => {
 
             // Fetch real-time data from API
             const url = getApiUrl(`/api/v1/departments?division=${encodeURIComponent(String(userDepartment))}&hod=${encodeURIComponent(String(userId || ''))}`);
-            const response = await fetch(url, { headers: getAuthHeadersSync() });
+            const response = await fetch(url, { headers: getAuthHeadersSync(), credentials: 'include' });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);

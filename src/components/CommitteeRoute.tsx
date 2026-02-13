@@ -37,8 +37,8 @@ const CommitteeRoute: React.FC<CommitteeRouteProps> = ({ children }) => {
     }, []);
 
     // Storage fallback to avoid redirect loops before Redux hydration completes
-    const { hasToken, isCommitteeFromStorage } = useMemo(() => {
-        const token = sessionStorage.getItem('token') || localStorage.getItem('token') || sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token');
+    const { hasCachedUser, isCommitteeFromStorage } = useMemo(() => {
+        const hasUserSnapshot = !!(sessionStorage.getItem('auth_user') || localStorage.getItem('auth_user') || localStorage.getItem('userProfile'));
 
         let rolesRaw: any[] = [];
         try {
@@ -57,13 +57,13 @@ const CommitteeRoute: React.FC<CommitteeRouteProps> = ({ children }) => {
             .map((s: string) => String(s).toUpperCase());
         const isCommittee = flat.includes('INNOVATION_COMMITTEE');
 
-        return { hasToken: !!token, isCommitteeFromStorage: isCommittee };
+        return { hasCachedUser: hasUserSnapshot, isCommitteeFromStorage: isCommittee };
     }, []);
 
     const reduxIsCommittee = (roles || []).some((r: any) => String(r).toUpperCase() === 'INNOVATION_COMMITTEE');
-    const allow = (isAuthenticated || hasToken) && (reduxIsCommittee || isCommitteeFromStorage);
+    const allow = (isAuthenticated || hasCachedUser) && (reduxIsCommittee || isCommitteeFromStorage);
 
-    if (!isAuthenticated && !hasToken) {
+    if (!isAuthenticated && !hasCachedUser) {
         return <Navigate to="/auth/login" replace />;
     }
 

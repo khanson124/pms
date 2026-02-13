@@ -50,9 +50,8 @@ const AuditTrailPage: React.FC = () => {
 
     const fetchAvailableActions = async () => {
         try {
-            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
             const res = await fetch('/api/audit/actions', {
-                headers: { Authorization: `Bearer ${token}` },
+                credentials: 'include',
             });
             if (res.ok) {
                 const data = await res.json();
@@ -67,9 +66,8 @@ const AuditTrailPage: React.FC = () => {
         setLoading(true);
         setError('');
         try {
-            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
             const res = await fetch(`/api/audit/recent?limit=${ITEMS_PER_PAGE}`, {
-                headers: { Authorization: `Bearer ${token}` },
+                credentials: 'include',
             });
 
             if (!res.ok) {
@@ -92,13 +90,12 @@ const AuditTrailPage: React.FC = () => {
         setSearchMode('search');
 
         try {
-            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
             const res = await fetch('/api/audit/search', {
                 method: 'POST',
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
                 body: JSON.stringify({
                     ...filters,
                     userId: filters.userId ? parseInt(filters.userId) : undefined,

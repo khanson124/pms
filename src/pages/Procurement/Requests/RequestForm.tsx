@@ -271,7 +271,7 @@ const RequestForm = () => {
         const fetchFinanceOfficers = async () => {
             try {
                 const resp = await fetch(getApiUrl('/api/finance-officers'), {
-                    headers: { 'x-user-id': String(currentUserId) },
+                    credentials: 'include',
                 });
                 if (resp.ok) {
                     const officers = await resp.json();
@@ -350,7 +350,9 @@ const RequestForm = () => {
 
         const fetchRequest = async () => {
             try {
-                const resp = await fetch(getApiUrl(`/api/requests/${id}`));
+                const resp = await fetch(getApiUrl(`/api/requests/${id}`), {
+                    credentials: 'include',
+                });
                 if (!resp.ok) throw new Error('Failed to fetch request');
 
                 const request = await resp.json();
@@ -553,7 +555,7 @@ const RequestForm = () => {
         if (!isEditMode || !id) return;
         try {
             const response = await fetch(getApiUrl(`/api/requests/${id}/actions`), {
-                headers: { 'x-user-id': String(currentUserId) },
+                credentials: 'include',
             });
             if (response.ok) {
                 const result = await response.json();
@@ -578,8 +580,8 @@ const RequestForm = () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-user-id': String(currentUserId),
                 },
+                credentials: 'include',
                 body: JSON.stringify({ note: rejectionNote }),
             });
 
@@ -774,7 +776,7 @@ const RequestForm = () => {
                             attachments.forEach((f) => fd.append('attachments', f));
                             const uploadResp = await fetch(getApiUrl(`/api/requests/${id}/attachments`), {
                                 method: 'POST',
-                                headers: { 'x-user-id': String(userId) },
+                                credentials: 'include',
                                 body: fd,
                             });
                             if (!uploadResp.ok) {
@@ -812,8 +814,8 @@ const RequestForm = () => {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'x-user-id': String(userId),
                     },
+                    credentials: 'include',
                     body: JSON.stringify(updatePayload),
                 });
 
@@ -842,7 +844,8 @@ const RequestForm = () => {
                     try {
                         const approveResp = await fetch(getApiUrl(`/api/requests/${id}/action`), {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'x-user-id': String(userId) },
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
                             body: JSON.stringify({ action: 'APPROVE' }),
                         });
                         if (!approveResp.ok) {
@@ -889,8 +892,8 @@ const RequestForm = () => {
                                         method: 'POST',
                                         headers: {
                                             'Content-Type': 'application/json',
-                                            'x-user-id': String(userId),
                                         },
+                                        credentials: 'include',
                                         body: JSON.stringify({}),
                                     });
 
@@ -939,8 +942,8 @@ const RequestForm = () => {
                                             method: 'POST',
                                             headers: {
                                                 'Content-Type': 'application/json',
-                                                'x-user-id': String(userId),
                                             },
+                                            credentials: 'include',
                                             body: JSON.stringify({ overrideSplinter: true }),
                                         });
                                         if (!overrideResp.ok) {
@@ -1070,9 +1073,7 @@ const RequestForm = () => {
 
                 const resp = await fetch(getApiUrl('/api/requests'), {
                     method: 'POST',
-                    headers: {
-                        'x-user-id': String(userId),
-                    },
+                    credentials: 'include',
                     body: formData,
                 });
 
@@ -1088,8 +1089,8 @@ const RequestForm = () => {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'x-user-id': String(userId),
                     },
+                    credentials: 'include',
                 });
 
                 if (submitResp.status === 409) {
@@ -1158,7 +1159,8 @@ const RequestForm = () => {
         try {
             const resp = await fetch(getApiUrl(`/api/requests/${id}/action`), {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-user-id': String(userId) },
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ action: 'SEND_TO_VENDOR' }),
             });
             if (!resp.ok) {
@@ -1198,7 +1200,8 @@ const RequestForm = () => {
             setIsReassigningOfficer(true);
             const resp = await fetch(getApiUrl(`/api/requests/${id}/assign-finance-officer`), {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-user-id': String(userId) },
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ financeOfficerId: selectedFinanceOfficerId }),
             });
 
@@ -1241,7 +1244,8 @@ const RequestForm = () => {
             setIsSubmitting(true);
             const resp = await fetch(getApiUrl(`/api/requests/${id}/submit`), {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-user-id': String(userId) },
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({}),
             });
 
@@ -1286,7 +1290,8 @@ const RequestForm = () => {
 
                 const overrideResp = await fetch(getApiUrl(`/api/requests/${id}/submit`), {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'x-user-id': String(userId) },
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({ overrideSplinter: true }),
                 });
                 if (!overrideResp.ok) {

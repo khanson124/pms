@@ -212,7 +212,10 @@ const ProcurementOfficerDashboard = () => {
             try {
                 const headers = await getAuthHeaders();
                 // Backend expects a single status filter; fetch all and filter client-side
-                const res = await fetch(getApiUrl('/api/evaluations'), { headers });
+                const res = await fetch(getApiUrl('/api/evaluations'), {
+                    headers,
+                    credentials: 'include',
+                });
                 if (!res.ok) throw new Error('Failed to fetch evaluations');
                 const data = await res.json();
                 const list: Array<{ status?: string }> = (data?.data || []) as Array<{ status?: string }>;

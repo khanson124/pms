@@ -26,7 +26,9 @@ const FinanceManagerDashboard = () => {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const response = await fetch(getApiUrl('/api/stats/finance-manager'));
+                const response = await fetch(getApiUrl('/api/stats/finance-manager'), {
+                    credentials: 'include',
+                });
                 if (response.ok) {
                     const data = await response.json();
                     setStats(data);

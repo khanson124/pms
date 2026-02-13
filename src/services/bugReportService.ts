@@ -1,5 +1,4 @@
 import { getApiUrl } from '../config/api';
-import { getToken, getUser } from '../utils/auth';
 
 export type BugReportSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type BugReportStatus = 'NEW' | 'TRIAGED' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
@@ -25,18 +24,7 @@ export interface BugReport {
 }
 
 function authHeadersForMultipart(): Record<string, string> {
-    const token = getToken();
-    const user = getUser();
-    const headers: Record<string, string> = {};
-
-    if (user?.id) {
-        headers['x-user-id'] = String(user.id);
-    }
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    return headers;
+    return {};
 }
 
 export async function createBugReport(formData: FormData): Promise<BugReport> {
@@ -44,6 +32,7 @@ export async function createBugReport(formData: FormData): Promise<BugReport> {
         method: 'POST',
         headers: authHeadersForMultipart(),
         body: formData,
+        credentials: 'include',
     });
 
     const payload = await response.json().catch(() => ({}));

@@ -90,9 +90,7 @@ const AssignRequests = () => {
 
     // Fetch data function (can be called to refresh inbox/officers)
     const buildHeaders = () => {
-        const headers = getAuthHeadersSync();
-        if (currentUserId) headers['x-user-id'] = String(currentUserId);
-        return headers;
+        return getAuthHeadersSync();
     };
 
     const fetchData = async () => {
@@ -219,7 +217,7 @@ const AssignRequests = () => {
         const reqId = overrideRequest ?? selectedRequest;
 
         if (!reqId || !assigneeId) {
-            MySwal.fire({
+            await MySwal.fire({
                 icon: 'warning',
                 title: 'Selection Required',
                 text: 'Please select both a request and an officer.',
@@ -237,17 +235,14 @@ const AssignRequests = () => {
             title: 'Confirm Assignment',
             html: `
                 <div style="text-align: left; margin-bottom: 16px;">
-                    <div style="background: #f9fafb; padding: 12px; border-radius: 4px; margin-bottom: 12px;">
-                        <p style="margin: 4px 0;"><strong>Request:</strong> ${request.reference}</p>
-                        <p style="margin: 4px 0;"><strong>Title:</strong> ${request.title}</p>
-                        <p style="margin: 4px 0;"><strong>Department:</strong> ${request.department.name}</p>
-                        <p style="margin: 4px 0;"><strong>Amount:</strong> ${request.currency} $${(Number(request.totalEstimated) || 0).toFixed(2)}</p>
-                    </div>
-                    <div style="background: #eff6ff; padding: 12px; border-radius: 4px;">
-                        <p style="margin: 4px 0;"><strong>Assign to:</strong> ${officer.name}</p>
-                        <p style="margin: 4px 0; color: #6b7280;"><strong>Email:</strong> ${officer.email}</p>
-                        <p style="margin: 4px 0; color: #6b7280;"><strong>Current workload:</strong> ${officer.assignedCount} request(s)</p>
-                    </div>
+                    <p style="margin: 4px 0;"><strong>Request:</strong> ${request.reference} - ${request.title}</p>
+                    <p style="margin: 4px 0;"><strong>Department:</strong> ${request.department.name}</p>
+                    <p style="margin: 4px 0;"><strong>Amount:</strong> ${request.currency} $${(Number(request.totalEstimated) || 0).toFixed(2)}</p>
+                </div>
+                <div style="background: #eff6ff; padding: 12px; border-radius: 4px;">
+                    <p style="margin: 4px 0;"><strong>Assign to:</strong> ${officer.name}</p>
+                    <p style="margin: 4px 0; color: #6b7280;"><strong>Email:</strong> ${officer.email}</p>
+                    <p style="margin: 4px 0; color: #6b7280;"><strong>Current workload:</strong> ${officer.assignedCount} request(s)</p>
                 </div>
             `,
             showCancelButton: true,
@@ -263,6 +258,7 @@ const AssignRequests = () => {
                     headers: {
                         ...buildHeaders(),
                     },
+                    credentials: 'include',
                     body: JSON.stringify({
                         assigneeId: assigneeId,
                     }),
@@ -274,7 +270,6 @@ const AssignRequests = () => {
                 }
 
                 // Remove assigned request from unassigned list (no-op in reassignment view)
-
                 setRequests((prev) => prev.filter((r) => r.id !== reqId));
                 // Update full list
                 setAllRequests((prev) => prev.map((r) => (r.id === reqId ? { ...r, currentAssigneeId: assigneeId } : r)));

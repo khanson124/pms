@@ -36,7 +36,8 @@
         "server:copy-config": "node -e \"const fs=require('fs'); const path=require('path'); const src=path.join(process.cwd(),'server','config'); const dst=path.join(process.cwd(),'dist','server','config'); fs.mkdirSync(dst,{recursive:true}); for (const f of ['roles-permissions.json','ldap-group-mapping.json']) { const s=path.join(src,f); const d=path.join(dst,f); if(!fs.existsSync(s)) { console.error('Missing', s); process.exit(1); } fs.copyFileSync(s,d); console.log('Copied', f); }\"",
         "server:prod": "node dist/server/index.js",
         "seed:ideas": "node server/seed-ideas.mjs",
-        "backfill:votes": "node server/scripts/backfill-vote-count.mjs"
+        "backfill:votes": "node server/scripts/backfill-vote-count.mjs",
+        "ideas:encrypt": "npx tsx server/scripts/encrypt-ideas.ts"
     },
     "prisma": {
         "seed": "npx tsx server/prisma/seed.ts",

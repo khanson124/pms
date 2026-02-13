@@ -1,18 +1,6 @@
 import type { Idea, IdeaCounts } from '../types/idea';
 import { getApiBaseUrl } from '../config/api';
 
-// Helper to get auth token (adjust if your app stores it differently)
-function getAuthToken(): string | null {
-    try {
-        const raw = localStorage.getItem('auth');
-        if (raw) {
-            const parsed = JSON.parse(raw);
-            return parsed?.token || parsed?.accessToken || null;
-        }
-    } catch {}
-    return null;
-}
-
 function apiBase(): string {
     return getApiBaseUrl();
 }
@@ -30,10 +18,8 @@ function buildUrl(path: string, params?: Record<string, string | number | boolea
 }
 
 async function request<T>(input: RequestInfo, init: RequestInit = {}): Promise<T> {
-    const token = getAuthToken();
     const headers: HeadersInit = {
         'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...init.headers,
     };
     const res = await fetch(input, { ...init, headers, credentials: 'include' });

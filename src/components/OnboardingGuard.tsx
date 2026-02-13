@@ -1,5 +1,6 @@
 import { PropsWithChildren } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
+import { getUser } from '../utils/auth';
 
 /**
  * Route guard to prevent returning to Onboarding after selection/completion.
@@ -24,10 +25,10 @@ export default function OnboardingGuard({ children }: PropsWithChildren) {
 
     try {
         // Check if user is authenticated
-        const authToken = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+        const authUser = getUser();
 
         // If not authenticated, allow (will be redirected by auth guard)
-        if (!authToken) {
+        if (!authUser) {
             return <>{children}</>;
         }
 

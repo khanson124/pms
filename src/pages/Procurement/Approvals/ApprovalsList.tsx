@@ -8,6 +8,7 @@ import IconEye from '../../../components/Icon/IconEye';
 import IconClock from '../../../components/Icon/IconClock';
 import IconInbox from '../../../components/Icon/IconInbox';
 import { getApiUrl } from '../../../utils/api';
+import Swal from 'sweetalert2';
 
 interface Approval {
     id: number;
@@ -41,15 +42,11 @@ const ApprovalsList = () => {
             setLoading(true);
             setError(null);
 
-            const token = localStorage.getItem('token');
-            const userId = localStorage.getItem('userId');
-
             const response = await fetch(getApiUrl('/api/approvals'), {
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                    'x-user-id': userId || '',
                 },
+                credentials: 'include',
             });
 
             if (!response.ok) {
@@ -65,8 +62,7 @@ const ApprovalsList = () => {
 
             const data = await response.json();
             setApprovals(Array.isArray(data) ? data : []);
-        } catch (err) {
-            console.error('Error fetching approvals:', err);
+        } catch (_err) {
             // Set empty approvals instead of showing error
             setApprovals([]);
             setError(null);
@@ -101,18 +97,22 @@ const ApprovalsList = () => {
         return new Date(dueDate) < new Date();
     };
 
-    const handleApprove = async (id: number) => {
-        console.log('Approved:', id);
-        // TODO: Implement approval logic
-        // After approval, refresh the list
-        await fetchApprovals();
+    const handleApprove = async (_id: number) => {
+        await Swal.fire({
+            icon: 'info',
+            title: 'Approval in Progress',
+            text: 'Approvals are currently managed by the workflow engine. This action will be enabled once the endpoint is available.',
+            confirmButtonText: 'OK',
+        });
     };
 
-    const handleReject = async (id: number) => {
-        console.log('Rejected:', id);
-        // TODO: Implement rejection logic
-        // After rejection, refresh the list
-        await fetchApprovals();
+    const handleReject = async (_id: number) => {
+        await Swal.fire({
+            icon: 'info',
+            title: 'Rejection in Progress',
+            text: 'Rejections are currently managed by the workflow engine. This action will be enabled once the endpoint is available.',
+            confirmButtonText: 'OK',
+        });
     };
 
     if (loading) {

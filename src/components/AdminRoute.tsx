@@ -18,8 +18,8 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
     const roles = useSelector(selectUserRoles);
 
     // Storage fallbacks to avoid redirect loops before Redux hydration completes
-    const { hasToken, isAdminFromStorage } = useMemo(() => {
-        const token = sessionStorage.getItem('token') || localStorage.getItem('token') || sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token');
+    const { hasCachedUser, isAdminFromStorage } = useMemo(() => {
+        const hasUserSnapshot = !!(sessionStorage.getItem('auth_user') || localStorage.getItem('auth_user') || localStorage.getItem('userProfile'));
 
         // Read user snapshot written at login
         let rolesRaw: any[] = [];
@@ -40,14 +40,14 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
             .map((s: string) => String(s).toUpperCase());
         const isAdmin = rolesFlat.includes('ADMIN') || rolesFlat.includes('ADMINISTRATOR');
 
-        return { hasToken: !!token, isAdminFromStorage: isAdmin };
+        return { hasCachedUser: hasUserSnapshot, isAdminFromStorage: isAdmin };
     }, []);
 
     // Determine admin access using Redux first, then storage fallback
     const reduxIsAdmin = roles?.includes('ADMIN' as any) || roles?.includes(UserRole.ADMIN as any);
-    const allow = (isAuthenticated || hasToken) && (reduxIsAdmin || isAdminFromStorage);
+    const allow = (isAuthenticated || hasCachedUser) && (reduxIsAdmin || isAdminFromStorage);
 
-    if (!isAuthenticated && !hasToken) {
+    if (!isAuthenticated && !hasCachedUser) {
         // No auth at all -> login
         return <Navigate to="/auth/login" replace />;
     }

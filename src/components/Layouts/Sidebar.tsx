@@ -26,7 +26,7 @@ import IconThumbUp from '../Icon/IconThumbUp';
 import IconPlusCircle from '../Icon/IconPlusCircle';
 import IconUser from '../Icon/IconUser';
 import IconStar from '../Icon/IconStar';
-import { getUser, clearAuth } from '../../utils/auth';
+import { getUser, logout } from '../../utils/auth';
 import { detectUserRoles, getDashboardPath } from '../../utils/roleDetection';
 import { can, isDeptManagerFor } from '../../utils/permissions';
 import IconLock from '../Icon/IconLock';
@@ -230,15 +230,13 @@ const Sidebar = () => {
     useEffect(() => {
         const fetchPinnedModule = async () => {
             try {
-                const token = getToken();
-                if (!token) return;
-
                 const response = await fetch(getApiUrl('/api/auth/me'), {
-                    headers: { Authorization: `Bearer ${token}` },
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                 });
 
                 if (response.status === 401) {
-                    clearAuth();
+                    await logout();
                     window.location.href = '/auth/login';
                     return;
                 }
@@ -269,20 +267,17 @@ const Sidebar = () => {
         if (pinnedModule) {
             const savePinnedModule = async () => {
                 try {
-                    const token = getToken();
-                    if (!token) return;
-
                     const response = await fetch(getApiUrl('/api/auth/me/pinned-module'), {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
-                            Authorization: `Bearer ${token}`,
                         },
+                        credentials: 'include',
                         body: JSON.stringify({ pinnedModule }),
                     });
 
                     if (response.status === 401) {
-                        clearAuth();
+                        await logout();
                         window.location.href = '/auth/login';
                     }
                 } catch (error) {
@@ -878,6 +873,15 @@ const Sidebar = () => {
                                                     <div className="flex items-center">
                                                         <IconUser className="group-hover:!text-primary shrink-0" />
                                                         <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">My Ideas</span>
+                                                    </div>
+                                                </NavLink>
+                                            </li>
+
+                                            <li className="nav-item">
+                                                <NavLink to="/innovation/leaderboard" className="group">
+                                                    <div className="flex items-center">
+                                                        <IconBarChart className="group-hover:!text-primary shrink-0" />
+                                                        <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">Leaderboard</span>
                                                     </div>
                                                 </NavLink>
                                             </li>

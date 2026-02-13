@@ -49,7 +49,10 @@ const FinancialManagement = () => {
     const loadFinancialData = async () => {
         setLoading(true);
         try {
-            const [budgetsRes, reportsRes] = await Promise.all([fetch(getApiUrl('/api/departments')).catch(() => null), fetch(getApiUrl('/api/financial/reports')).catch(() => null)]);
+            const [budgetsRes, reportsRes] = await Promise.all([
+                fetch(getApiUrl('/api/departments'), { credentials: 'include' }).catch(() => null),
+                fetch(getApiUrl('/api/financial/reports'), { credentials: 'include' }).catch(() => null),
+            ]);
 
             if (budgetsRes?.ok) {
                 const data = await budgetsRes.json();

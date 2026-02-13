@@ -36,9 +36,9 @@ const InnovationRoute: React.FC<InnovationRouteProps> = ({ children }) => {
     }, []);
 
     // Check auth from storage as fallback
-    const hasToken = !!(sessionStorage.getItem('token') || localStorage.getItem('token') || sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token'));
+    const hasCachedUser = !!(sessionStorage.getItem('auth_user') || localStorage.getItem('auth_user') || localStorage.getItem('userProfile'));
 
-    if (!isAuthenticated && !hasToken) {
+    if (!isAuthenticated && !hasCachedUser) {
         return <Navigate to="/auth/login" replace />;
     }
 

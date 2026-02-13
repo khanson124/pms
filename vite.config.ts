@@ -32,6 +32,16 @@ export default defineConfig(({ mode }) => {
                 '/api': {
                     target: apiTarget,
                     changeOrigin: true,
+                    secure: false,
+                    ws: true, // Enable WebSocket proxying
+                    configure: (proxy, _options) => {
+                        proxy.on('proxyReq', (proxyReq, req, _res) => {
+                            // Ensure cookies are forwarded
+                            if (req.headers.cookie) {
+                                proxyReq.setHeader('cookie', req.headers.cookie);
+                            }
+                        });
+                    },
                 },
                 // Note: Only proxy /api paths. DO NOT proxy frontend routes like /procurement, /finance, etc.
                 // Those are React Router routes and should be handled by the frontend.

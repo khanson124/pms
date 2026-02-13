@@ -2,6 +2,7 @@
 import { LoginCredentials, AuthResponse } from '../types/auth';
 import mockAuthService from './mockAuthService';
 import { getApiUrl } from '../config/api';
+import { clearAuth, getUser, isRemembered, setAuth } from '../utils/auth';
 
 // Use mock auth in development if VITE_USE_MOCK_AUTH is true
 const USE_MOCK_AUTH = import.meta.env.VITE_USE_MOCK_AUTH === 'true';
@@ -39,6 +40,7 @@ class AuthService {
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
                 body: JSON.stringify(normalizedCredentials),
             });
 
@@ -52,16 +54,10 @@ class AuthService {
 
             const data = await response.json();
 
-            if (data.token) {
-                localStorage.setItem('token', data.token);
-            }
-            if (data.refreshToken) {
-                localStorage.setItem('refreshToken', data.refreshToken);
-            }
             // Persist user snapshot for downstream services (adminService, etc.)
             try {
                 if (data.user) {
-                    localStorage.setItem('auth_user', JSON.stringify(data.user));
+                    setAuth('', data.user, Boolean((credentials as any).rememberMe));
                 }
             } catch {}
 
@@ -115,19 +111,57 @@ class AuthService {
             if (!t) return { success: false, message: 'No authentication token found' };
             return mockAuthService.verifyToken(t);
         }
+        try {
+            const response = await fetch(getApiUrl('/api/auth/me'), {
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
 
-        // TODO: Implement real token verification endpoint
-        const t = token || localStorage.getItem('token');
-        if (!t) return { success: false, message: 'No authentication token found' };
+            // Only treat 401/403 as auth failure - other errors might be temporary
+            if (response.status === 401 || response.status === 403) {
+                return { success: false, message: 'Authentication required' };
+            }
 
-        return { success: true, message: 'Token valid' };
+            if (!response.ok) {
+                // Server error or network issue - don't clear auth state
+                return { success: true, message: 'Verification skipped due to server error' };
+            }
+
+            const data = await response.json().catch(() => ({}));
+
+            if (data.user) {
+                setAuth('', data.user, isRemembered());
+            }
+
+            const user = data.user
+                ? {
+                      id: data.user.id,
+                      email: data.user.email,
+                      full_name: data.user.name || data.user.email,
+                      status: 'active' as const,
+                      roles: data.user.roles || [],
+                      department_id: data.user.department?.id,
+                      department_name: data.user.department?.name,
+                  }
+                : undefined;
+
+            return { success: true, message: 'Token valid', user };
+        } catch (error) {
+            // Network error - don't clear auth state, user might be temporarily offline
+            return { success: true, message: 'Verification skipped due to network error' };
+        }
     }
 
     async logout(): Promise<void> {
         if (USE_MOCK_AUTH) {
             await mockAuthService.logout();
         }
-        localStorage.removeItem('token');
+        try {
+            await fetch(getApiUrl('/api/auth/logout'), { method: 'POST', credentials: 'include' });
+        } catch {}
+        clearAuth();
     }
 
     async refreshToken(): Promise<AuthResponse> {
@@ -137,17 +171,12 @@ class AuthService {
 
         // Implement real token refresh endpoint
         try {
-            const refreshToken = localStorage.getItem('refreshToken');
-            if (!refreshToken) {
-                return { success: false, message: 'No refresh token found' };
-            }
-
             const response = await fetch(getApiUrl('/api/auth/refresh'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ refreshToken }),
+                credentials: 'include',
             });
 
             if (!response.ok) {
@@ -160,17 +189,9 @@ class AuthService {
 
             const data = await response.json();
 
-            // Store new tokens
-            if (data.token) {
-                localStorage.setItem('token', data.token);
-            }
-            if (data.refreshToken) {
-                localStorage.setItem('refreshToken', data.refreshToken);
-            }
-
             // Update cached user data
             if (data.user) {
-                localStorage.setItem('auth_user', JSON.stringify(data.user));
+                setAuth('', data.user, isRemembered());
             }
 
             // Transform backend user to frontend User type
@@ -194,8 +215,7 @@ class AuthService {
             };
         } catch (error: any) {
             console.error('Token refresh error:', error);
-            localStorage.removeItem('token');
-            localStorage.removeItem('refreshToken');
+            clearAuth();
             return {
                 success: false,
                 message: error.message || 'Token refresh failed',
@@ -207,15 +227,14 @@ class AuthService {
         if (USE_MOCK_AUTH) {
             return mockAuthService.getAuthHeaders();
         }
-        const token = localStorage.getItem('token');
-        return token ? { Authorization: `Bearer ${token}` } : {};
+        return {};
     }
 
     isAuthenticated(): boolean {
         if (USE_MOCK_AUTH) {
             return mockAuthService.isAuthenticated();
         }
-        return !!localStorage.getItem('token');
+        return !!getUser();
     }
 }
 

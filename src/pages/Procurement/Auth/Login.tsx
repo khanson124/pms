@@ -74,6 +74,7 @@ const Login = () => {
             const res = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ email, password, rememberMe }),
             });
 
@@ -84,18 +85,14 @@ const Login = () => {
                 throw new Error(msg);
             }
 
-            const { token, refreshToken, user } = data || {};
-            if (!token || !user) throw new Error('Invalid login response');
-
-            // Store refresh token if provided
-            if (refreshToken) {
-                localStorage.setItem('refreshToken', refreshToken);
-            }
+            const { token, user } = data || {};
+            if (!user) throw new Error('Invalid login response');
 
             // Clear Redux module state before setting new auth (forces re-initialization with new user)
             dispatch(clearModule());
 
-            setAuth(token, user, rememberMe);
+            setAuth(token || '', user, rememberMe);
+
             // Also persist legacy userProfile structure expected by RequestForm & index pages
             try {
                 const legacyProfile = {
@@ -556,7 +553,6 @@ const Login = () => {
                                                     const result = await loginWithMicrosoft();
                                                     const idToken = result.idToken;
                                                     if (!idToken) throw new Error('No idToken from Microsoft');
-                                                    // TODO: implement backend endpoint for Microsoft login when enabling Azure AD
                                                     throw new Error('Microsoft SSO is not yet enabled.');
                                                 } catch (e: any) {
                                                     const msg = e?.message || 'Microsoft sign-in failed';
