@@ -3457,9 +3457,35 @@ app.post('/api/requests/:id/submit', async (req, res) => {
             const splinteringEnabled = lbSettings?.splinteringEnabled ?? false;
 
             if (splinteringEnabled) {
-                const windowDays = Number(process.env.SPLINTER_WINDOW_DAYS || 30);
-                // TEMPORARY: Disable by using impossibly high threshold (matches splinteringService default)
-                const threshold = Number(process.env.SPLINTER_THRESHOLD_JMD || 999999999999);
+                let windowDays = Number(process.env.SPLINTER_WINDOW_DAYS || 0);
+                let threshold = Number(process.env.SPLINTER_THRESHOLD_JMD || 0);
+
+                // If env overrides are not provided, fall back to enabled admin-configured splintering rules
+                const hasWindowOverride = Number.isFinite(windowDays) && windowDays > 0;
+                const hasThresholdOverride = Number.isFinite(threshold) && threshold > 0;
+
+                if (!hasWindowOverride || !hasThresholdOverride) {
+                    const enabledRules = await prisma.splinteringRule.findMany({
+                        where: { enabled: true },
+                        orderBy: { thresholdAmount: 'asc' },
+                        select: { thresholdAmount: true, timeWindowDays: true },
+                    });
+
+                    if (enabledRules.length > 0) {
+                        const strictestRule = enabledRules[0];
+                        if (!hasWindowOverride) {
+                            windowDays = Number(strictestRule.timeWindowDays || 90);
+                        }
+                        if (!hasThresholdOverride) {
+                            threshold = Number(strictestRule.thresholdAmount || 25000);
+                        }
+                    }
+                }
+
+                // Final guardrails
+                if (!Number.isFinite(windowDays) || windowDays <= 0) windowDays = 90;
+                if (!Number.isFinite(threshold) || threshold <= 0) threshold = 25000;
+
                 const spl = await checkSplintering(prisma, {
                     requesterId: request.requesterId,
                     departmentId: request.departmentId,

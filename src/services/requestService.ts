@@ -5,6 +5,18 @@
 import { getApiUrl } from '../config/api';
 import { getAuthHeadersSync } from '../utils/api';
 
+const formatJmdAmount = (value: unknown): string => {
+    const n = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(n)) return String(value ?? 'N/A');
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'JMD',
+        currencyDisplay: 'code',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(n);
+};
+
 export interface RequestItem {
     id?: number;
     description: string;
@@ -158,7 +170,16 @@ export async function submitRequest(id: string): Promise<Request> {
 
         if (!response.ok) {
             const error = await response.json().catch(() => ({ error: response.statusText }));
-            throw new Error(error.error || 'Failed to submit request');
+            const message = error?.error || error?.message || response.statusText || 'Failed to submit request';
+            if (response.status === 409 && error?.details) {
+                const details = error.details;
+                throw new Error(
+                    `Submission blocked by splintering check (window: ${details?.windowDays ?? 'N/A'} days, combined: ${formatJmdAmount(details?.combined)}, threshold: ${formatJmdAmount(
+                        details?.threshold,
+                    )}).`,
+                );
+            }
+            throw new Error(message);
         }
 
         return await response.json();

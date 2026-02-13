@@ -28,6 +28,18 @@ const parseNumberInput = (value: string): number => {
     return Number.isNaN(parsed) ? 0 : parsed;
 };
 
+const formatJmdAmount = (value: unknown): string => {
+    const n = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(n)) return String(value ?? '');
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'JMD',
+        currencyDisplay: 'code',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(n);
+};
+
 interface RequestItem {
     itemNo: number;
     stockLevel: string;
@@ -250,6 +262,7 @@ const RequestForm = () => {
     // Request actions/messages
     const [requestActions, setRequestActions] = useState<Array<{ id: number; action: string; comment: string | null; performedBy: { name: string } | null; createdAt: string }>>([]);
     const [showMessagesPanel, setShowMessagesPanel] = useState(false);
+    const [draftHoldReason, setDraftHoldReason] = useState('');
 
     // Load available finance officers if user is Budget Manager and request is in FINANCE_REVIEW
     useEffect(() => {
@@ -885,9 +898,10 @@ const RequestForm = () => {
                                         // Splintering detected — show details and allow override (manager only)
                                         const body = await submitResp.json().catch(() => ({}));
                                         const details = body?.details || body;
-                                        const msg = `Suspicious split purchases detected within the last ${details?.windowDays || ''} days. Combined total: ${details?.combined || ''} (threshold ${
-                                            details?.threshold || ''
-                                        }).`;
+                                        const msg = `Suspicious split purchases detected within the last ${details?.windowDays || ''} days. Combined total: ${formatJmdAmount(
+                                            details?.combined,
+                                        )} (threshold: ${formatJmdAmount(details?.threshold)}).`;
+                                        setDraftHoldReason(msg);
 
                                         if (!hasManagerRole) {
                                             // Non-managers cannot override
@@ -1078,10 +1092,35 @@ const RequestForm = () => {
                     },
                 });
 
+                if (submitResp.status === 409) {
+                    const err = await submitResp.json().catch(() => ({}));
+                    const details = err?.details || {};
+                    const windowDays = details?.windowDays ?? '';
+                    const msg = `Potential splintering detected within the last ${windowDays} days. Combined total: ${formatJmdAmount(
+                        details?.combined,
+                    )} (threshold: ${formatJmdAmount(details?.threshold)}).`;
+                    setDraftHoldReason(msg);
+
+                    await Swal.fire({
+                        icon: 'warning',
+                        title: 'Request Created as Draft',
+                        text: `${msg} This request was saved but not submitted, and remains in Draft for manager review.`,
+                    });
+                    navigate('/apps/requests');
+                    return;
+                }
+
                 if (!submitResp.ok) {
                     const err = await submitResp.json().catch(() => ({}));
-                    console.error('Failed to submit request:', err);
-                    // Don't throw - the request was created successfully, just not submitted
+                    const errorText = err?.error || err?.message || submitResp.statusText || 'Unknown submission error';
+                    console.error('Failed to submit request:', errorText);
+                    await Swal.fire({
+                        icon: 'warning',
+                        title: 'Request Created, Submission Pending',
+                        text: `Your request was created but could not be submitted automatically (${errorText}). It remains in Draft.`,
+                    });
+                    navigate('/apps/requests');
+                    return;
                 }
 
                 Swal.fire({ icon: 'success', title: 'Request submitted', text: `Reference ${data.reference || data.id} has been sent for review` });
@@ -1209,9 +1248,10 @@ const RequestForm = () => {
             if (resp.status === 409) {
                 const body = await resp.json().catch(() => ({}));
                 const details = body?.details || body;
-                const msg = `Suspicious split purchases detected within the last ${details?.windowDays || ''} days. Combined total: ${details?.combined || ''} (threshold ${
-                    details?.threshold || ''
-                }).`;
+                const msg = `Suspicious split purchases detected within the last ${details?.windowDays || ''} days. Combined total: ${formatJmdAmount(
+                    details?.combined,
+                )} (threshold: ${formatJmdAmount(details?.threshold)}).`;
+                setDraftHoldReason(msg);
 
                 if (!hasManagerRole) {
                     // Non-managers cannot override
@@ -1275,6 +1315,29 @@ const RequestForm = () => {
 
     return (
         <div className="p-6">
+            {(() => {
+                const isDraftForRequester =
+                    isEditMode && requestMeta?.status === 'DRAFT' && (Number(requestMeta.currentAssigneeId) === Number(currentUserId) || Number(requestRequesterId) === Number(currentUserId));
+                if (!isDraftForRequester) return null;
+
+                const latestReturnReason =
+                    requestActions.find((a) => {
+                        const action = String(a?.action || '').toUpperCase();
+                        return (action.includes('RETURN') || action.includes('REJECT')) && typeof a?.comment === 'string' && a.comment.trim().length > 0;
+                    })?.comment || '';
+
+                const reason = draftHoldReason || latestReturnReason || statusComment || '';
+                const message = reason
+                    ? `Reason: ${reason}`
+                    : 'Reason: This request is still a draft or was returned for changes. Update the required fields and click "Resubmit for Review".';
+
+                return (
+                    <div className="mb-4 rounded border border-amber-300 bg-amber-50 px-4 py-3 text-amber-900 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-100">
+                        <p className="font-semibold">This request is currently in Draft.</p>
+                        <p className="mt-1 text-sm">{message}</p>
+                    </div>
+                );
+            })()}
             <div className="mb-6">
                 <div className="flex justify-center">
                     <div className="w-full max-w-4xl">
