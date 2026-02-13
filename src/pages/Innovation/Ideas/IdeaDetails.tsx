@@ -81,7 +81,7 @@ export default function IdeaDetails() {
                 const user = getUser();
                 if (!user) return;
 
-                await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/ideas/${id}/view`, {
+                await fetch(getApiUrl(`/api/ideas/${id}/view`), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

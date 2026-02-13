@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { setPageTitle } from '../../../store/themeConfigSlice';
 import Swal from 'sweetalert2';
 import { fetchIdeas, Idea } from '../../../utils/ideasApi';
 
 const BSJProjects = () => {
     const dispatch = useDispatch();
+    const { t } = useTranslation();
 
     const [projects, setProjects] = useState<Idea[]>([]);
     const [loading, setLoading] = useState(true);
@@ -22,8 +24,8 @@ const BSJProjects = () => {
     const pageSize = 12;
 
     useEffect(() => {
-        dispatch(setPageTitle('BSJ Projects'));
-    }, [dispatch]);
+        dispatch(setPageTitle(t('innovation.projects.title', { defaultValue: 'BSJ Projects' })));
+    }, [dispatch, t]);
 
     // Load projects with real-time refresh
     const loadProjects = useCallback(async (showLoader = true) => {
@@ -181,7 +183,7 @@ const BSJProjects = () => {
                 String(p.voteCount),
                 String(p.viewCount),
                 p.status,
-            ])
+            ]),
         );
         const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });

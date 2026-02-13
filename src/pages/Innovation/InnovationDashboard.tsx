@@ -51,7 +51,10 @@ const InnovationDashboard = () => {
             const ideas = Array.isArray(response) ? response : (response as any).ideas || response;
 
             // Calculate myIdeas count (still need to filter client-side for this)
-            const myIdeas = ideas.filter((idea: any) => idea.submittedBy === currentUser?.name || idea.submittedBy === currentUser?.email).length;
+            const myIdeas = ideas.filter((idea: any) => {
+                if (idea.submittedById && currentUser?.id) return String(idea.submittedById) === String(currentUser.id);
+                return idea.submittedBy === currentUser?.name || idea.submittedBy === currentUser?.email;
+            }).length;
 
             setStats({
                 myIdeas,

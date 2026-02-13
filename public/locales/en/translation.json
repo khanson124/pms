@@ -456,6 +456,44 @@
                 }
             }
         },
+        "leaderboard": {
+            "title": "Innovation Leaderboard",
+            "breadcrumb": "Leaderboard",
+            "heading": "Top contributors",
+            "empty": "No data yet.",
+            "error": {
+                "title": "Unable to Load Leaderboard",
+                "message": "We encountered a problem loading the leaderboard. Please try again.",
+                "action": "Try Again"
+            },
+            "table": {
+                "rank": "Rank",
+                "user": "User",
+                "ideas": "Ideas",
+                "upvotes": "Upvotes",
+                "comments": "Comments",
+                "points": "Points",
+                "badge": "Badge"
+            }
+        },
+        "projects": {
+            "title": "BSJ Projects"
+        },
+        "notFound": {
+            "title": "Page Not Found",
+            "message": "This page doesn't exist in the Innovation Hub. Let's get you back on track!",
+            "actions": {
+                "back": "Go Back",
+                "dashboard": "Innovation Dashboard"
+            },
+            "quickLinks": {
+                "title": "Quick Links",
+                "submit": "Submit New Idea",
+                "browse": "Browse Ideas",
+                "mine": "My Ideas",
+                "projects": "BSJ Projects"
+            }
+        },
         "categories": {
             "TECHNOLOGY": "Technology",
             "SUSTAINABILITY": "Sustainability",
