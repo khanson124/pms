@@ -48,6 +48,9 @@ const EvaluationList = () => {
     const [isCommittee, setIsCommittee] = useState(false);
     const [isProcurement, setIsProcurement] = useState(false);
     const [isExecutive, setIsExecutive] = useState(false);
+    const [editingRfqId, setEditingRfqId] = useState<number | null>(null);
+    const [editingRfqValue, setEditingRfqValue] = useState('');
+    const [savingRfqId, setSavingRfqId] = useState<number | null>(null);
 
     const toast = (title: string, icon: 'success' | 'error' | 'info' | 'warning' = 'info') =>
         Swal.fire({
@@ -100,9 +103,12 @@ const EvaluationList = () => {
         }
     };
 
+    const getEffectiveStatus = (e: Evaluation): EvaluationStatus => (e.cancelled ? 'CANCELLED' : e.status);
+
     const filteredEvaluations = useMemo(() => {
         return evaluations.filter((e) => {
-            const displayStatus = statusMap[e.status];
+            const effectiveStatus = getEffectiveStatus(e);
+            const displayStatus = statusMap[effectiveStatus];
             if (statusFilter !== 'ALL' && displayStatus !== statusFilter) return false;
             if (search) {
                 const haystack = `${e.evalNumber} ${e.rfqNumber} ${e.rfqTitle} ${e.evaluator || ''} ${e.description || ''}`.toLowerCase();
@@ -117,13 +123,14 @@ const EvaluationList = () => {
     const stats = useMemo(() => {
         const base = { total: evaluations.length, pending: 0, inProgress: 0, committeeReview: 0, completed: 0, validated: 0, rejected: 0, cancelled: 0 };
         for (const e of evaluations) {
-            if (e.status === 'PENDING') base.pending++;
-            else if (e.status === 'IN_PROGRESS') base.inProgress++;
-            else if (e.status === 'COMMITTEE_REVIEW') base.committeeReview++;
-            else if (e.status === 'COMPLETED') base.completed++;
-            else if (e.status === 'VALIDATED') base.validated++;
-            else if (e.status === 'REJECTED') base.rejected++;
-            else if (e.status === 'CANCELLED') base.cancelled++;
+            const status = getEffectiveStatus(e);
+            if (status === 'PENDING') base.pending++;
+            else if (status === 'IN_PROGRESS') base.inProgress++;
+            else if (status === 'COMMITTEE_REVIEW') base.committeeReview++;
+            else if (status === 'COMPLETED') base.completed++;
+            else if (status === 'VALIDATED') base.validated++;
+            else if (status === 'REJECTED') base.rejected++;
+            else if (status === 'CANCELLED') base.cancelled++;
         }
         return base;
     }, [evaluations]);
@@ -186,6 +193,38 @@ const EvaluationList = () => {
             toast(err.message || 'Failed to validate evaluation', 'error');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const startRfqEdit = (evaluation: Evaluation) => {
+        setEditingRfqId(evaluation.id);
+        setEditingRfqValue(evaluation.rfqNumber || '');
+    };
+
+    const cancelRfqEdit = () => {
+        setEditingRfqId(null);
+        setEditingRfqValue('');
+    };
+
+    const saveRfqNumber = async (evaluation: Evaluation) => {
+        const nextRfqNumber = editingRfqValue.trim();
+        const currentRfqNumber = (evaluation.rfqNumber || '').trim();
+
+        if (nextRfqNumber === currentRfqNumber) {
+            cancelRfqEdit();
+            return;
+        }
+
+        try {
+            setSavingRfqId(evaluation.id);
+            const updated = await evaluationService.updateEvaluation(evaluation.id, { rfqNumber: nextRfqNumber });
+            setEvaluations((prev) => prev.map((row) => (row.id === updated.id ? updated : row)));
+            toast('RFQ number updated', 'success');
+            cancelRfqEdit();
+        } catch (err: any) {
+            toast(err.message || 'Failed to update RFQ number', 'error');
+        } finally {
+            setSavingRfqId(null);
         }
     };
 
@@ -472,7 +511,47 @@ const EvaluationList = () => {
                                                     </button>
                                                 </td>
                                                 <td className="whitespace-nowrap">
-                                                    <span className="text-info">{evaluation.rfqNumber}</span>
+                                                    {editingRfqId === evaluation.id ? (
+                                                        <div className="flex items-center gap-1">
+                                                            <input
+                                                                type="text"
+                                                                className="form-input h-8 min-w-[150px]"
+                                                                value={editingRfqValue}
+                                                                onChange={(e) => setEditingRfqValue(e.target.value)}
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === 'Enter') {
+                                                                        e.preventDefault();
+                                                                        void saveRfqNumber(evaluation);
+                                                                    }
+                                                                    if (e.key === 'Escape') {
+                                                                        e.preventDefault();
+                                                                        cancelRfqEdit();
+                                                                    }
+                                                                }}
+                                                                autoFocus
+                                                            />
+                                                            <button
+                                                                className="btn btn-sm btn-outline-success"
+                                                                onClick={() => void saveRfqNumber(evaluation)}
+                                                                disabled={savingRfqId === evaluation.id}
+                                                                title="Save RFQ Number"
+                                                            >
+                                                                <IconChecks className="h-4 w-4" />
+                                                            </button>
+                                                            <button className="btn btn-sm btn-outline-danger" onClick={cancelRfqEdit} disabled={savingRfqId === evaluation.id} title="Cancel">
+                                                                <IconX className="h-4 w-4" />
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="text-info">{evaluation.rfqNumber || '-'}</span>
+                                                            {isProcurement && (
+                                                                <button className="btn btn-sm btn-outline-warning" onClick={() => startRfqEdit(evaluation)} title="Edit RFQ Number">
+                                                                    <IconEdit className="h-4 w-4" />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </td>
                                                 <td>
                                                     <div className="max-w-[300px]" title={evaluation.rfqTitle}>
@@ -490,7 +569,9 @@ const EvaluationList = () => {
                                                 <td className="whitespace-nowrap">{formatDate(evaluation.dueDate)}</td>
                                                 <td>
                                                     <div className="flex flex-wrap items-center gap-1">
-                                                        <span className={`badge ${getStatusBadge(evaluation.status)} whitespace-nowrap`}>{statusMap[evaluation.status]}</span>
+                                                        <span className={`badge ${getStatusBadge(getEffectiveStatus(evaluation))} whitespace-nowrap`}>
+                                                            {statusMap[getEffectiveStatus(evaluation)]}
+                                                        </span>
                                                         {isCommittee && hasNewSubmissions(evaluation) && (
                                                             <span className="badge bg-info whitespace-nowrap" title="Submitted sections awaiting verification">
                                                                 New

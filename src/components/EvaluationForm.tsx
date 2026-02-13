@@ -102,16 +102,22 @@ export const EvaluationForm: React.FC<Props> = ({
     const currentUser = useMemo(() => {
         try {
             const user = getUser();
-            const name = String(user?.name || '').trim();
+            const name = String((user as any)?.name || (user as any)?.full_name || '').trim();
             const email = String(user?.email || '').trim();
-            return { name, email };
+            const idRaw = (user as any)?.id ?? (user as any)?.userId;
+            const id = Number(idRaw);
+            return { name, email, id: Number.isFinite(id) ? id : null };
         } catch {
-            return { name: '', email: '' };
+            return { name: '', email: '', id: null };
         }
     }, []);
 
     const canEditAssignedColumn = (column: { name?: string; assigneeName?: string } | null): boolean => {
-        if ((!currentUser.name && !currentUser.email) || !column) return false;
+        if ((!currentUser.name && !currentUser.email && !currentUser.id) || !column) return false;
+        const assigneeId = Number((column as any)?.assigneeId);
+        if (Number.isFinite(assigneeId) && currentUser.id && assigneeId === currentUser.id) {
+            return true;
+        }
         const explicit = String(column.assigneeName || '').trim();
         const parsed = (() => {
             const name = column.name || '';
@@ -174,7 +180,19 @@ export const EvaluationForm: React.FC<Props> = ({
     const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-    const canEdit = (sec: 'A' | 'B' | 'C' | 'D' | 'E') => canEditSections.includes(sec);
+    // Get section status
+    const getSectionStatus = (sec: 'A' | 'B' | 'C' | 'D' | 'E'): string => {
+        const statusKey = `section${sec}Status` as keyof typeof evaluation;
+        const rawStatus = evaluation?.[statusKey];
+        return typeof rawStatus === 'string' ? rawStatus : 'NOT_STARTED';
+    };
+
+    const canEdit = (sec: 'A' | 'B' | 'C' | 'D' | 'E') => {
+        if (!canEditSections.includes(sec)) return false;
+        if (sec === 'A' && !isProcurement) return false;
+        if (sec === 'B' || sec === 'C') return getSectionStatus(sec) !== 'VERIFIED';
+        return true;
+    };
 
     React.useEffect(() => {
         setExistingAttachments(getEvaluationAttachments(evaluation));
@@ -203,16 +221,10 @@ export const EvaluationForm: React.FC<Props> = ({
             }
         }
     }, [evaluation?.id, canEdit('E')]);
+
     const canEditStructure = (sec: 'A' | 'B' | 'C' | 'D' | 'E') => structureEditableSections.includes(sec);
     // Evaluators can only edit technical evaluation table, not eligibility or compliance
-    const canEditTechnical = () => canEditSections.includes('B');
-
-    // Get section status
-    const getSectionStatus = (sec: 'A' | 'B' | 'C' | 'D' | 'E'): string => {
-        const statusKey = `section${sec}Status` as keyof typeof evaluation;
-        const rawStatus = evaluation?.[statusKey];
-        return typeof rawStatus === 'string' ? rawStatus : 'NOT_STARTED';
-    };
+    const canEditTechnical = () => canEdit('B');
 
     // Check if user can verify a section (procurement officer and section is submitted)
     const canVerifySection = (sec: 'A' | 'B' | 'C' | 'D' | 'E'): boolean => {
@@ -1108,7 +1120,7 @@ export const EvaluationForm: React.FC<Props> = ({
                                                                             }}
                                                                         />
                                                                     )
-                                                                ) : canEditTechnical() && canEditAssignedColumn(col) && !prefilledCells[`B-${row.id}-${col.id}`] ? (
+                                                                ) : canEditTechnical() && canEditAssignedColumn(col) && !(prefilledCells[`B-${row.id}-${col.id}`] && String(row.data?.[col.id] || '').trim() !== '') ? (
                                                                     // Evaluator mode - only edit if cell was NOT pre-filled by officer
                                                                     col.cellType === 'radio' ? (
                                                                         <div className="flex items-center gap-4 justify-center">
@@ -1392,7 +1404,7 @@ export const EvaluationForm: React.FC<Props> = ({
                                                                             }}
                                                                         />
                                                                     )
-                                                                ) : canEditTechnical() && canEditAssignedColumn(col) && !prefilledCells[`B-${row.id}-${col.id}`] ? (
+                                                                ) : canEditTechnical() && canEditAssignedColumn(col) && !(prefilledCells[`B-${row.id}-${col.id}`] && String(row.data?.[col.id] || '').trim() !== '') ? (
                                                                     // Evaluator mode - only edit if cell was NOT pre-filled by officer
                                                                     col.cellType === 'radio' ? (
                                                                         <div className="flex items-center gap-4 justify-center">
@@ -1710,7 +1722,7 @@ export const EvaluationForm: React.FC<Props> = ({
                                                                             }}
                                                                         />
                                                                     )
-                                                                ) : canEditTechnical() && canEditAssignedColumn(col) && !prefilledCells[`B-${row.id}-${col.id}`] ? (
+                                                                ) : canEditTechnical() && canEditAssignedColumn(col) && !(prefilledCells[`B-${row.id}-${col.id}`] && String(row.data?.[col.id] || '').trim() !== '') ? (
                                                                     // Evaluator mode - only edit if cell was NOT pre-filled by officer
                                                                     col.cellType === 'radio' ? (
                                                                         <div className="flex items-center gap-4 justify-center">

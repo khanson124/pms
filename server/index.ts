@@ -1651,6 +1651,21 @@ app.post('/api/ideas/:id/approve', authMiddleware, requireCommittee, async (req,
                     },
                 })
                 .catch((err: any) => console.error('Failed to create approval message:', err));
+
+            // Send email notification to idea submitter
+            if (updated.submitter?.email) {
+                await emailService
+                    .sendEmail(
+                        updated.submitter.email,
+                        `Innovation Idea Approved: ${updated.title}`,
+                        `<p>Dear ${updated.submitter?.name || updated.submitter.email},</p>
+                        <p>Great news! Your innovation idea "<strong>${updated.title}</strong>" has been approved by the Innovation Committee.</p>
+                        ${notes ? `<p><strong>Reviewer Notes:</strong> ${notes}</p>` : ''}
+                        <p>You can view the idea status in the Innovation Hub.</p>
+                        <p style="font-size:12px;color:#666;">This is an automated message from the Procurement Management System.</p>`,
+                    )
+                    .catch((err: any) => console.error('Failed to send approval email:', err));
+            }
         }
 
         // Emit WebSocket event
@@ -1716,6 +1731,21 @@ app.post('/api/ideas/:id/reject', authMiddleware, requireCommittee, async (req, 
                     },
                 })
                 .catch((err: any) => console.error('Failed to create rejection message:', err));
+
+            // Send email notification to idea submitter
+            if (updated.submitter?.email) {
+                await emailService
+                    .sendEmail(
+                        updated.submitter.email,
+                        `Innovation Idea Review: ${updated.title}`,
+                        `<p>Dear ${updated.submitter?.name || updated.submitter.email},</p>
+                        <p>Thank you for submitting your innovation idea "<strong>${updated.title}</strong>". After review, the committee is unable to proceed with this idea at this time.</p>
+                        ${notes ? `<p><strong>Reviewer Feedback:</strong> ${notes}</p>` : ''}
+                        <p>We encourage you to continue innovating and submitting new ideas.</p>
+                        <p style="font-size:12px;color:#666;">This is an automated message from the Procurement Management System.</p>`,
+                    )
+                    .catch((err: any) => console.error('Failed to send rejection email:', err));
+            }
         }
 
         // Invalidate ideas cache
@@ -1796,6 +1826,21 @@ app.post('/api/ideas/:id/promote', authMiddleware, requireCommittee, async (req,
                     },
                 })
                 .catch((err: any) => console.error('Failed to create promotion message:', err));
+
+            // Send email notification to idea submitter
+            if (idea.submitter?.email) {
+                await emailService
+                    .sendEmail(
+                        idea.submitter.email,
+                        `Innovation Idea Promoted: ${idea.title}`,
+                        `<p>Dear ${idea.submitter?.name || idea.submitter.email},</p>
+                        <p>Congratulations! Your innovation idea "<strong>${idea.title}</strong>" has been promoted to an official project.</p>
+                        <p><strong>Project Code:</strong> ${code}</p>
+                        <p>The project team will be in touch with next steps.</p>
+                        <p style="font-size:12px;color:#666;">This is an automated message from the Procurement Management System.</p>`,
+                    )
+                    .catch((err: any) => console.error('Failed to send promotion email:', err));
+            }
         }
 
         // Fetch updated idea to return full data
@@ -1832,6 +1877,28 @@ app.post('/api/ideas/batch/approve', authMiddleware, requireCommittee, batchLimi
         // Emit WebSocket event
         emitBatchApproval(ideaIds, 'APPROVE', result.updated);
 
+        // Email submitters of approved ideas
+        try {
+            const approvedIdeas = await prisma.idea.findMany({
+                where: { id: { in: ideaIds.filter((id) => !result.failed.includes(id)) } },
+                include: { submitter: { select: { name: true, email: true } } },
+            });
+            for (const idea of approvedIdeas) {
+                if (!idea.submitter?.email) continue;
+                await emailService.sendEmail(
+                    idea.submitter.email,
+                    `Innovation Idea Approved: ${idea.title}`,
+                    `<p>Dear ${idea.submitter?.name || idea.submitter.email},</p>
+                    <p>Your innovation idea "<strong>${idea.title}</strong>" has been approved by the Innovation Committee.</p>
+                    ${notes ? `<p><strong>Reviewer Notes:</strong> ${notes}</p>` : ''}
+                    <p>You can view the idea status in the Innovation Hub.</p>
+                    <p style="font-size:12px;color:#666;">This is an automated message from the Procurement Management System.</p>`,
+                );
+            }
+        } catch (err) {
+            console.warn('Failed to send batch approval emails:', err);
+        }
+
         return res.json({
             message: `Approved ${result.updated} ideas`,
             updated: result.updated,
@@ -1863,6 +1930,28 @@ app.post('/api/ideas/batch/reject', authMiddleware, requireCommittee, batchLimit
 
         // Emit WebSocket event
         emitBatchApproval(ideaIds, 'REJECT', result.updated);
+
+        // Email submitters of rejected ideas
+        try {
+            const rejectedIdeas = await prisma.idea.findMany({
+                where: { id: { in: ideaIds.filter((id) => !result.failed.includes(id)) } },
+                include: { submitter: { select: { name: true, email: true } } },
+            });
+            for (const idea of rejectedIdeas) {
+                if (!idea.submitter?.email) continue;
+                await emailService.sendEmail(
+                    idea.submitter.email,
+                    `Innovation Idea Review: ${idea.title}`,
+                    `<p>Dear ${idea.submitter?.name || idea.submitter.email},</p>
+                    <p>Thank you for submitting your innovation idea "<strong>${idea.title}</strong>". After review, the committee is unable to proceed with this idea at this time.</p>
+                    ${notes ? `<p><strong>Reviewer Feedback:</strong> ${notes}</p>` : ''}
+                    <p>We encourage you to continue innovating and submitting new ideas.</p>
+                    <p style="font-size:12px;color:#666;">This is an automated message from the Procurement Management System.</p>`,
+                );
+            }
+        } catch (err) {
+            console.warn('Failed to send batch rejection emails:', err);
+        }
 
         return res.json({
             message: `Rejected ${result.updated} ideas`,
@@ -6274,7 +6363,10 @@ app.get(
                     evaluations = evaluations.filter((e: any) => e.createdBy === userId || assignedIds.has(e.id));
                 }
 
-                const normalized = evaluations.map((e: any) => (e?.status === 'COMMITTEE_REVIEW' ? { ...e, status: 'IN_PROGRESS' } : e));
+                const normalized = evaluations.map((e: any) => {
+                    if (e?.cancelled) return { ...e, status: 'CANCELLED' };
+                    return e?.status === 'COMMITTEE_REVIEW' ? { ...e, status: 'IN_PROGRESS' } : e;
+                });
                 return res.json({ success: true, data: normalized });
             } catch (error: any) {
                 // If the table doesn't exist or query fails, return empty array
@@ -6653,6 +6745,7 @@ app.post(
 
         // JWT payload uses 'sub' for user ID, fallback to 'id' for compatibility
         const userId = user?.sub || user?.id;
+        const normalizedRfqNumber = rfqNumber === undefined || rfqNumber === null ? '' : String(rfqNumber).trim();
 
         console.log('Creating evaluation with data:', {
             evalNumber,
@@ -6674,8 +6767,8 @@ app.post(
             throw new BadRequestError('User not authenticated. Please log in again.');
         }
 
-        if (!evalNumber || !rfqNumber || !rfqTitle) {
-            throw new BadRequestError('Missing required fields: evalNumber, rfqNumber, rfqTitle');
+        if (!evalNumber || !rfqTitle) {
+            throw new BadRequestError('Missing required fields: evalNumber, rfqTitle');
         }
 
         const formattedDueDate = formatDateTimeForSql(dueDate);
@@ -6728,7 +6821,7 @@ app.post(
                 const evaluation = await (prisma as any).evaluation.create({
                     data: {
                         evalNumber,
-                        rfqNumber,
+                        rfqNumber: normalizedRfqNumber,
                         rfqTitle,
                         description: description || null,
                         // persist combinedRequestId (int) when available
@@ -6789,7 +6882,7 @@ app.post(
 
         const values = [
             `'${evalNumber.replace(/'/g, "''")}'`,
-            `'${rfqNumber.replace(/'/g, "''")}'`,
+            `'${normalizedRfqNumber.replace(/'/g, "''")}'`,
             `'${rfqTitle.replace(/'/g, "''")}'`,
             `${description ? `'${description.replace(/'/g, "''")}'` : 'NULL'}`,
             `${sectionA ? `'${JSON.stringify(sectionA).replace(/'/g, "''")}'` : 'NULL'}`,
@@ -6941,9 +7034,12 @@ app.post(
                     for (const row of table.rows) {
                         if (row.data && typeof row.data === 'object') {
                             for (const [cellId, value] of Object.entries(row.data)) {
-                                if (value && String(value).trim() !== '') {
-                                    prefilledCells[`B-${row.id}-${cellId}`] = true;
-                                }
+                                if (value === null || value === undefined) continue;
+                                const trimmed = String(value).trim();
+                                if (!trimmed) continue;
+                                const lower = trimmed.toLowerCase();
+                                if (lower === '-' || lower === '—' || lower === 'n/a' || lower === 'na') continue;
+                                prefilledCells[`B-${row.id}-${cellId}`] = true;
                             }
                         }
                     }
@@ -7353,7 +7449,7 @@ app.patch(
     authMiddleware,
     asyncHandler(async (req, res) => {
         const { id } = req.params;
-        const { status, sectionA, sectionB, sectionC, sectionD, sectionE, validationNotes, description, dateSubmissionConsidered, reportCompletionDate } = req.body;
+        const { status, rfqNumber, sectionA, sectionB, sectionC, sectionD, sectionE, validationNotes, description, dateSubmissionConsidered, reportCompletionDate } = req.body;
 
         const delegateSupportsDates = evaluationDelegateSupportsDateFields();
         const useDelegate = hasEvaluationDelegate() && delegateSupportsDates;
@@ -7372,6 +7468,7 @@ app.patch(
         const updateData: Prisma.EvaluationUpdateInput = {};
 
         if (status) updateData.status = status;
+        if (rfqNumber !== undefined) updateData.rfqNumber = String(rfqNumber).trim();
         if (sectionA) updateData.sectionA = sectionA;
         if (sectionB) updateData.sectionB = sectionB;
         if (sectionC) updateData.sectionC = sectionC;
@@ -7401,6 +7498,7 @@ app.patch(
             ['sectionE', sectionE],
         ];
         if (status) sets.push(`status='${String(status).replace(/'/g, "''")}'`);
+        if (rfqNumber !== undefined) sets.push(`rfqNumber='${String(rfqNumber).trim().replace(/'/g, "''")}'`);
         for (const [key, val] of jsonFields) {
             if (val !== undefined) sets.push(`${key}=${val === null ? 'NULL' : `'${JSON.stringify(val).replace(/'/g, "''")}'`}`);
         }

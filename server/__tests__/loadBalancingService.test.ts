@@ -55,6 +55,7 @@ describe('Load Balancing Service', () => {
                 strategy: 'LEAST_LOADED',
                 autoAssignOnApproval: true,
                 roundRobinCounter: 0,
+                splinteringEnabled: false,
             });
         });
 

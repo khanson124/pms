@@ -214,6 +214,7 @@ export interface CreateEvaluationDTO {
 
 export interface UpdateEvaluationDTO {
     status?: EvaluationStatus;
+    rfqNumber?: string;
     sectionA?: SectionA;
     sectionB?: SectionB;
     sectionC?: SectionC | SectionCEntry[];

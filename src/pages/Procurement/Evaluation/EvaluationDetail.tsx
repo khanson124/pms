@@ -173,7 +173,12 @@ const EvaluationDetail = () => {
                                   return [];
                               }
                           })();
-                    (arr || []).forEach((s: string) => sections.add(String(s).toUpperCase()));
+                    (arr || []).forEach((s: string) => {
+                        const normalized = String(s).toUpperCase();
+                        if (!normalized) return;
+                        if (String(a.status || '').toUpperCase() === 'SUBMITTED') return;
+                        sections.add(normalized);
+                    });
                 });
 
                 // Procurement officers can always edit section A (their section)

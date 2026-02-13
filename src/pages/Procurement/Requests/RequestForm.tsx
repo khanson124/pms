@@ -74,6 +74,7 @@ const DEPARTMENT_CODES: readonly string[] = [
 
 /** Full month names used for header month selection. */
 const MONTHS: readonly string[] = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+const getCurrentHeaderMonth = (): string => MONTHS[new Date().getMonth()];
 
 /**
  * Header year range logic.
@@ -181,7 +182,7 @@ const RequestForm = () => {
     const [selectedFinanceOfficerId, setSelectedFinanceOfficerId] = useState<number | null>(null);
     const [isReassigningOfficer, setIsReassigningOfficer] = useState(false);
     const [headerDeptCode, setHeaderDeptCode] = useState('');
-    const [headerMonth, setHeaderMonth] = useState('');
+    const [headerMonth, setHeaderMonth] = useState(getCurrentHeaderMonth());
     const [headerYear, setHeaderYear] = useState<number | null>(new Date().getFullYear());
     const [headerSequence, setHeaderSequence] = useState<string>('000');
 
@@ -228,9 +229,11 @@ const RequestForm = () => {
     const isHOD = userRoles.some((r: string) => r === 'HEAD_OF_DIVISION' || r === 'HOD');
 
     const isAssignee = !!(isEditMode && requestMeta?.currentAssigneeId && currentUserId && Number(requestMeta.currentAssigneeId) === Number(currentUserId));
+    const isRequestEditableByProcurement = !!(requestMeta?.status && !['CANCELLED', 'REJECTED'].includes(requestMeta.status));
     const canEditManagerFields = !!(isAssignee && requestMeta?.status === 'DEPARTMENT_REVIEW' && isDeptManager);
     const canEditHodFields = !!(isAssignee && requestMeta?.status === 'HOD_REVIEW' && isHOD);
-    const canEditProcurementSection = !!(isAssignee && isProcurementRole && requestMeta?.status && !['CANCELLED', 'REJECTED'].includes(requestMeta.status));
+    const [hasCompletedEvaluation, setHasCompletedEvaluation] = useState(false);
+    const canEditProcurementSection = !!(isProcurementRole && isRequestEditableByProcurement && (isAssignee || hasCompletedEvaluation));
     const canEditBudgetSection = !!(isAssignee && (requestMeta?.status === 'FINANCE_REVIEW' || requestMeta?.status === 'BUDGET_MANAGER_REVIEW'));
     const canApproveBudgetOfficer = !!(isAssignee && requestMeta?.status === 'FINANCE_REVIEW' && isBudgetOfficer);
     const canApproveBudgetManager = !!(isAssignee && isBudgetManager && (requestMeta?.status === 'FINANCE_REVIEW' || requestMeta?.status === 'BUDGET_MANAGER_REVIEW'));
@@ -440,7 +443,7 @@ const RequestForm = () => {
                 })();
 
                 setHeaderDeptCode(request.headerDeptCode || derivedHeaderFromTitle.dept || request.department?.code || '');
-                setHeaderMonth(request.headerMonth || derivedHeaderFromTitle.month || '');
+                setHeaderMonth(request.headerMonth || derivedHeaderFromTitle.month || getCurrentHeaderMonth());
                 setHeaderYear(request.headerYear || derivedHeaderFromTitle.year || new Date().getFullYear());
 
                 const rawSequenceFromRequest = request.headerSequence !== null && request.headerSequence !== undefined ? String(request.headerSequence) : '';
@@ -465,6 +468,30 @@ const RequestForm = () => {
 
         fetchRequest();
     }, [id, isEditMode]);
+
+    useEffect(() => {
+        if (!isEditMode || !id) return;
+
+        const fetchEvaluations = async () => {
+            try {
+                const resp = await fetch(getApiUrl(`/api/requests/${id}/evaluations`), {
+                    headers: { 'x-user-id': String(currentUserId) },
+                });
+                if (!resp.ok) return;
+                const result = await resp.json();
+                const evaluations = Array.isArray(result?.data) ? result.data : [];
+                const completed = evaluations.some((evaluation: any) => {
+                    const status = String(evaluation?.status || '').toUpperCase();
+                    return status === 'COMPLETED' || status === 'VALIDATED';
+                });
+                setHasCompletedEvaluation(completed);
+            } catch (err) {
+                console.warn('Failed to fetch evaluations for request:', err);
+            }
+        };
+
+        fetchEvaluations();
+    }, [id, isEditMode, currentUserId]);
 
     // Fetch request actions/messages when in edit mode
     useEffect(() => {

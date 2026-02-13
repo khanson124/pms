@@ -11,6 +11,11 @@ import IconTrendingUp from '../../../components/Icon/IconTrendingUp';
 import IconBarChart from '../../../components/Icon/IconBarChart';
 import IconArrowForward from '../../../components/Icon/IconArrowForward';
 
+const toFiniteNumber = (value: unknown, fallback = 0): number => {
+    const parsed = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+};
+
 const FinanceOfficerDashboard = () => {
     const dispatch = useDispatch();
     useEffect(() => {
@@ -32,7 +37,17 @@ const FinanceOfficerDashboard = () => {
                 });
                 if (response.ok) {
                     const data = await response.json();
-                    setStats(data);
+                    const paymentsToProcess = toFiniteNumber(data?.paymentsToProcess ?? data?.pendingReview, 0);
+                    const totalAmount = toFiniteNumber(data?.totalAmount, 0);
+                    const processingTime = toFiniteNumber(data?.processingTime ?? data?.avgProcessingTime, 0);
+                    const approvalRate = toFiniteNumber(data?.approvalRate, 0);
+
+                    setStats({
+                        paymentsToProcess,
+                        totalAmount,
+                        processingTime,
+                        approvalRate,
+                    });
                 }
             } catch (error) {
                 console.error('Failed to fetch finance officer stats:', error);
@@ -55,6 +70,10 @@ const FinanceOfficerDashboard = () => {
         { id: 2, type: 'Approval', reference: 'REQ-2024-089', amount: '$12,500', dueDate: 'Oct 31', priority: 'Medium' },
         { id: 3, type: 'Review', reference: 'INV-2024-234', amount: '$3,180', dueDate: 'Nov 2', priority: 'Low' },
     ];
+
+    const formattedTotalAmount = `$${(toFiniteNumber(stats.totalAmount, 0) / 1000).toFixed(0)}K`;
+    const formattedProcessingTime = `${toFiniteNumber(stats.processingTime, 0).toFixed(1)}d`;
+    const formattedApprovalRate = `${toFiniteNumber(stats.approvalRate, 0).toFixed(1)}%`;
 
     return (
         <div className="space-y-6">
@@ -82,7 +101,7 @@ const FinanceOfficerDashboard = () => {
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-gray-600 dark:text-gray-400 text-sm">Total Amount</p>
-                            <p className="text-3xl font-bold dark:text-white mt-1">${(stats.totalAmount / 1000).toFixed(0)}K</p>
+                            <p className="text-3xl font-bold dark:text-white mt-1">{formattedTotalAmount}</p>
                         </div>
                         <IconCheckCircle className="w-10 h-10 text-green-500 opacity-30" />
                     </div>
@@ -92,7 +111,7 @@ const FinanceOfficerDashboard = () => {
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-gray-600 dark:text-gray-400 text-sm">Avg Processing Time</p>
-                            <p className="text-3xl font-bold dark:text-white mt-1">{stats.processingTime}d</p>
+                            <p className="text-3xl font-bold dark:text-white mt-1">{formattedProcessingTime}</p>
                         </div>
                         <IconClock className="w-10 h-10 text-blue-500 opacity-30" />
                     </div>
@@ -102,7 +121,7 @@ const FinanceOfficerDashboard = () => {
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-gray-600 dark:text-gray-400 text-sm">Approval Rate</p>
-                            <p className="text-3xl font-bold dark:text-white mt-1">{stats.approvalRate}%</p>
+                            <p className="text-3xl font-bold dark:text-white mt-1">{formattedApprovalRate}</p>
                         </div>
                         <IconTrendingUp className="w-10 h-10 text-purple-500 opacity-30" />
                     </div>

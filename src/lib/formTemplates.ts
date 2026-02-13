@@ -28,8 +28,9 @@ export function createEDFormInstance(evaluationData: any, requestData: any, tota
         if (!value) return '';
         const v = String(value).toUpperCase();
         if (v.includes('GOODS')) return 'Goods';
-        if (v.includes('CONSULTING')) return 'Consulting Services';
         if (v.includes('NON')) return 'Non-Consulting Services';
+        if (v.includes('CONSULTING')) return 'Consulting Services';
+        if (v.includes('SERVICE')) return 'Services';
         if (v.includes('WORK')) return 'Works';
         return String(value);
     };

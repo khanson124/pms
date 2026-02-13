@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setPageTitle } from '../../../store/themeConfigSlice';
@@ -8,7 +8,8 @@ import IconX from '../../../components/Icon/IconX';
 import { evaluationService } from '../../../services/evaluationService';
 import { getUser } from '../../../utils/auth';
 import Swal from 'sweetalert2';
-import { HOE_FORM_DETAIL, FormField, FormSection } from '../../../lib/hoeApprovalFormDefinition';
+import Select, { type StylesConfig } from 'react-select';
+import { HOE_FORM_DETAIL, FormField, FormSection, getPpcCategoriesForContractType } from '../../../lib/hoeApprovalFormDefinition';
 
 interface EDApprovalFormData {
     id: number;
@@ -68,6 +69,7 @@ const EDApprovalForm = () => {
 
     const [formValues, setFormValues] = useState<Record<string, string | boolean>>({});
     const [comments, setComments] = useState('');
+    const prevContractTypeRef = useRef<string | null>(null);
     const isExecutiveUser = (() => {
         try {
             const user = getUser();
@@ -110,11 +112,13 @@ const EDApprovalForm = () => {
         }));
     };
 
+    const isFieldRequired = (field: FormField, values: Record<string, string | boolean>) => (typeof field.required === 'function' ? field.required(values) : field.required === true);
+
     const validateRequiredFields = (values: Record<string, string | boolean>) => {
         const missing: string[] = [];
         HOE_FORM_DETAIL.sections.forEach((section) => {
             section.fields?.forEach((field) => {
-                if (!field.required) return;
+                if (!isFieldRequired(field, values)) return;
                 const value = values[field.id];
                 const isEmpty = field.type === 'checkbox' ? value !== true : value === undefined || value === null || String(value).trim() === '';
                 if (isEmpty) {
@@ -123,6 +127,61 @@ const EDApprovalForm = () => {
             });
         });
         return missing;
+    };
+
+    const contractTypeValue = typeof formValues.contract_type === 'string' ? formValues.contract_type : '';
+    const ppcCategoryValue = typeof formValues.ppc_registration_category === 'string' ? formValues.ppc_registration_category : '';
+    const ppcCategoryList = useMemo(() => getPpcCategoriesForContractType(contractTypeValue), [contractTypeValue]);
+    const ppcCategoryOptions = useMemo(() => {
+        const next = [...ppcCategoryList];
+        if (ppcCategoryValue && !next.includes(ppcCategoryValue)) {
+            next.unshift(ppcCategoryValue);
+        }
+        return next.map((category) => ({ value: category, label: category }));
+    }, [ppcCategoryList, ppcCategoryValue]);
+
+    useEffect(() => {
+        const previous = prevContractTypeRef.current;
+        prevContractTypeRef.current = contractTypeValue;
+        if (previous === null) return;
+        if (!contractTypeValue) return;
+        if (previous !== contractTypeValue && ppcCategoryValue && !ppcCategoryList.includes(ppcCategoryValue)) {
+            handleFieldChange('ppc_registration_category', '');
+        }
+    }, [contractTypeValue, ppcCategoryList, ppcCategoryValue]);
+
+    const ppcSelectStyles: StylesConfig<{ value: string; label: string }, false> = {
+        control: (base, state) => ({
+            ...base,
+            minHeight: 42,
+            borderColor: state.isFocused ? '#4361ee' : '#e5e7eb',
+            boxShadow: state.isFocused ? '0 0 0 1px #4361ee' : 'none',
+            backgroundColor: state.isDisabled ? '#f9fafb' : '#ffffff',
+        }),
+        valueContainer: (base) => ({
+            ...base,
+            padding: '0 10px',
+        }),
+        input: (base) => ({
+            ...base,
+            color: '#111827',
+        }),
+        singleValue: (base) => ({
+            ...base,
+            color: '#111827',
+        }),
+        placeholder: (base) => ({
+            ...base,
+            color: '#9ca3af',
+        }),
+        menu: (base) => ({
+            ...base,
+            zIndex: 50,
+        }),
+        menuPortal: (base) => ({
+            ...base,
+            zIndex: 50,
+        }),
     };
 
     const handleSave = async () => {
@@ -254,9 +313,23 @@ const EDApprovalForm = () => {
                                     <div key={field.id}>
                                         <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">
                                             {field.label}
-                                            {field.required && <span className="text-red-500 ml-1">*</span>}
+                                            {isFieldRequired(field, formValues) && <span className="text-red-500 ml-1">*</span>}
                                         </label>
-                                        {renderField(field, formValues[field.id], (value) => handleFieldChange(field.id, value), isFinal)}
+                                        {field.id === 'ppc_registration_category' ? (
+                                            <Select
+                                                isSearchable
+                                                isClearable
+                                                isDisabled={isFinal}
+                                                placeholder={contractTypeValue ? 'Select PPC category' : 'Select contract type first'}
+                                                options={ppcCategoryOptions}
+                                                value={ppcCategoryValue ? { value: ppcCategoryValue, label: ppcCategoryValue } : null}
+                                                onChange={(option) => handleFieldChange('ppc_registration_category', option?.value || '')}
+                                                styles={ppcSelectStyles}
+                                                menuPortalTarget={document.body}
+                                            />
+                                        ) : (
+                                            renderField(field, formValues[field.id], (value) => handleFieldChange(field.id, value), isFinal)
+                                        )}
                                     </div>
                                 ))}
                             </div>
