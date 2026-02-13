@@ -1539,6 +1539,8 @@ app.post('/api/ideas', authMiddleware, ideaCreationLimiter, upload.single('image
         const user = (req as any).user as { sub: number | string };
         const { title, description, category } = (req.body || {}) as Record<string, string>;
         const tagIdsRaw = (req.body?.tagIds ?? '') as string;
+        const isAnonymousRaw = req.body?.isAnonymous as string | boolean | undefined;
+        const isAnonymous = typeof isAnonymousRaw === 'string' ? isAnonymousRaw.toLowerCase() === 'true' : Boolean(isAnonymousRaw);
 
         if (!title || !description || !category) {
             return res.status(400).json({ message: 'title, description and category are required' });
@@ -1553,6 +1555,7 @@ app.post('/api/ideas', authMiddleware, ideaCreationLimiter, upload.single('image
                 description: String(description),
                 category: category as any,
                 status: 'PENDING_REVIEW',
+                isAnonymous,
                 submittedBy: submittedBy as any, // Type mismatch - regenerate Prisma client to fix
             },
         });
