@@ -6,7 +6,7 @@ import pkg from './package.json';
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '');
-    const apiTarget = env.VITE_API_URL || 'http://localhost:4001';
+    const apiTarget = env.VITE_API_URL || 'http://localhost:4000';
     const allowedHosts = env.VITE_ALLOWED_HOSTS ? env.VITE_ALLOWED_HOSTS.split(',').map((s) => s.trim()) : ['heron', 'spinx-dev', 'spinx-prod', 'localhost', '127.0.0.1'];
 
     return {
