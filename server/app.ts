@@ -89,7 +89,7 @@ if (config.NODE_ENV === 'production') {
 
 // CORS configuration
 const corsOptions = {
-    origin: config.NODE_ENV === 'production' ? [config.CORS_ORIGIN] : config.CORS_ORIGIN ? [config.CORS_ORIGIN] : true,
+    origin: config.NODE_ENV === 'production' ? (config.CORS_ORIGIN ? [config.CORS_ORIGIN] : false) : config.CORS_ORIGIN ? [config.CORS_ORIGIN] : true,
     credentials: true,
     optionsSuccessStatus: 200,
 };
